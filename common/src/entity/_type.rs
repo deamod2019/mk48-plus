@@ -30,7 +30,9 @@ impl EntityType {
     /// on whether you are a bot.
     pub fn can_spawn_as(self, score: u32, bot: bool, moderator: bool) -> bool {
         let data = self.data();
-        if (bot || !moderator) && data.sub_kind == EntitySubKind::Drone {return false};
+        if (bot || !moderator) && data.sub_kind == EntitySubKind::Drone {
+            return false;
+        };
         data.kind == EntityKind::Boat && level_to_score(data.level) <= score && (bot || !data.npc)
     }
 
@@ -39,14 +41,32 @@ impl EntityType {
     pub fn can_upgrade_to(self, upgrade: Self, score: u32, bot: bool, moderator: bool) -> bool {
         let data = self.data();
         let upgrade_data = upgrade.data();
-        if moderator && upgrade_data.kind == data.kind {return true};
-        if upgrade_data.sub_kind == EntitySubKind::Drone && !moderator {return false};
-        if bot && upgrade == EntityType::Chinook {return false};
-        if bot && upgrade == EntityType::Lst {return false};
-        if self == EntityType::Lst && upgrade == EntityType::Sherman {return score < level_to_score(6) && score >= level_to_score(4)};
-        if data.sub_kind == EntitySubKind::Tank && upgrade_data.sub_kind == EntitySubKind::LandingShip {return true};
-        if data.sub_kind == EntitySubKind::LandingShip && upgrade_data.sub_kind == EntitySubKind::Tank {return true};
-        upgrade_data.level > data.level 
+        if moderator && upgrade_data.kind == data.kind {
+            return true;
+        };
+        if upgrade_data.sub_kind == EntitySubKind::Drone && !moderator {
+            return false;
+        };
+        if bot && upgrade == EntityType::Chinook {
+            return false;
+        };
+        if bot && upgrade == EntityType::Lst {
+            return false;
+        };
+        if self == EntityType::Lst && upgrade == EntityType::Sherman {
+            return score < level_to_score(6) && score >= level_to_score(4);
+        };
+        if data.sub_kind == EntitySubKind::Tank
+            && upgrade_data.sub_kind == EntitySubKind::LandingShip
+        {
+            return true;
+        };
+        if data.sub_kind == EntitySubKind::LandingShip
+            && upgrade_data.sub_kind == EntitySubKind::Tank
+        {
+            return true;
+        };
+        upgrade_data.level > data.level
             && upgrade_data.kind == data.kind
             && score >= level_to_score(upgrade_data.level)
             && (bot || !upgrade_data.npc)
@@ -61,7 +81,11 @@ impl EntityType {
 
     /// spawn_options returns an iterator that visits all spawnable entity types and allows a random
     /// choice to be made.
-    pub fn spawn_options(score: u32, bot: bool, moderator: bool) -> impl Iterator<Item = Self> + IteratorRandom {
+    pub fn spawn_options(
+        score: u32,
+        bot: bool,
+        moderator: bool,
+    ) -> impl Iterator<Item = Self> + IteratorRandom {
         Self::iter().filter(move |t| t.can_spawn_as(score, bot, moderator))
     }
 
@@ -75,8 +99,12 @@ impl EntityType {
         moderator: bool,
     ) -> impl Iterator<Item = Self> + IteratorRandom {
         // Don't iterate if not enough score for next level.
-         
-        if score >= level_to_score(self.data().level) || (self.data().sub_kind == EntitySubKind::Tank || self.data().sub_kind == EntitySubKind::LandingShip) || moderator {
+
+        if score >= level_to_score(self.data().level)
+            || (self.data().sub_kind == EntitySubKind::Tank
+                || self.data().sub_kind == EntitySubKind::LandingShip)
+            || moderator
+        {
             Some(Self::iter().filter(move |t| self.can_upgrade_to(*t, score, bot, moderator)))
         } else {
             None
@@ -178,10 +206,7 @@ impl<'de> Deserialize<'de> for EntityType {
     EntityTypeData,
 )]
 pub enum EntityType {
-    #[info(
-        label = "M1 Abrams",
-        link = "https://en.wikipedia.org/wiki/M1_Abrams"
-    )]
+    #[info(label = "M1 Abrams", link = "https://en.wikipedia.org/wiki/M1_Abrams")]
     #[entity(Boat, Tank, level = 6)]
     #[size(length = 7.93, width = 3.66, draft = 1.0)]
     #[props(speed = 13.333, ram_damage = 3)]
@@ -330,7 +355,7 @@ pub enum EntityType {
     #[armament(Hellfire, forward = 5.0, side = 3.0, symmetrical, hidden)]
     #[armament(Hellfire, forward = 5.0, side = 5.0, symmetrical, hidden)]
     #[turret(M230, forward = 3.0, side = 0.0)]
-    Apache, 
+    Apache,
     #[info(
         label = "Arleigh Burke",
         link = "https://en.wikipedia.org/wiki/Arleigh_Burke-class_destroyer"
@@ -409,7 +434,7 @@ pub enum EntityType {
     #[props(speed = 282.944)]
     #[sensors(visual = 1000, radar = 1000)]
     #[armament(Mk82, count = 12, hidden)]
-    B2, 
+    B2,
     #[info(
         label = "Clemenceau",
         link = "https://en.wikipedia.org/wiki/Clemenceau-class_aircraft_carrier"
@@ -505,7 +530,7 @@ pub enum EntityType {
     #[size(length = 30, width = 18, draft = 0.0)]
     #[props(speed = 82.3111)]
     #[sensors(visual, radar)]
-    Chinook, 
+    Chinook,
     #[info(
         label = "Catalina",
         link = "https://en.wikipedia.org/wiki/Consolidated_PBY_Catalina"
@@ -518,7 +543,7 @@ pub enum EntityType {
     #[turret(_M1919, forward = 7, slow, azimuth_b = 30, symmetrical)]
     #[turret(_M1919, forward = -8, angle = 180, slow, azimuth_b = 40)]
     #[turret(_M1919, forward = -3, slow, azimuth_b = 30, symmetrical)]
-    Catalina, 
+    Catalina,
     #[info(
         label = "Spitfire",
         link = "https://en.wikipedia.org/wiki/Supermarine_Spitfire"
@@ -530,7 +555,7 @@ pub enum EntityType {
     #[armament(RP3, forward = 8.5, side = 8, symmetrical)]
     #[turret(_M1919, forward = 7, side = 8, slow, azimuth_b = 150, symmetrical)]
     #[turret(_M1919, forward = 7, slow, azimuth_b = 150)]
-    Spitfire, 
+    Spitfire,
     #[info(
         label = "Chengdu J-20",
         link = "https://en.wikipedia.org/wiki/Chengdu_J-20"
@@ -541,7 +566,7 @@ pub enum EntityType {
     #[armament(Ls6, forward = 2, side = 0, count = 4, hidden)]
     #[armament(Pl12, forward = 2, side = 0, count = 8, hidden)]
     #[sensors(visual = 800, radar = 1300)]
-    J20, 
+    J20,
     #[info(
         label = "F-35 Lightning II",
         link = "https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II"
@@ -553,7 +578,7 @@ pub enum EntityType {
     #[armament(Jagm, forward = -3, side = 3, symmetrical)]
     #[armament(Jagm, forward = -3, side = 3, symmetrical)]
     #[sensors(visual = 800, radar = 1500)]
-    F35, 
+    F35,
     #[info(
         label = "Dreadnought",
         link = "https://en.wikipedia.org/wiki/HMS_Dreadnought_(1906)"
@@ -591,10 +616,7 @@ pub enum EntityType {
     #[turret(forward = 43.75, medium)]
     #[exhaust(forward = -39, side = -0.8)]
     Dredger,
-    #[info(
-        label = "Drone",
-        link = "https://en.wikipedia.org/wiki/Drone"
-    )]
+    #[info(label = "Drone", link = "https://en.wikipedia.org/wiki/Drone")]
     #[entity(Boat, Drone, level = 1)]
     #[size(length = 1.11333, width = 1.40667, draft = 0.0)]
     #[props(speed = 100.0)]
@@ -1183,8 +1205,9 @@ pub enum EntityType {
     #[entity(Boat, Starship, level = 12)]
     #[size(length = 1600, width = 878, draft = 0.0)]
     #[props(speed = 400.0, damage = 8.0)]
-    #[sensors(visual, radar)]
+    #[sensors(visual, radar, sonar = 900)]
     #[armament(TieFighter, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
+    #[armament(Mark48, forward = 120.0, side = 60.0, angle = 0.0, count = 2, symmetrical)]
     #[turret(Turbolaser, forward = 130.8086, side = -215.0364, symmetrical)]
     #[turret(Turbolaser, forward = 72.7645, side = -232.6973, symmetrical)]
     #[turret(Turbolaser, forward = 19.7676, side = -249.5172, symmetrical)]
@@ -1295,11 +1318,8 @@ pub enum EntityType {
     #[armament(Tomahawk, forward = -62, count = 6, side = 0, vertical)]
     #[armament(Asroc, forward = 43, side = 0, count = 2, vertical)]
     #[armament(Mk3, forward = -85, side = 0, angle = -180, hidden)]
-    Ticonderoga, 
-    #[info(
-        label = "Titanic",
-        link = "https://en.wikipedia.org/wiki/Titanic"
-    )]
+    Ticonderoga,
+    #[info(label = "Titanic", link = "https://en.wikipedia.org/wiki/Titanic")]
     #[entity(Boat, Passenger, level = 7)]
     #[size(length = 269.1, width = 28.2, draft = 10.5)]
     #[props(speed = 11.8332)]
@@ -1331,7 +1351,7 @@ pub enum EntityType {
     #[armament(VBlaster, forward = 5.0, count = 8, hidden)]
     #[armament(VMissiles, forward = 5.0, count = 8, hidden)]
     #[armament(VProjector, forward = 5.0, count = 1, hidden)]
-    Vindicator, 
+    Vindicator,
     #[info(
         label = "Visby",
         link = "https://en.wikipedia.org/wiki/Visby-class_corvette"
@@ -1383,14 +1403,7 @@ pub enum EntityType {
         count = 4,
         symmetrical
     )]
-    #[armament(
-        Mk3,
-        forward = 37.7849,
-        side = 4.73435,
-        angle = 0,
-        symmetrical,
-        hidden
-    )]
+    #[armament(Mk3, forward = 37.7849, side = 4.73435, angle = 0, symmetrical, hidden)]
     #[armament(Tomahawk, forward = 30.3, side = 2, angle = 0, symmetrical, vertical)]
     #[armament(Tomahawk, forward = 23.7, side = 2, angle = 0, symmetrical, vertical)]
     #[armament(Tomahawk, forward = 17.2, side = 2, angle = 0, symmetrical, vertical)]
@@ -1404,7 +1417,7 @@ pub enum EntityType {
     #[props(speed = 291.6667)]
     #[sensors(visual = 800, radar = 1000)]
     #[armament(Blaster, forward = 2, side = 5.6, count = 4, hidden, symmetrical)]
-    Xwing, 
+    Xwing,
     #[info(
         label = "Yamato",
         link = "https://en.wikipedia.org/wiki/Japanese_battleship_Yamato"
@@ -1446,14 +1459,20 @@ pub enum EntityType {
     #[exhaust(forward = -22.5)]
     #[exhaust(forward = -22.5, side = 6.91, symmetrical)]
     Zubr,
-    #[info(label = "Landing Ship, Tank", link = "https://en.wikipedia.org/wiki/Landing_Ship,_Tank")]
+    #[info(
+        label = "Landing Ship, Tank",
+        link = "https://en.wikipedia.org/wiki/Landing_Ship,_Tank"
+    )]
     #[entity(Boat, LandingShip, level = 4)]
     #[size(length = 33.33, width = 5.66, draft = 1.0)]
     #[props(speed = 5.65889)]
     #[sensors(radar, visual)]
     #[turret(_2M3M, forward = 10, angle = 0, fast)]
     Lst,
-    #[info(label = "Zudredger", link = "https://en.wikipedia.org/wiki/Zubr-class_LCAC")]
+    #[info(
+        label = "Zudredger",
+        link = "https://en.wikipedia.org/wiki/Zubr-class_LCAC"
+    )]
     #[entity(Boat, Hovercraft, level = 11)]
     #[size(length = 57, width = 21.152344, draft = 1.6)]
     #[props(speed = 38.29446)]
@@ -1525,13 +1544,19 @@ pub enum EntityType {
     #[size(length = 2.69, width = 0.159)]
     #[props(speed = 15, lifespan = 30)]
     Mk3,
-    #[info(label = "P-270 Moskit", link = "https://en.wikipedia.org/wiki/P-270_Moskit")]
+    #[info(
+        label = "P-270 Moskit",
+        link = "https://en.wikipedia.org/wiki/P-270_Moskit"
+    )]
     #[entity(Weapon, Missile, level = 9)]
     #[size(length = 9.745, width = 0.8)]
     #[props(speed = 1027.778, range = 130000)]
     #[sensors(radar)]
     Moskit,
-    #[info(label = "AGM-179 JAGM", link = "https://en.wikipedia.org/wiki/AGM-179_JAGM")]
+    #[info(
+        label = "AGM-179 JAGM",
+        link = "https://en.wikipedia.org/wiki/AGM-179_JAGM"
+    )]
     #[entity(Weapon, Missile, level = 15)]
     #[size(length = 1.8, width = 0.18)]
     #[props(speed = 1000, range = 8000)]
@@ -1733,10 +1758,7 @@ pub enum EntityType {
     #[offset(forward = 0.08)]
     #[armament(Vt1, side = 0.947, angle = 0, symmetrical)]
     Crotale,
-    #[info(
-        label = "HQ-10",
-        link = "https://en.wikipedia.org/wiki/HQ-10"
-    )]
+    #[info(label = "HQ-10", link = "https://en.wikipedia.org/wiki/HQ-10")]
     #[entity(Turret, Sam)]
     #[size(length = 5.0, width = 3.75)]
     #[offset(forward = 0.08)]
@@ -1980,7 +2002,10 @@ pub enum EntityType {
     #[props(speed = 993.9, range = 650000)]
     #[sensors(radar)]
     BrahMos,
-    #[info(label = "AGM-114 Hellfire", link = "https://en.wikipedia.org/wiki/AGM-114_Hellfire")]
+    #[info(
+        label = "AGM-114 Hellfire",
+        link = "https://en.wikipedia.org/wiki/AGM-114_Hellfire"
+    )]
     #[entity(Weapon, Missile, level = 7)]
     #[size(length = 1.6, width = 0.18)]
     #[props(speed = 445.9, range = 11000)]
@@ -2077,10 +2102,7 @@ pub enum EntityType {
     #[props(speed = 22.63557, range = 9100)]
     #[sensors(sonar)]
     Mark54,
-    #[info(
-        label = "Yu-7",
-        link = "https://en.wikipedia.org/wiki/Yu-7_torpedo"
-    )]
+    #[info(label = "Yu-7", link = "https://en.wikipedia.org/wiki/Yu-7_torpedo")]
     #[entity(Weapon, Torpedo, level = 7)]
     #[size(length = 2.72, width = 0.324)]
     #[props(speed = 20.0, range = 7500)]
@@ -2128,10 +2150,7 @@ pub enum EntityType {
     #[size(length = 1.125, width = 0.29883)]
     #[props(speed = 200, range = 9810)]
     Of45,
-    #[info(
-        label = "RP-3",
-        link = "https://en.wikipedia.org/wiki/RP-3"
-    )]
+    #[info(label = "RP-3", link = "https://en.wikipedia.org/wiki/RP-3")]
     #[entity(Weapon, Rocket, level = 7)]
     #[size(length = 1.4, width = 0.08)]
     #[props(speed = 380, range = 30000)]
@@ -2234,19 +2253,13 @@ pub enum EntityType {
     #[props(speed = 1200, range = 6000)]
     #[sensors(radar)]
     Vt1,
-    #[info(
-        label = "HQ-10",
-        link = "https://en.wikipedia.org/wiki/HQ-10"
-    )]
+    #[info(label = "HQ-10", link = "https://en.wikipedia.org/wiki/HQ-10")]
     #[entity(Weapon, Sam, level = 5)]
     #[size(length = 2.0, width = 0.12)]
     #[props(speed = 686, range = 9000)]
     #[sensors(radar)]
     Hq10SAM,
-    #[info(
-        label = "LS-6",
-        link = "https://en.wikipedia.org/wiki/LS_PGB"
-    )]
+    #[info(label = "LS-6", link = "https://en.wikipedia.org/wiki/LS_PGB")]
     #[entity(Weapon, GlideBomb, level = 10)]
     #[size(length = 2.14, width = 1.28)]
     #[props(speed = 300, range = 2500)]

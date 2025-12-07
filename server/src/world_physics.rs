@@ -165,6 +165,29 @@ impl World {
                         }
                     }
                     EntityKind::Boat => {
+                // Warp charge / cooldown handling for special ships.
+                let mut halt_for_warp = false;
+                let warp_target = {
+                    let extension = entity.extension_mut();
+                    if extension.is_warping() {
+                        halt_for_warp = true;
+                    }
+                    extension.advance_warp(delta)
+                };
+
+                if halt_for_warp {
+                    repair_eligible = false;
+                    entity.guidance.velocity_target = Velocity::ZERO;
+                    entity.transform.velocity = Velocity::ZERO;
+                }
+
+                if let Some(target) = warp_target {
+                    // Teleport and halt movement.
+                    entity.transform.position = target;
+                    entity.transform.velocity = Velocity::ZERO;
+                    entity.guidance.velocity_target = Velocity::ZERO;
+                }
+
                         match data.sub_kind {
                             EntitySubKind::Ekranoplan => {
                                 entity.apply_altitude_target(

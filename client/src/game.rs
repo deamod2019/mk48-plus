@@ -29,10 +29,11 @@ use common::angle::Angle;
 use common::contact::{Contact, ContactTrait};
 use common::entity::{EntityData, EntityId, EntityKind, EntitySubKind, EntityType};
 use common::guidance::Guidance;
-use common::protocol::{Command, Control, Fire, Hint, Pay, Spawn, Update, Upgrade};
+use common::protocol::{Command, Control, Fire, Hint, Pay, Spawn, Update, Upgrade, Warp};
 use common::ticks::Ticks;
 use common::transform::Transform;
 use common::velocity::Velocity;
+use common::warp::{WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE};
 use common::world::strict_area_border;
 use common_util::range::{gen_radius, lerp, map_ranges};
 use core_protocol::id::{GameId, TeamId};
@@ -82,6 +83,10 @@ pub struct Mk48Game {
     /// FPS counter
     pub fps_counter: FpsMonitor,
     ui_state: UiState,
+    /// Warp UI/计时
+    warp_selecting: bool,
+    warp_charge_secs: f32,
+    warp_cooldown_secs: f32,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -207,6 +212,9 @@ impl GameClient for Mk48Game {
             fire_rate_limiter: FireRateLimiter::new(),
             fps_counter: FpsMonitor::new(1.0),
             ui_state: UiState::default(),
+            warp_selecting: false,
+            warp_charge_secs: 0.0,
+            warp_cooldown_secs: 0.0,
         })
     }
 
@@ -1504,6 +1512,7 @@ impl GameClient for Mk48Game {
 
         // Send command later, when lifetimes allow.
         let mut control: Option<Command> = None;
+        let mut pending_warp: Option<Warp> = None;
 
         let player_contact = Self::maybe_contact_mut(
             &mut context.state.game.contacts,
@@ -1516,6 +1525,10 @@ impl GameClient for Mk48Game {
         );
 
         let status = if let Some(player_contact) = player_contact {
+            let is_star_destroyer =
+                player_contact.view.entity_type() == Some(EntityType::StarDestroyer);
+            self.update_warp_timers(elapsed_seconds, is_star_destroyer);
+
             let mut guidance = None;
 
             {
@@ -1629,10 +1642,44 @@ impl GameClient for Mk48Game {
                 armament: self.ui_state.armament,
                 armament_consumption: player_contact.reloads().iter().map(|b| *b).collect(),
                 team_proximity,
+                warp_selecting: self.warp_selecting,
+                warp_charge_remaining: self.warp_charge_secs.max(0.0),
+                warp_cooldown_remaining: self.warp_cooldown_secs.max(0.0),
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
-                let left_click = context.mouse.take_click(MouseButton::Left);
+                let mut left_click = context.mouse.take_click(MouseButton::Left);
+                let cancel_warp = context.mouse.take_click(MouseButton::Right);
+
+                if self.warp_selecting {
+                    if cancel_warp {
+                        self.warp_selecting = false;
+                    }
+
+                    if left_click {
+                        if let Some(target) = aim_target {
+                            let current = player_contact.transform().position;
+                            let max_offset =
+                                player_contact.data().camera_range() * WARP_MAX_RANGE_SCALE;
+                            let clamped_target =
+                                current + (target - current).clamp_length_max(max_offset);
+                            let border_limit = context.state.game.world_radius
+                                - player_contact.data().length.max(100.0);
+                            let final_target =
+                                if clamped_target.length_squared() > border_limit.powi(2) {
+                                    clamped_target.normalize_or_zero() * border_limit
+                                } else {
+                                    clamped_target
+                                };
+                            pending_warp = Some(Warp { target: final_target });
+                            self.warp_selecting = false;
+                            self.warp_charge_secs = WARP_CHARGE.to_secs();
+                            self.warp_cooldown_secs = 0.0;
+                        }
+                        // 吞掉点击，避免同时开火。
+                        left_click = false;
+                    }
+                }
 
                 // Get hint before borrow of player_contact().
                 let hint = Some(Hint {
@@ -1703,10 +1750,16 @@ impl GameClient for Mk48Game {
             .filter(|_| !self.respawn_overridden)
             .cloned()
         {
+            self.reset_warp_state();
             UiStatus::Respawning(UiStatusRespawning { death_reason })
         } else {
+            self.reset_warp_state();
             UiStatus::Spawning
         };
+
+        if let Some(warp) = pending_warp.take() {
+            context.send_to_game(Command::Warp(warp));
+        }
 
         if let Some(control) = control {
             context.send_to_game(control);
@@ -1747,6 +1800,17 @@ impl GameClient for Mk48Game {
             UiEvent::Upgrade(entity_type) => {
                 context.audio.play(Audio::Upgrade);
                 context.send_to_game(Command::Upgrade(Upgrade { entity_type }));
+                self.reset_warp_state();
+            }
+            UiEvent::WarpToggle => {
+                if let Some(contact) = context.state.game.player_contact() {
+                    if contact.entity_type() == Some(EntityType::StarDestroyer)
+                        && self.warp_charge_secs == 0.0
+                        && self.warp_cooldown_secs == 0.0
+                    {
+                        self.warp_selecting = !self.warp_selecting;
+                    }
+                }
             }
         }
     }
@@ -1774,5 +1838,26 @@ impl Mk48Game {
             }
         }
         self.ui_state.submerge = submerge;
+    }
+
+    fn update_warp_timers(&mut self, elapsed_seconds: f32, has_warp: bool) {
+        if !has_warp {
+            self.reset_warp_state();
+            return;
+        }
+        if self.warp_charge_secs > 0.0 {
+            self.warp_charge_secs = (self.warp_charge_secs - elapsed_seconds).max(0.0);
+            if self.warp_charge_secs == 0.0 && self.warp_cooldown_secs == 0.0 {
+                self.warp_cooldown_secs = WARP_COOLDOWN.to_secs();
+            }
+        } else {
+            self.warp_cooldown_secs = (self.warp_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn reset_warp_state(&mut self) {
+        self.warp_selecting = false;
+        self.warp_charge_secs = 0.0;
+        self.warp_cooldown_secs = 0.0;
     }
 }

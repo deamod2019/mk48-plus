@@ -6,9 +6,18 @@ use common::angle::Angle;
 use common::entity::*;
 use common::ticks::Ticks;
 use common::util::make_mut_slice;
+use common::warp::WARP_COOLDOWN;
 use common_util::alloc::{arc_default_n, box_default_n};
+use glam::Vec2;
 use std::iter::FromIterator;
 use std::sync::Arc;
+
+#[derive(Debug, Clone)]
+pub struct WarpState {
+    pub target: Vec2,
+    pub charge: Ticks,
+    pub cooldown: Ticks,
+}
 
 /// Additional fields for certain entities (for now, boats). Stored separately for memory efficiency.
 #[derive(Debug)]
@@ -39,6 +48,10 @@ pub struct EntityExtension {
     // 1 angle per turret relative to boat.
     // Arc to save allocations
     pub turrets: Arc<[Angle]>,
+
+    /// Space warp info for special ships.
+    warp_state: Option<WarpState>,
+    warp_cooldown: Ticks,
 }
 
 impl EntityExtension {
@@ -65,6 +78,8 @@ impl EntityExtension {
         };
         self.reloads = box_default_n(data.armaments.len());
         self.turrets = Arc::from_iter(data.turrets.iter().map(|t| t.angle));
+        self.warp_state = None;
+        self.warp_cooldown = Ticks::ZERO;
     }
 
     /// Returns the target altitude of the boat from submerge.
@@ -142,6 +157,59 @@ impl EntityExtension {
     pub fn turrets_mut(&mut self) -> &mut [Angle] {
         make_mut_slice(&mut self.turrets)
     }
+
+    pub fn start_warp(
+        &mut self,
+        target: Vec2,
+        charge: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
+        if self.is_warp_busy() {
+            return Err("warp on cooldown");
+        }
+        self.warp_state = Some(WarpState {
+            target,
+            charge,
+            cooldown,
+        });
+        Ok(())
+    }
+
+    pub fn is_warp_busy(&self) -> bool {
+        self.warp_state.is_some() || self.warp_cooldown != Ticks::ZERO
+    }
+
+    pub fn is_warping(&self) -> bool {
+        self.warp_state.is_some()
+    }
+
+    pub fn warp_charge_remaining(&self) -> Ticks {
+        self.warp_state
+            .as_ref()
+            .map(|w| w.charge)
+            .unwrap_or(Ticks::ZERO)
+    }
+
+    pub fn warp_cooldown_remaining(&self) -> Ticks {
+        self.warp_cooldown
+    }
+
+    /// Advances warp timers. Returns Some(target) when teleport should occur.
+    pub fn advance_warp(&mut self, delta: Ticks) -> Option<Vec2> {
+        if let Some(mut warp) = self.warp_state.take() {
+            warp.charge = warp.charge.saturating_sub(delta);
+            if warp.charge == Ticks::ZERO {
+                let target = warp.target;
+                self.warp_cooldown = warp.cooldown.max(WARP_COOLDOWN);
+                return Some(target);
+            } else {
+                self.warp_state = Some(warp);
+            }
+        } else {
+            self.warp_cooldown = self.warp_cooldown.saturating_sub(delta);
+        }
+        None
+    }
 }
 
 impl Default for EntityExtension {
@@ -158,6 +226,8 @@ impl Default for EntityExtension {
             spawn_protection_remaining: Self::SPAWN_PROTECTION_INITIAL,
             reloads: box_default_n(0),
             turrets: arc_default_n(0),
+            warp_state: None,
+            warp_cooldown: Ticks::ZERO,
         }
     }
 }

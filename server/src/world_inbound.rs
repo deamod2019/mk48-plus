@@ -13,6 +13,7 @@ use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
 use common::util::{level_to_score, score_to_level};
+use common::warp::{WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
 use game_server::player::PlayerTuple;
@@ -247,6 +248,57 @@ impl CommandTrait for Control {
     }
 }
 
+impl CommandTrait for Warp {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive {
+                entity_index, ..
+            } => entity_index,
+            _ => return Err("cannot warp while not alive"),
+        };
+
+        let entity = &mut world.entities[entity_index];
+        let data = entity.data();
+        if entity.entity_type != EntityType::StarDestroyer {
+            return Err("warp not supported");
+        }
+
+        if entity.extension().is_warp_busy() {
+            return Err("warp busy");
+        }
+
+        let mut target = self.target;
+        let valid_range = -world.radius * 2.0..world.radius * 2.0;
+        target.x = sanitize_float(target.x, valid_range.clone())?;
+        target.y = sanitize_float(target.y, valid_range)?;
+
+        // 限制在当前可视范围附近，防止穿越全图。
+        let max_offset = data.camera_range() * WARP_MAX_RANGE_SCALE;
+        let current = entity.transform.position;
+        let delta = target - current;
+        let clamped_target = current + delta.clamp_length_max(max_offset);
+
+        // 保证落点不出边界。
+        let border_limit = world.radius - data.length.max(100.0);
+        let length_sq = clamped_target.length_squared();
+        let target = if length_sq > border_limit.powi(2) {
+            clamped_target.normalize_or_zero() * border_limit
+        } else {
+            clamped_target
+        };
+
+        entity
+            .extension_mut()
+            .start_warp(target, WARP_CHARGE, WARP_COOLDOWN)?;
+        Ok(())
+    }
+}
+
 impl CommandTrait for Fire {
     fn apply(
         &self,
@@ -267,6 +319,10 @@ impl CommandTrait for Fire {
             }
 
             let entity = &mut world.entities[entity_index];
+
+            if entity.extension().is_warping() {
+                return Err("cannot fire while warping");
+            }
 
             let data = entity.data();
 

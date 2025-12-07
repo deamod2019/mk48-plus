@@ -36,6 +36,7 @@ pub enum Command {
     Control(Control),
     Spawn(Spawn),
     Upgrade(Upgrade),
+    Warp(Warp),
 }
 
 /// Generic command to control one's ship.
@@ -95,6 +96,12 @@ pub struct Spawn {
 pub struct Upgrade {
     /// What to upgrade to. Must be an affordable boat of higher level.
     pub entity_type: EntityType,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Warp {
+    /// 目标世界坐标，服务器会再次裁剪。
+    pub target: Vec2,
 }
 
 #[cfg(test)]

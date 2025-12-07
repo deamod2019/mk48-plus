@@ -26,6 +26,7 @@ impl AsCommandTrait for Command {
             Command::Control(ref v) => v as &dyn CommandTrait,
             Command::Spawn(ref v) => v as &dyn CommandTrait,
             Command::Upgrade(ref v) => v as &dyn CommandTrait,
+            Command::Warp(ref v) => v as &dyn CommandTrait,
         }
     }
 }

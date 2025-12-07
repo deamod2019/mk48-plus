@@ -66,6 +66,19 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
         "#
     );
 
+    let disabled_style = css!(
+        r#"
+        opacity: 0.5;
+        cursor: not-allowed;
+        "#
+    );
+
+    let warp_image_style = css!(
+        r#"
+        filter: hue-rotate(60deg) brightness(1.2);
+        "#
+    );
+
     let data: &'static EntityData = props.status.entity_type.data();
 
     let ui_event_callback = use_ui_event_callback::<Mk48Game>();
@@ -97,6 +110,7 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
             }
             {surface_button(t, props.status.entity_type, props.status.submerge, &button_style, &button_selected_style, &ui_event_callback)}
             {active_sensor_button(t, props.status.entity_type, props.status.active, props.status.altitude, &button_style, &button_selected_style, &ui_event_callback)}
+            {warp_button(props.status.clone(), &button_style, &button_selected_style, &disabled_style, &warp_image_style, &consumption_style, &ui_event_callback)}
         </Section>
     }
 }
@@ -158,5 +172,43 @@ fn active_sensor_button(
                 {t.sensor_active_label()}
             </div>
         }
+    }
+}
+
+fn warp_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    button_selected_style: &StyleSource,
+    disabled_style: &StyleSource,
+    warp_image_style: &StyleSource,
+    consumption_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::StarDestroyer {
+        return Html::default();
+    }
+
+    let charging = status.warp_charge_remaining > 0.0;
+    let cooling = status.warp_cooldown_remaining > 0.0;
+    let selecting = status.warp_selecting && !charging && !cooling;
+
+    let label = if charging {
+        format!("跃迁充能 {:.1}s", status.warp_charge_remaining)
+    } else if cooling {
+        format!("冷却 {:.1}s", status.warp_cooldown_remaining)
+    } else if selecting {
+        "选择跃迁点".to_string()
+    } else {
+        "空间跃迁".to_string()
+    };
+
+    let onclick = (!charging && !cooling)
+        .then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::WarpToggle));
+
+    html! {
+        <div class={classes!(button_style.clone(), selecting.then(|| button_selected_style.clone()), (charging || cooling).then(|| disabled_style.clone()))} {onclick} title={"在视野内选定跃迁目标，3秒充能后瞬移"}>
+            <Sprite entity_type={EntityType::GreenBlaster} image_class={classes!(warp_image_style.clone())}/>
+            <span class={consumption_style.clone()}>{label}</span>
+        </div>
     }
 }
