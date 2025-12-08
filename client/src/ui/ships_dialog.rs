@@ -11,7 +11,8 @@ use common::velocity::Velocity;
 use core_protocol::id::LanguageId;
 use stylist::yew::styled_component;
 use stylist::StyleSource;
-use yew::{html, html_nested, Html};
+use web_sys::window;
+use yew::{html, html_nested, use_effect_with_deps, Html};
 use yew_frontend::component::link::Link;
 use yew_frontend::dialog::dialog::Dialog;
 use yew_frontend::translation::use_translation;
@@ -27,17 +28,39 @@ pub fn ships_dialog() -> Html {
 		"#
     );
 
+    // 页面加载后如果有 hash，滚动到对应舰船。
+    use_effect_with_deps(
+        |_| {
+            if let Some(hash) = window().and_then(|w| w.location().hash().ok()) {
+                let id = hash.trim_start_matches('#');
+                if !id.is_empty() {
+                    if let Some(elem) = window()
+                        .and_then(|w| w.document())
+                        .and_then(|d| d.get_element_by_id(id))
+                    {
+                        elem.scroll_into_view()
+                    }
+                }
+            }
+            || ()
+        },
+        (),
+    );
+
     html! {
         <Dialog title={"Ships"}>
             <p>{"The following is a list of all ships in the game, and their weapons. Note that certain values are approximate and may be affected by other factors. For example, weapon damage depends on hit location."}</p>
 
             <table>
-                {EntityType::iter().filter(|t| t.data().kind == EntityKind::Boat).map(|entity_type| html_nested!{
-                    <tr>
-                        <td>
-                            {entity_card(t, &table_style, entity_type, None)}
-                        </td>
-                    </tr>
+                {EntityType::iter().filter(|t| t.data().kind == EntityKind::Boat).map(|entity_type| {
+                    let id = entity_type.as_str();
+                    html_nested!{
+                        <tr id={id}>
+                            <td>
+                                {entity_card(t, &table_style, entity_type, None)}
+                            </td>
+                        </tr>
+                    }
                 }).collect::<Html>()}
             </table>
         </Dialog>

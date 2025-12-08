@@ -1,0 +1,152 @@
+:root {
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: #e7ecf5;
+  background-color: #0e1118;
+}
+
+body {
+  margin: 0;
+  background: #0e1118;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #222b3a;
+  background: #121725;
+  cursor: pointer;
+  color: #cdd5e5;
+}
+
+.tab.active {
+  border-color: #4b6aa8;
+  background: linear-gradient(135deg, #1c2537, #22324a);
+  color: #fff;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+input,
+button,
+textarea {
+  font-family: inherit;
+}
+
+input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #202838;
+  background: #0f131e;
+  color: #e7ecf5;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #2f3b4f;
+  background: linear-gradient(135deg, #1c2433, #24344a);
+  color: #e7ecf5;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #161c2a;
+}
+
+.panel {
+  border: 1px solid #1d2431;
+  border-radius: 10px;
+  padding: 12px;
+  background: #131722;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  padding: 10px;
+  border: 1px solid #1f2835;
+  border-radius: 10px;
+  background: #0f131c;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.field label {
+  font-size: 12px;
+  color: #9fb0d0;
+}
+
+.field input,
+.field textarea {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #202838;
+  background: #0f131e;
+  color: #e7ecf5;
+}
+
+.field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.list-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.monospace {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+}
+
+.pre {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #242c3a;
+  background: #0c0f17;
+  color: #e7ecf5;
+  min-height: 200px;
+  overflow: auto;
+  font-size: 13px;
+}

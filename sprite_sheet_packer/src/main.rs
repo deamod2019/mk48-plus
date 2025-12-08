@@ -83,6 +83,14 @@ fn main() {
         });
 
     let non_entity_sprites = non_entity_sprites.into_inner().unwrap();
+    let non_entity_sprites_css: Vec<Image> = non_entity_sprites
+        .iter()
+        .map(|i| Image {
+            file: i.file.clone(),
+            name: i.name.clone(),
+            width: i.width,
+        })
+        .collect();
     let animations = animations.into_inner().unwrap();
 
     let optimize = true;
@@ -200,14 +208,15 @@ fn main() {
                 let data: &'static EntityData = entity_type.data();
                 let aspect = data.length / data.width;
                 let width = match data.kind {
-                    EntityKind::Boat => 160.min((40.0 * aspect) as u32), 
+                    EntityKind::Boat => 160.min((40.0 * aspect) as u32),
                     EntityKind::Weapon | EntityKind::Decoy | EntityKind::Aircraft => {
                         80.min((40.0 * aspect) as u32)
-                    },
+                    }
                     _ => 0,
                 };
                 (width != 0).then(|| entity_sprite_params(entity_type, width))
             })
+            .chain(non_entity_sprites_css.into_iter())
             .collect(),
         vec![],
         2,

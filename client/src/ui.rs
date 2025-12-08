@@ -13,7 +13,7 @@ use crate::ui::logo::logo;
 use crate::ui::respawn_overlay::RespawnOverlay;
 use crate::ui::settings_dialog::SettingsDialog;
 use crate::ui::ship_controls::ShipControls;
-use crate::ui::ships_dialog::ShipsDialog;
+use crate::ui::ships_detail_dialog::ShipsDetailDialog;
 use crate::ui::status_overlay::StatusOverlay;
 use crate::ui::upgrade_overlay::UpgradeOverlay;
 use client_util::context::Context;
@@ -58,6 +58,7 @@ mod settings_dialog;
 mod ship_controls;
 mod ship_menu;
 mod ships_dialog;
+mod ships_detail_dialog;
 mod sprite;
 mod status_overlay;
 mod upgrade_overlay;
@@ -224,8 +225,8 @@ pub enum Mk48Route {
     Changelog,
     #[at("/help/")]
     Help,
-    #[at("/ships/")]
-    Ships,
+    #[at("/ships_detail/")]
+    ShipsDetail,
     #[at("/levels/")]
     Levels,
     #[at("/settings/")]
@@ -333,8 +334,9 @@ fn switch(routes: Mk48Route) -> Html {
         Mk48Route::Help => html! {
             <HelpDialog/>
         },
-        Mk48Route::Ships => html! {
-            <ShipsDialog/>
+        // Ships tab intentionally omitted from the switch to hide it from UI navigation.
+        Mk48Route::ShipsDetail => html! {
+            <ShipsDetailDialog/>
         },
         Mk48Route::Levels => html! {
             <LevelsDialog/>

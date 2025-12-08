@@ -1,0 +1,3098 @@
+{
+  "weapons": [
+    {
+      "id": "Moskit",
+      "label": "P-270 Moskit",
+      "kind": "Missile",
+      "damage": 0.9351922,
+      "reload": 12.0,
+      "speed": 1027.778,
+      "range": 0.0
+    },
+    {
+      "id": "Jagm",
+      "label": "AGM-179 JAGM",
+      "kind": "Missile",
+      "damage": 1.5,
+      "reload": 5.2000003,
+      "speed": 1000.0,
+      "range": 0.0
+    },
+    {
+      "id": "Blaster",
+      "label": "Blaster",
+      "kind": "Laser",
+      "damage": 0.5,
+      "reload": 2.0,
+      "speed": 1184.0,
+      "range": 0.0
+    },
+    {
+      "id": "GreenBlaster",
+      "label": "Green Blaster",
+      "kind": "Laser",
+      "damage": 0.5,
+      "reload": 2.0,
+      "speed": 1184.0,
+      "range": 0.0
+    },
+    {
+      "id": "VBlaster",
+      "label": "Vindicator Blaster",
+      "kind": "Laser",
+      "damage": 0.5,
+      "reload": 2.0,
+      "speed": 1184.0,
+      "range": 0.0
+    },
+    {
+      "id": "TurbolaserBeam",
+      "label": "Turbolaser Beam",
+      "kind": "Laser",
+      "damage": 9.0,
+      "reload": 0.5,
+      "speed": 2000.0,
+      "range": 200000.0
+    },
+    {
+      "id": "VProjector",
+      "label": "Vindicator Projector",
+      "kind": "Shell",
+      "damage": 1.5425847,
+      "reload": 15.0,
+      "speed": 1500.0,
+      "range": 0.0
+    },
+    {
+      "id": "VMissiles",
+      "label": "Vindicator Cluster Missiles",
+      "kind": "Missile",
+      "damage": 0.5861822,
+      "reload": 10.400001,
+      "speed": 1000.0,
+      "range": 0.0
+    },
+    {
+      "id": "30X130MmR",
+      "label": "30 x 130 mmR",
+      "kind": "Shell",
+      "damage": 0.24482185,
+      "reload": 8.0,
+      "speed": 603.75,
+      "range": 0.0
+    },
+    {
+      "id": "30X165MmR",
+      "label": "30 x 165 mmR",
+      "kind": "Shell",
+      "damage": 0.2661273,
+      "reload": 8.0,
+      "speed": 862.5,
+      "range": 0.0
+    },
+    {
+      "id": "762X54MmR",
+      "label": "762 x 54 mmR",
+      "kind": "Shell",
+      "damage": 0.454626,
+      "reload": 10.0,
+      "speed": 639.75,
+      "range": 0.0
+    },
+    {
+      "id": "200X1070MmR",
+      "label": "200 x 1070 mmR",
+      "kind": "Shell",
+      "damage": 0.5119816,
+      "reload": 11.2,
+      "speed": 639.75,
+      "range": 0.0
+    },
+    {
+      "id": "127X680MmR",
+      "label": "127 x 680 mmR",
+      "kind": "Shell",
+      "damage": 0.43686587,
+      "reload": 9.7,
+      "speed": 592.5,
+      "range": 0.0
+    },
+    {
+      "id": "130X720MmR",
+      "label": "130 x 720 mmR",
+      "kind": "Shell",
+      "damage": 0.44569358,
+      "reload": 9.8,
+      "speed": 637.5,
+      "range": 0.0
+    },
+    {
+      "id": "75X667MmR",
+      "label": "75 x 667 mmR",
+      "kind": "TankShell",
+      "damage": 1.001649,
+      "reload": 2.0,
+      "speed": 464.03125,
+      "range": 0.0
+    },
+    {
+      "id": "120X570MmR",
+      "label": "120 x 570 mmR",
+      "kind": "TankShell",
+      "damage": 1.3679999,
+      "reload": 2.0,
+      "speed": 1000.0,
+      "range": 0.0
+    },
+    {
+      "id": "25X129MmR",
+      "label": "25 x 129 mmR",
+      "kind": "Shell",
+      "damage": 0.24449188,
+      "reload": 8.0,
+      "speed": 675.0,
+      "range": 0.0
+    },
+    {
+      "id": "300X1400MmR",
+      "label": "300 x 1400 mmR",
+      "kind": "Shell",
+      "damage": 0.56249,
+      "reload": 12.6,
+      "speed": 685.5,
+      "range": 0.0
+    },
+    {
+      "id": "380X1700MmR",
+      "label": "380 x 1700 mmR",
+      "kind": "Shell",
+      "damage": 0.68782,
+      "reload": 13.8,
+      "speed": 615.0,
+      "range": 0.0
+    },
+    {
+      "id": "458X1980MmR",
+      "label": "458 x 1980 mmR",
+      "kind": "Shell",
+      "damage": 1.086735,
+      "reload": 14.900001,
+      "speed": 585.0,
+      "range": 0.0
+    },
+    {
+      "id": "57X441MmR",
+      "label": "57 x 441 mmR",
+      "kind": "Shell",
+      "damage": 0.37542528,
+      "reload": 8.7,
+      "speed": 639.75,
+      "range": 0.0
+    },
+    {
+      "id": "76X636MmR",
+      "label": "76 x 636 mmR",
+      "kind": "Shell",
+      "damage": 0.42675635,
+      "reload": 9.5,
+      "speed": 686.25,
+      "range": 0.0
+    },
+    {
+      "id": "82R",
+      "label": "82R",
+      "kind": "Torpedo",
+      "damage": 0.6194578,
+      "reload": 12.0,
+      "speed": 23.0,
+      "range": 0.0
+    },
+    {
+      "id": "Asroc",
+      "label": "ASROC",
+      "kind": "RocketTorpedo",
+      "damage": 0.0,
+      "reload": 20.0,
+      "speed": 200.0,
+      "range": 9700.0
+    },
+    {
+      "id": "Barak8",
+      "label": "Barak 8",
+      "kind": "Sam",
+      "damage": 0.5445056,
+      "reload": 16.0,
+      "speed": 662.6,
+      "range": 0.0
+    },
+    {
+      "id": "Pl12",
+      "label": "PL-12",
+      "kind": "Sam",
+      "damage": 0.36083743,
+      "reload": 16.0,
+      "speed": 1372.0,
+      "range": 0.0
+    },
+    {
+      "id": "BrahMos",
+      "label": "BrahMos",
+      "kind": "Missile",
+      "damage": 0.84284765,
+      "reload": 12.0,
+      "speed": 993.9,
+      "range": 0.0
+    },
+    {
+      "id": "Hellfire",
+      "label": "AGM-114 Hellfire",
+      "kind": "Missile",
+      "damage": 1.5,
+      "reload": 4.9,
+      "speed": 445.9,
+      "range": 0.0
+    },
+    {
+      "id": "CannonBall",
+      "label": "Cannon Ball",
+      "kind": "Shell",
+      "damage": 0.21608992,
+      "reload": 8.0,
+      "speed": 438.912,
+      "range": 0.0
+    },
+    {
+      "id": "Depositor",
+      "label": "Depositor",
+      "kind": "Depositor",
+      "damage": 0.0,
+      "reload": 0.5,
+      "speed": 0.0,
+      "range": 60.0
+    },
+    {
+      "id": "Shovel",
+      "label": "Shovel",
+      "kind": "Shovel",
+      "damage": 0.0,
+      "reload": 0.5,
+      "speed": 0.0,
+      "range": 60.0
+    },
+    {
+      "id": "Essm",
+      "label": "ESSM",
+      "kind": "Sam",
+      "damage": 0.47118384,
+      "reload": 16.0,
+      "speed": 1325.2,
+      "range": 0.0
+    },
+    {
+      "id": "Exocet",
+      "label": "Exocet",
+      "kind": "Missile",
+      "damage": 0.66597736,
+      "reload": 12.0,
+      "speed": 319.0,
+      "range": 0.0
+    },
+    {
+      "id": "Harpoon",
+      "label": "Harpoon",
+      "kind": "Missile",
+      "damage": 0.48372898,
+      "reload": 8.400001,
+      "speed": 240.0,
+      "range": 0.0
+    },
+    {
+      "id": "Hq9",
+      "label": "HQ-9",
+      "kind": "Sam",
+      "damage": 0.7269589,
+      "reload": 16.0,
+      "speed": 950.0,
+      "range": 0.0
+    },
+    {
+      "id": "Igla",
+      "label": "Igla",
+      "kind": "Sam",
+      "damage": 0.26100987,
+      "reload": 16.0,
+      "speed": 570.0,
+      "range": 0.0
+    },
+    {
+      "id": "Kalibr",
+      "label": "Kalibr",
+      "kind": "Missile",
+      "damage": 0.82166183,
+      "reload": 12.0,
+      "speed": 265.04,
+      "range": 0.0
+    },
+    {
+      "id": "Lrlap",
+      "label": "LRLAP",
+      "kind": "Shell",
+      "damage": 0.669229,
+      "reload": 6.0,
+      "speed": 825.0,
+      "range": 140000.0
+    },
+    {
+      "id": "Magic",
+      "label": "Magic",
+      "kind": "Sam",
+      "damage": 0.38278228,
+      "reload": 16.0,
+      "speed": 1190.0,
+      "range": 0.0
+    },
+    {
+      "id": "Mark18",
+      "label": "Mark 18",
+      "kind": "Torpedo",
+      "damage": 0.9683625,
+      "reload": 8.0,
+      "speed": 14.9189,
+      "range": 0.0
+    },
+    {
+      "id": "Mark48",
+      "label": "Mark 48",
+      "kind": "Torpedo",
+      "damage": 1.2291787,
+      "reload": 12.0,
+      "speed": 28.2944,
+      "range": 38000.0
+    },
+    {
+      "id": "Mark54",
+      "label": "Mark 54",
+      "kind": "Torpedo",
+      "damage": 0.54395384,
+      "reload": 12.0,
+      "speed": 22.63557,
+      "range": 0.0
+    },
+    {
+      "id": "Yu7",
+      "label": "Yu-7",
+      "kind": "Torpedo",
+      "damage": 0.54395384,
+      "reload": 12.0,
+      "speed": 20.0,
+      "range": 0.0
+    },
+    {
+      "id": "Mark8",
+      "label": "Mark 8",
+      "kind": "Shell",
+      "damage": 0.60185194,
+      "reload": 13.5,
+      "speed": 760.0,
+      "range": 0.0
+    },
+    {
+      "id": "Mark9",
+      "label": "Mark 9",
+      "kind": "DepthCharge",
+      "damage": 0.7,
+      "reload": 5.0,
+      "speed": 0.0,
+      "range": 0.0
+    },
+    {
+      "id": "Mistral",
+      "label": "Mistral",
+      "kind": "Sam",
+      "damage": 0.29336795,
+      "reload": 16.0,
+      "speed": 930.0,
+      "range": 0.0
+    },
+    {
+      "id": "Nsm",
+      "label": "Naval Strike Missile",
+      "kind": "Missile",
+      "damage": 0.49701738,
+      "reload": 6.0,
+      "speed": 300.0,
+      "range": 185000.0
+    },
+    {
+      "id": "Of45",
+      "label": "OF-45",
+      "kind": "Rocket",
+      "damage": 0.20632905,
+      "reload": 2.5,
+      "speed": 200.0,
+      "range": 0.0
+    },
+    {
+      "id": "RP3",
+      "label": "RP-3",
+      "kind": "Rocket",
+      "damage": 0.75,
+      "reload": 2.5,
+      "speed": 380.0,
+      "range": 0.0
+    },
+    {
+      "id": "P15",
+      "label": "P-15 Termit",
+      "kind": "Missile",
+      "damage": 0.65035903,
+      "reload": 11.6,
+      "speed": 325.85,
+      "range": 0.0
+    },
+    {
+      "id": "P700",
+      "label": "P-700 Granit",
+      "kind": "Missile",
+      "damage": 0.9522557,
+      "reload": 12.0,
+      "speed": 530.08,
+      "range": 0.0
+    },
+    {
+      "id": "Rbs15",
+      "label": "RBS-15",
+      "kind": "Missile",
+      "damage": 0.53002346,
+      "reload": 9.3,
+      "speed": 300.0,
+      "range": 0.0
+    },
+    {
+      "id": "Rim116",
+      "label": "Rolling Airframe Missile",
+      "kind": "Sam",
+      "damage": 0.38965166,
+      "reload": 16.0,
+      "speed": 680.0,
+      "range": 0.0
+    },
+    {
+      "id": "Rpk6",
+      "label": "Vodopad",
+      "kind": "RocketTorpedo",
+      "damage": 0.0,
+      "reload": 20.0,
+      "speed": 200.0,
+      "range": 20000.0
+    },
+    {
+      "id": "S300",
+      "label": "S-300",
+      "kind": "Sam",
+      "damage": 0.71192515,
+      "reload": 16.0,
+      "speed": 950.0,
+      "range": 0.0
+    },
+    {
+      "id": "Set65",
+      "label": "Set 65",
+      "kind": "Torpedo",
+      "damage": 1.147368,
+      "reload": 12.0,
+      "speed": 20.577778,
+      "range": 0.0
+    },
+    {
+      "id": "Yu6",
+      "label": "Yu-6",
+      "kind": "Torpedo",
+      "damage": 1.075218,
+      "reload": 12.0,
+      "speed": 28.0,
+      "range": 0.0
+    },
+    {
+      "id": "Tomahawk",
+      "label": "Tomahawk",
+      "kind": "Missile",
+      "damage": 0.63140196,
+      "reload": 11.2,
+      "speed": 245.872,
+      "range": 0.0
+    },
+    {
+      "id": "Yj82",
+      "label": "YJ-82",
+      "kind": "Missile",
+      "damage": 0.66597736,
+      "reload": 12.0,
+      "speed": 240.0,
+      "range": 0.0
+    },
+    {
+      "id": "Torped45",
+      "label": "Torped 45",
+      "kind": "Torpedo",
+      "damage": 0.5620244,
+      "reload": 12.0,
+      "speed": 20.57779,
+      "range": 0.0
+    },
+    {
+      "id": "Type53",
+      "label": "Type 53",
+      "kind": "Torpedo",
+      "damage": 1.075218,
+      "reload": 8.0,
+      "speed": 23.2,
+      "range": 0.0
+    },
+    {
+      "id": "V611",
+      "label": "Shtorm",
+      "kind": "Sam",
+      "damage": 0.6775887,
+      "reload": 16.0,
+      "speed": 600.0,
+      "range": 0.0
+    },
+    {
+      "id": "Vt1",
+      "label": "Crotale VT-1",
+      "kind": "Sam",
+      "damage": 0.3455422,
+      "reload": 16.0,
+      "speed": 1200.0,
+      "range": 0.0
+    },
+    {
+      "id": "Hq10SAM",
+      "label": "HQ-10",
+      "kind": "Sam",
+      "damage": 0.30865592,
+      "reload": 16.0,
+      "speed": 686.0,
+      "range": 0.0
+    },
+    {
+      "id": "Ls6",
+      "label": "LS-6",
+      "kind": "GlideBomb",
+      "damage": 2.14,
+      "reload": 12.0,
+      "speed": 300.0,
+      "range": 0.0
+    },
+    {
+      "id": "Wz0839",
+      "label": "wz. 08/39",
+      "kind": "Mine",
+      "damage": 2.0,
+      "reload": 15.0,
+      "speed": 0.0,
+      "range": 0.0
+    },
+    {
+      "id": "Type96Bomb",
+      "label": "Type 96 Bomb",
+      "kind": "Mine",
+      "damage": 1.0,
+      "reload": 15.0,
+      "speed": 0.0,
+      "range": 0.0
+    },
+    {
+      "id": "Mk82",
+      "label": "Mark 82 bomb",
+      "kind": "Mine",
+      "damage": 2.22,
+      "reload": 15.0,
+      "speed": 0.0,
+      "range": 0.0
+    },
+    {
+      "id": "Yj18",
+      "label": "YJ-18",
+      "kind": "Missile",
+      "damage": 0.82166183,
+      "reload": 12.0,
+      "speed": 265.04,
+      "range": 0.0
+    }
+  ],
+  "ships": [
+    {
+      "id": "Abrams",
+      "label": "M1 Abrams",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Tank",
+      "speed": 13.3125,
+      "health": 0.26433334,
+      "length": 7.93,
+      "draft": 0.0,
+      "range": 700.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "120X570MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "AbramsTurret",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Akula",
+      "label": "Akula",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 18.0,
+      "health": 3.7766669,
+      "length": 113.3,
+      "draft": 8.0,
+      "range": 739.9,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Set65",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Brosok",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Igla",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Apache",
+      "label": "AH-64 Apache",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Helicopter",
+      "speed": 81.25,
+      "health": 0.591,
+      "length": 17.73,
+      "draft": 0.0,
+      "range": 700.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "30X130MmR",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hellfire",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "M230",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "ArleighBurke",
+      "label": "Arleigh Burke",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 17.0,
+      "health": 5.1333337,
+      "length": 154.0,
+      "draft": 8.0,
+      "range": 862.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.2837037,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.25,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Harpoon",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark54",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Essm",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark12",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Bismarck",
+      "label": "Bismarck",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 15.40625,
+      "health": 8.053334,
+      "length": 241.6,
+      "draft": 8.0,
+      "range": 1124.8,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.41348147,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "380X1700MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Kingfisher",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "38CmSkc34",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Buyan",
+      "label": "Buyan",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "Corvette",
+      "speed": 13.3125,
+      "health": 2.5000002,
+      "length": 75.0,
+      "draft": 2.0,
+      "range": 625.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.16666667,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.5,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Kalibr",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "130X720MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Igla",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "RatepKomar",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "A190",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "label": "B-2 Spirit",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 282.9375,
+      "health": 0.70000005,
+      "length": 21.0,
+      "draft": 0.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mk82",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Clemenceau",
+      "label": "Clemenceau",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 16.4375,
+      "health": 8.833334,
+      "length": 265.0,
+      "draft": 8.0,
+      "range": 1195.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.44814813,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Vt1",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "SuperEtendard",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "SuperFrelon",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Crotale",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "100Mm",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Kaga",
+      "label": "Kaga",
+      "level": 10,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 14.375,
+      "health": 8.255,
+      "length": 247.65,
+      "draft": 8.0,
+      "range": 1142.95,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.42244443,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Type96",
+          "count": 24,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "200X1070MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "200Mm",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Liaoning",
+      "label": "Liaoning",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 14.90625,
+      "health": 10.150001,
+      "length": 304.5,
+      "draft": 10.0,
+      "range": 1313.5,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Z18",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "J15",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hq10SAM",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "30X165MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hq10",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Type730",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Chinook",
+      "label": "CH-47 Chinook",
+      "level": 2,
+      "kind": "Boat",
+      "sub_kind": "Helicopter",
+      "speed": 82.28125,
+      "health": 1.0,
+      "length": 30.0,
+      "draft": 0.0,
+      "range": 490.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "Catalina",
+      "label": "Catalina",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 87.4375,
+      "health": 0.6492877,
+      "length": 19.47863,
+      "draft": 0.0,
+      "range": 600.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "762X54MmR",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Wz0839",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "M1919",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Spitfire",
+      "label": "Spitfire",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 165.0,
+      "health": 0.60800004,
+      "length": 18.24,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "RP3",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "762X54MmR",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "M1919",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "J20",
+      "label": "Chengdu J-20",
+      "level": 10,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 333.28125,
+      "health": 0.7066667,
+      "length": 21.2,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Ls6",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Pl12",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "F35",
+      "label": "F-35 Lightning II",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 411.59375,
+      "health": 0.5233334,
+      "length": 15.7,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Jagm",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Dreadnought",
+      "label": "Dreadnought",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "Dreadnought",
+      "speed": 10.78125,
+      "health": 5.363333,
+      "length": 160.9,
+      "draft": 8.0,
+      "range": 882.69995,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.2939259,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "300X1400MmR",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark18",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "MarkBViii",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Dredger",
+      "label": "Dredger",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "Dredger",
+      "speed": 8.0,
+      "health": 3.3000002,
+      "length": 99.0,
+      "draft": 6.0,
+      "range": 697.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Depositor",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Drone",
+      "label": "Drone",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Drone",
+      "speed": 100.0,
+      "health": 0.037111003,
+      "length": 1.11333,
+      "draft": 0.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "Espana",
+      "label": "España",
+      "level": 3,
+      "kind": "Boat",
+      "sub_kind": "Dreadnought",
+      "speed": 10.0,
+      "health": 4.6138005,
+      "length": 138.414,
+      "draft": 6.0,
+      "range": 815.242,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.26061335,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "300X1400MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "VickersMkH12In",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Ekranoplan",
+      "label": "Ekranoplan",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Ekranoplan",
+      "speed": 152.75,
+      "health": 2.4600003,
+      "length": 73.8,
+      "draft": 2.0,
+      "range": 621.4,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.16488889,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Moskit",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "25X129MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "2M3M",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Essex",
+      "label": "Essex",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 16.8125,
+      "health": 8.86,
+      "length": 265.8,
+      "draft": 6.0,
+      "range": 1197.3999,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.4493333,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Avenger",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark12X2",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "FairmileD",
+      "label": "Fairmile D",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Mtb",
+      "speed": 15.9375,
+      "health": 1.1666667,
+      "length": 35.0,
+      "draft": 0.0,
+      "range": 505.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.107407406,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "57X441MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark9",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark18",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "6Pounder",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Fletcher",
+      "label": "Fletcher",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 18.75,
+      "health": 3.826667,
+      "length": 114.8,
+      "draft": 4.0,
+      "range": 744.4,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.22562963,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "127X680MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark18",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark9",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark12",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Freccia",
+      "label": "Freccia",
+      "level": 3,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 15.4375,
+      "health": 3.2050002,
+      "length": 96.15,
+      "draft": 4.0,
+      "range": 688.45,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.198,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark9",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Ansaldo",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Freedom",
+      "label": "Freedom",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Lcs",
+      "speed": 24.15625,
+      "health": 3.8333335,
+      "length": 115.0,
+      "draft": 2.0,
+      "range": 745.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.22592592,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.5,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "57X441MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Nsm",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rim116",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Bofors57MmMk3",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark49",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "G5",
+      "label": "G-5",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Mtb",
+      "speed": 27.25,
+      "health": 0.6283334,
+      "length": 18.85,
+      "draft": 0.0,
+      "range": 456.55,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Type53",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Golf",
+      "label": "Golf",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 8.71875,
+      "health": 3.2800002,
+      "length": 98.4,
+      "draft": 8.0,
+      "range": 695.2,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Set65",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Indiaman",
+      "label": "East Indiaman",
+      "level": 3,
+      "kind": "Boat",
+      "sub_kind": "Pirate",
+      "speed": 4.0,
+      "health": 1.7604768,
+      "length": 52.8143,
+      "draft": 4.0,
+      "range": 558.4429,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.13379896,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "CannonBall",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Iowa",
+      "label": "Iowa",
+      "level": 10,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 16.96875,
+      "health": 9.013333,
+      "length": 270.4,
+      "draft": 12.0,
+      "range": 1211.2,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.45614815,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Seahawk",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark8",
+          "count": 9,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 16,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark7",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Kirov",
+      "label": "Kirov",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Cruiser",
+      "speed": 16.4375,
+      "health": 8.400001,
+      "length": 252.0,
+      "draft": 8.0,
+      "range": 1156.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.4288889,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "S300",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "130X720MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Set65",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Ka25",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P700",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Ak130",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Kolkata",
+      "label": "Kolkata",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 15.40625,
+      "health": 5.4333334,
+      "length": 163.0,
+      "draft": 6.0,
+      "range": 889.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.29703704,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.5,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Ka25",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Set65",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "BrahMos",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Barak8",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Komar",
+      "label": "Komar",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Mtb",
+      "speed": 22.59375,
+      "health": 0.8466667,
+      "length": 25.4,
+      "draft": 0.0,
+      "range": 476.2,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "25X129MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark9",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Type53",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "2M3M",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Leander",
+      "label": "Leander",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Cruiser",
+      "speed": 16.6875,
+      "health": 5.6366673,
+      "length": 169.1,
+      "draft": 4.0,
+      "range": 907.30005,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.30607408,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "127X680MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark18",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Bl6MkXxiii",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Lublin",
+      "label": "Lublin",
+      "level": 3,
+      "kind": "Boat",
+      "sub_kind": "Minelayer",
+      "speed": 8.5,
+      "health": 3.1933336,
+      "length": 95.8,
+      "draft": 2.0,
+      "range": 687.4,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.19748148,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Wz0839",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Momi",
+      "label": "Momi",
+      "level": 2,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 18.5,
+      "health": 2.8433335,
+      "length": 85.3,
+      "draft": 2.0,
+      "range": 655.9,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.18192592,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "127X680MmR",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark18",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark9",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark12",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Montana",
+      "label": "Montana",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 14.375,
+      "health": 9.36,
+      "length": 280.8,
+      "draft": 10.0,
+      "range": 1242.3999,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.47155553,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark8",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Kingfisher",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark7",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Moskva",
+      "label": "Moskva",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 14.65625,
+      "health": 6.3,
+      "length": 189.0,
+      "draft": 6.0,
+      "range": 967.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.33555555,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Ka25",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "V611",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Set65",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Shtorm",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Oberon",
+      "label": "Oberon",
+      "level": 3,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 8.9375,
+      "health": 3.0000002,
+      "length": 90.0,
+      "draft": 4.0,
+      "range": 670.0,
+      "depth": 200.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Ohio",
+      "label": "Ohio",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 12.84375,
+      "health": 5.666667,
+      "length": 170.0,
+      "draft": 10.0,
+      "range": 910.0,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Tomahawk",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark48",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mk70",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Olympias",
+      "label": "Olympias",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Ram",
+      "speed": 16.0,
+      "health": 1.2300001,
+      "length": 36.9,
+      "draft": 0.0,
+      "range": 510.7,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.11022222,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "Osa",
+      "label": "Osa",
+      "level": 3,
+      "kind": "Boat",
+      "sub_kind": "Mtb",
+      "speed": 21.59375,
+      "health": 1.2866666,
+      "length": 38.6,
+      "draft": 0.0,
+      "range": 515.8,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.11274074,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "P15",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "25X129MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "2M3M",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Pt34",
+      "label": "PT-34",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Mtb",
+      "speed": 21.0625,
+      "health": 0.7666667,
+      "length": 23.0,
+      "draft": 0.0,
+      "range": 469.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Seawolf",
+      "label": "Seawolf",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 18.0,
+      "health": 3.6000001,
+      "length": 108.0,
+      "draft": 10.0,
+      "range": 724.0,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.5,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark48",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mk70",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Skipjack",
+      "label": "Skipjack",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 16.96875,
+      "health": 2.5570002,
+      "length": 76.71,
+      "draft": 6.0,
+      "range": 630.13,
+      "depth": 210.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark48",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mk70",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Harpoon",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "039A",
+      "label": "Yuan-class Submarine",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 11.0,
+      "health": 2.5333335,
+      "length": 76.0,
+      "draft": 6.0,
+      "range": 700.0,
+      "depth": 200.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.9,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Yj82",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yu7",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yu6",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Skjold",
+      "label": "Skjold",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Corvette",
+      "speed": 30.84375,
+      "health": 1.5833334,
+      "length": 47.5,
+      "draft": 0.0,
+      "range": 542.5,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.12592593,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.75,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "76X636MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Nsm",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mistral",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Sherman",
+      "label": "M4 Sherman",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "Tank",
+      "speed": 9.375,
+      "health": 0.19633333,
+      "length": 5.89,
+      "draft": 0.0,
+      "range": 600.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "75X667MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ShermanTurret",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "StarDestroyer",
+      "label": "Imperial II-Class Star Destroyer",
+      "level": 12,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 400.0,
+      "health": 142.22223,
+      "length": 1600.0,
+      "draft": 0.0,
+      "range": 2000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark48",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TieFighter",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurbolaserBeam",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Turbolaser",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Tanker",
+      "label": "Oil Tanker",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Tanker",
+      "speed": 8.3125,
+      "health": 5.966667,
+      "length": 179.0,
+      "draft": 10.0,
+      "range": 937.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "TerryFox",
+      "label": "Terry Fox",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Icebreaker",
+      "speed": 8.21875,
+      "health": 2.9333334,
+      "length": 88.0,
+      "draft": 8.0,
+      "range": 664.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.18592592,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "Town",
+      "label": "Town",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Cruiser",
+      "speed": 16.5625,
+      "health": 6.01,
+      "length": 180.3,
+      "draft": 6.0,
+      "range": 940.9,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.32266667,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Kingfisher",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Bl6MkXxiiiX3",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Type055",
+      "label": "Type 055",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 15.40625,
+      "health": 6.0000005,
+      "length": 180.0,
+      "draft": 8.0,
+      "range": 940.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.32222223,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.75,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "82R",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yj18",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "130X720MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hq9",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Harbin",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hpj38",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "TypeViic",
+      "label": "Type VII C",
+      "level": 2,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 9.03125,
+      "health": 2.2366667,
+      "length": 67.1,
+      "draft": 4.0,
+      "range": 601.3,
+      "depth": 180.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "57X441MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "88CmSkc35",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Ticonderoga",
+      "label": "Ticonderoga",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Cruiser",
+      "speed": 16.6875,
+      "health": 5.766667,
+      "length": 173.0,
+      "draft": 10.0,
+      "range": 919.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.31185186,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Harpoon",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mk3",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Asroc",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Titanic",
+      "label": "Titanic",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Passenger",
+      "speed": 11.8125,
+      "health": 8.97,
+      "length": 269.1,
+      "draft": 10.0,
+      "range": 1207.3,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "Uap",
+      "label": "UAP",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Drone",
+      "speed": 1000.0,
+      "health": 0.40000004,
+      "length": 12.0,
+      "draft": 0.0,
+      "range": 750.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.95,
+      "npc": false,
+      "armaments": []
+    },
+    {
+      "id": "Vindicator",
+      "label": "Nexar Vindicator",
+      "level": 12,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 350.0,
+      "health": 0.96000004,
+      "length": 28.8,
+      "draft": 0.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "VProjector",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "VMissiles",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "VBlaster",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Visby",
+      "label": "Visby",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Corvette",
+      "speed": 18.0,
+      "health": 2.4233334,
+      "length": 72.7,
+      "draft": 2.0,
+      "range": 618.1,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.16325925,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.75,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "57X441MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Torped45",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rbs15",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Bofors57MmMk3",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Virginia",
+      "label": "Virginia",
+      "level": 10,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 18.0,
+      "health": 3.8333335,
+      "length": 115.0,
+      "draft": 10.0,
+      "range": 745.0,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.65,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark48",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mk3",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Xwing",
+      "label": "T-65B X-wing starfighter",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 291.65625,
+      "health": 0.4466667,
+      "length": 13.4,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Blaster",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Yamato",
+      "label": "Yamato",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 13.875,
+      "health": 8.766667,
+      "length": 263.0,
+      "draft": 10.0,
+      "range": 1189.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.44518518,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "E4N",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "458X1980MmR",
+          "count": 9,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "45Type94",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Yasen",
+      "label": "Yasen",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 18.0,
+      "health": 4.3333335,
+      "length": 130.0,
+      "draft": 10.0,
+      "range": 790.0,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "BrahMos",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rpk6",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Brosok",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Igla",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Set65",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Zubr",
+      "label": "Zubr",
+      "level": 2,
+      "kind": "Boat",
+      "sub_kind": "Hovercraft",
+      "speed": 28.28125,
+      "health": 1.9000001,
+      "length": 57.0,
+      "draft": 0.0,
+      "range": 571.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.14,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "25X129MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Of45",
+          "count": 9,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Ogon",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "2M3M",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Lst",
+      "label": "Landing Ship, Tank",
+      "level": 4,
+      "kind": "Boat",
+      "sub_kind": "LandingShip",
+      "speed": 5.625,
+      "health": 1.1110001,
+      "length": 33.33,
+      "draft": 0.0,
+      "range": 499.99,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.10493334,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "25X129MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "2M3M",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Zudredger",
+      "label": "Zudredger",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Hovercraft",
+      "speed": 38.28125,
+      "health": 1.9000001,
+      "length": 57.0,
+      "draft": 0.0,
+      "range": 571.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.14,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Shovel",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Depositor",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Zumwalt",
+      "label": "Zumwalt",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 15.40625,
+      "health": 6.3333335,
+      "length": 190.0,
+      "draft": 12.0,
+      "range": 970.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.33703703,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.75,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Seahawk",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Essm",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Asroc",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Lrlap",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark51",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}

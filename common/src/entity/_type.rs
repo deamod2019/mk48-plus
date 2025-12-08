@@ -1175,6 +1175,23 @@ pub enum EntityType {
     #[armament(Mk70, forward = 33.75, side = 0.7, angle = 0, hidden)]
     #[armament(Harpoon, forward = 34, angle = 0, symmetrical)]
     Skipjack,
+    #[info(label = "Yuan-class Submarine", link = "https://en.wikipedia.org/wiki/Type_039A_submarine")]
+    #[entity(Boat, Submarine, level = 5)]
+    #[size(length = 76.0, width = 9.2, draft = 6.0, mast = 10.0)]
+    #[props(speed = 11.0, depth = 200, stealth = 0.9)]
+    #[sensors(radar, sonar, visual = 700)]
+    #[armament(Yu6, forward = 30.0, side = 0.9, angle = 0, count = 2, symmetrical)]
+    #[armament(Yu7, forward = 31.5, side = 1.2, angle = 0, symmetrical)]
+    #[armament(
+        Yj82,
+        forward = -2.0,
+        side = 2.0,
+        angle = 0,
+        count = 2,
+        symmetrical,
+        vertical
+    )]
+    _039A,
     #[info(
         label = "Skjold",
         link = "https://en.wikipedia.org/wiki/Skjold-class_corvette"
@@ -1884,8 +1901,7 @@ pub enum EntityType {
     #[info(label = "Turbolaser Beam")]
     #[entity(Weapon, Laser)]
     #[size(length = 2.0, width = 0.3)]
-    #[props(speed = 2000.0, range = 200000.0, reload = 0.5, damage = 18.0)]
-    TurbolaserBeam,
+    #[props(speed = 2000.0, range = 200000.0, reload = 0.5, damage = 18.0)]    TurbolaserBeam,
     #[info(label = "Vindicator Projector")]
     #[entity(Weapon, Shell)]
     #[size(length = 25.0, width = 0.0)]
@@ -2215,6 +2231,12 @@ pub enum EntityType {
     #[props(speed = 20.577778, range = 16000)]
     #[sensors(sonar)]
     Set65,
+    #[info(label = "Yu-6", link = "https://en.wikipedia.org/wiki/Yu-6_torpedo")]
+    #[entity(Weapon, Torpedo, level = 5)]
+    #[size(length = 7.2, width = 0.533)]
+    #[props(speed = 28.0, range = 17000)]
+    #[sensors(sonar)]
+    Yu6,
     #[info(
         label = "Tomahawk",
         link = "https://en.wikipedia.org/wiki/Tomahawk_(missile)"
@@ -2224,6 +2246,12 @@ pub enum EntityType {
     #[props(speed = 245.872, range = 250000)]
     #[sensors(radar)]
     Tomahawk,
+    #[info(label = "YJ-82", link = "https://en.wikipedia.org/wiki/YJ-82")]
+    #[entity(Weapon, Missile, level = 5)]
+    #[size(length = 6.0, width = 2.5)]
+    #[props(speed = 240.0, range = 60000)]
+    #[sensors(radar)]
+    Yj82,
     #[info(label = "Torped 45", link = "https://en.wikipedia.org/wiki/Torped_45")]
     #[entity(Weapon, Torpedo, level = 4)]
     #[size(length = 2.85, width = 0.4)]

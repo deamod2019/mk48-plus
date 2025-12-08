@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2018"
 authors = ["Softbear, Inc."]
 license = "AGPL-3.0-or-later"
+default-run = "server"
 
 [profile.release]
 debug = true

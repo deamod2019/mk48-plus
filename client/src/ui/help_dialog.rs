@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Softbear, Inc.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::ui::Mk48Route;
 use yew::{function_component, html, Html};
-use yew_frontend::component::route_link::RouteLink;
 use yew_frontend::dialog::dialog::Dialog;
 use yew_frontend::frontend::use_game_id;
 use yew_frontend::translation::{use_translation, Translation};
@@ -83,7 +81,7 @@ pub fn help_dialog() -> Html {
 
             <p>
                 {"Here is a full list of ships: "}
-                <RouteLink<Mk48Route> route={Mk48Route::Ships}>{"Mk48.io Ships"}</RouteLink<Mk48Route>>
+                {"Mk48.io Ships"}
                 {"."}
             </p>
 
