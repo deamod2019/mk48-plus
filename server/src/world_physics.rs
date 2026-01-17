@@ -90,6 +90,15 @@ impl World {
                 }
 
                 let mut max_speed = data.speed.to_mps();
+                // Apply engine boost speed multiplier
+                if entity.entity_type == EntityType::Minelayer49 {
+                    let boost_mult = entity.extension().engine_boost_speed_multiplier();
+                    if boost_mult > 1.0 {
+                        max_speed = data.speed.to_mps() * boost_mult;
+                        // Force velocity target to max during boost
+                        entity.guidance.velocity_target = common::velocity::Velocity::from_mps(max_speed);
+                    }
+                }
                 let mut repair_eligible = true;
 
                 if frozen {
@@ -98,15 +107,20 @@ impl World {
 
                 match data.kind {
                     EntityKind::Aircraft => {
-                        let position_diff = if let Status::Alive {
-                            aim_target: Some(aim_target),
-                            ..
-                        } = entity.borrow_player().data.status
-                        {
-                            aim_target - entity.transform.position
+                        let position_diff = if entity.player.is_some() {
+                            if let Status::Alive {
+                                aim_target: Some(aim_target),
+                                ..
+                            } = entity.borrow_player().data.status
+                            {
+                                aim_target - entity.transform.position
+                            } else {
+                                // Hover when no target or player is dead.
+                                Vec2::ZERO
+                            }
                         } else {
-                            // Hover when no target or player is dead.
-                            Vec2::ZERO
+                            // No player owner - fly forward autonomously
+                            entity.transform.direction.to_vec() * 100.0
                         };
 
                         entity.guidance.direction_target = Angle::from(position_diff)
@@ -470,6 +484,8 @@ impl World {
                     }
                     entity.reload(delta);
                     entity.extension_mut().update_tickers(delta);
+                    entity.extension_mut().advance_engine_boost(delta);
+                    entity.extension_mut().advance_iaigiri(delta);
 
                     if repair_eligible {
                         let repair_amount = if data.length > 200.0 {

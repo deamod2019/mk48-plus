@@ -393,6 +393,8 @@ pub struct Mk48OverlayLayer {
     u_border: f32,
     u_restrict: f32,
     u_visual: f32,
+    u_smoke_position: Vec2,
+    u_smoke_radius: f32,
 }
 
 impl DefaultRender for Mk48OverlayLayer {
@@ -411,6 +413,8 @@ impl DefaultRender for Mk48OverlayLayer {
             u_border: 1000.0,
             u_restrict: 0.0,
             u_visual: 0.0,
+            u_smoke_position: Vec2::ZERO,
+            u_smoke_radius: 0.0,
         }
     }
 }
@@ -422,6 +426,7 @@ impl Mk48OverlayLayer {
         visual_restriction: f32,
         world_radius: f32,
         area: Option<(f32, bool)>,
+        smoke_screen: Option<(Vec2, f32)>,
     ) {
         self.u_visual = visual_range;
         self.u_restrict = visual_restriction;
@@ -430,7 +435,16 @@ impl Mk48OverlayLayer {
             .as_ref()
             .map(|(_, above)| if *above { 1.0 } else { -1.0 })
             .unwrap_or_default();
-        self.u_area = area.map(|(area, _)| area).unwrap_or_default()
+        self.u_area = area.map(|(area, _)| area).unwrap_or_default();
+        
+        // Update smoke screen effect
+        if let Some((position, radius)) = smoke_screen {
+            self.u_smoke_position = position;
+            self.u_smoke_radius = radius;
+        } else {
+            self.u_smoke_position = Vec2::ZERO;
+            self.u_smoke_radius = 0.0;
+        }
     }
 }
 
@@ -444,6 +458,8 @@ impl RenderLayer<&Camera2d> for Mk48OverlayLayer {
                 vec3(self.u_above, self.u_area, self.u_border),
             );
             shader.uniform("uRestrict_uVisual", vec2(self.u_restrict, self.u_visual));
+            shader.uniform("uSmokePosition", self.u_smoke_position);
+            shader.uniform("uSmokeRadius", self.u_smoke_radius);
 
             self.inner.render(renderer, (shader, camera, None));
         }

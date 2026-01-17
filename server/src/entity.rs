@@ -389,6 +389,10 @@ impl Entity {
 
     /// Reloads arbitrary armaments/groups by a certain amount.
     pub fn reload(&mut self, amount: Ticks) {
+        // Only boats have armaments to reload.
+        if !self.is_boat() {
+            return;
+        }
         let armaments = &self.data().armaments;
         let reloads = self.extension_mut().reloads_mut();
         if reloads.is_empty() {

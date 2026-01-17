@@ -499,6 +499,25 @@ pub enum EntityType {
     #[exhaust(forward = -1)]
     Bismarck,
     #[info(
+        label = "HunterKiller-77",
+        link = "https://en.wikipedia.org/wiki/Anti-submarine_warfare"
+    )]
+    #[entity(Boat, Corvette, level = 7)]
+    #[size(length = 78, width = 12, draft = 4.2)]
+    #[props(speed = 10.29, stealth = 0.25)]
+    #[sensors(radar, sonar, visual)]
+    #[armament(Mark54, forward = 25, side = 2.0, angle = 0, symmetrical, external)]
+    #[armament(Mark54, forward = 24, side = 2.0, angle = 0, symmetrical, external)]
+    #[armament(Mark9, forward = 0, side = 3.0, angle = 60, symmetrical, external)]
+    #[armament(Mark9, forward = -2, side = 3.0, angle = 60, symmetrical, external)]
+    #[armament(Mark9, forward = -4, side = 3.0, angle = 60, symmetrical, external)]
+    #[armament(Mark9, forward = -6, side = 3.0, angle = 60, symmetrical, external)]
+    #[armament(Mark9, forward = -8, side = 3.0, angle = 60, symmetrical, external)]
+    #[armament(Mark9, forward = -10, side = 3.0, angle = 60, symmetrical, external)]
+    #[turret(OtoMelara76Mm, forward = 28, fast, azimuth_b = 20)]
+    #[exhaust(forward = -5)]
+    HunterKiller77,
+    #[info(
         label = "Buyan",
         link = "https://en.wikipedia.org/wiki/Buyan-class_corvette"
     )]
@@ -584,6 +603,29 @@ pub enum EntityType {
     #[turret(_200Mm, forward = 84.6, side = -15, medium)]
     #[exhaust(forward = 35, side = -16)]
     Kaga,
+    #[info(
+        label = "FortressCarrier",
+        link = "https://en.wikipedia.org/wiki/Supercarrier"
+    )]
+    #[entity(Boat, Carrier, level = 11)]
+    #[size(length = 340, width = 78, draft = 11.3, mast = 80)]
+    #[props(speed = 17.14)]
+    #[sensors(radar = 1200, visual = 800)]
+    #[armament(J15, forward = 80, side = 10, angle = 0, count = 2, external)]
+    #[armament(J15, forward = 40, side = 10, angle = 0, count = 2, external)]
+    #[armament(J15, forward = 0, side = 10, angle = 0, count = 2, external)]
+    #[armament(J15, forward = -40, side = 10, angle = 0, count = 2, external)]
+    #[armament(J15, forward = -80, side = 10, angle = 0, count = 2, external)]
+    #[armament(Seahawk, forward = -120, side = 20, angle = 0, external)]
+    #[armament(Seahawk, forward = -120, side = -20, angle = 0, external)]
+    #[turret(Essm, forward = 100, side = 30, fast)]
+    #[turret(Essm, forward = 100, side = -30, fast)]
+    #[turret(Essm, forward = -100, side = 30, fast)]
+    #[turret(Essm, forward = -100, side = -30, fast)]
+    #[turret(Type730, forward = 120, side = 35, slow)]
+    #[turret(Type730, forward = -130, side = -35, slow)]
+    #[exhaust(forward = -50, side = -30)]
+    FortressCarrier,
     #[info(
         label = "Liaoning",
         link = "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Liaoning"
@@ -1117,6 +1159,17 @@ pub enum EntityType {
     #[armament(Wz0839, forward = -41, side = 1.75, symmetrical, external)]
     #[armament(Wz0839, forward = -42, side = 1.75, symmetrical, external)]
     Lublin,
+    #[info(label = "布雷艇49型")]
+    #[entity(Boat, Minelayer, level = 6)]
+    #[size(length = 95.8, width = 15.0, draft = 2.0)]
+    #[props(speed = 18.5, damage = 3.19)]
+    #[sensors(radar, visual)]
+    #[armament(Wz0839, forward = -38, side = 1.75, symmetrical, external)]
+    #[armament(Wz0839, forward = -40, side = 1.75, symmetrical, external)]
+    #[armament(Wz0839, forward = -42, side = 1.75, symmetrical, external)]
+    #[armament(IaigiriMine, count = 1, hidden)]
+    #[exhaust(forward = -20)]
+    Minelayer49,
     #[info(
         label = "Momi",
         link = "https://en.wikipedia.org/wiki/Momi-class_destroyer"
@@ -1461,6 +1514,28 @@ pub enum EntityType {
     #[armament(Asroc, forward = 43, side = 0, count = 2, vertical)]
     #[armament(Mk3, forward = -85, side = 0, angle = -180, hidden)]
     Ticonderoga,
+    #[info(
+        label = "天王星",
+        link = "https://en.wikipedia.org/wiki/Cruiser"
+    )]
+    #[entity(Boat, Cruiser, level = 8)]
+    #[size(length = 166.0, width = 18.0, draft = 4.0)]
+    #[props(speed = 20.2)]
+    #[sensors(radar = 1200, visual = 800)]
+    #[turret(forward = 60, medium)]
+    #[turret(forward = 35, medium)]
+    #[turret(forward = 10, medium)]
+    #[turret(forward = -30, medium)]
+    #[turret(forward = -55, medium)]
+    #[turret(forward = -80, medium)]
+    #[armament(_127X680MmR, forward = 60, turret = 0)]
+    #[armament(_127X680MmR, forward = 35, turret = 1)]
+    #[armament(_127X680MmR, forward = 10, turret = 2)]
+    #[armament(_127X680MmR, forward = -30, turret = 3)]
+    #[armament(_127X680MmR, forward = -55, turret = 4)]
+    #[armament(_127X680MmR, forward = -80, turret = 5)]
+    #[exhaust(forward = -10)]
+    Tianwangxing,
     #[info(label = "Titanic", link = "https://en.wikipedia.org/wiki/Titanic")]
     #[entity(Boat, Passenger, level = 7)]
     #[size(length = 269.1, width = 28.2, draft = 10.5)]
@@ -2646,6 +2721,11 @@ pub enum EntityType {
     #[size(length = 2.0, width = 2.6)]
     #[props(lifespan = 300)]
     Wz0839,
+    #[info(label = "居合斩水雷")]
+    #[entity(Weapon, Mine, level = 6)]
+    #[size(length = 2.0, width = 2.6)]
+    #[props(lifespan = 10, damage = 1.0)]
+    IaigiriMine,
     #[info(
         label = "Type 96 Bomb",
         link = "https://en.wikipedia.org/wiki/Mitsubishi_A5M"

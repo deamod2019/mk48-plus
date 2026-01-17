@@ -12,6 +12,7 @@ use common::entity::*;
 use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
+use common::velocity::Velocity;
 use common::util::{level_to_score, score_to_level};
 use common::warp::{WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE};
 use common::zero_pulse::{ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS};
@@ -655,5 +656,371 @@ fn clamp_to_range(
         Err("outside maximum range")
     } else {
         Ok(center + delta.clamp_length_max(range))
+    }
+}
+
+
+impl CommandTrait for Iaigiri {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::iaigiri::{IAIGIRI_COOLDOWN, IAIGIRI_MAX_RANGE_SCALE, IAIGIRI_MINE_COUNT};
+        
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot iaigiri while not alive"),
+        };
+
+        let entity = &world.entities[entity_index];
+        
+        // Only Minelayer49 can use Iaigiri
+        if entity.entity_type != EntityType::Minelayer49 {
+            return Err("iaigiri not supported");
+        }
+
+        if entity.extension().iaigiri_cooldown_remaining() != Ticks::ZERO {
+            return Err("iaigiri on cooldown");
+        }
+
+        let data = entity.data();
+        
+        // Calculate target position
+        let mut target = self.target;
+        let valid_range = -world.radius * 2.0..world.radius * 2.0;
+        target.x = sanitize_float(target.x, valid_range.clone()).unwrap_or(entity.transform.position.x);
+        target.y = sanitize_float(target.y, valid_range).unwrap_or(entity.transform.position.y);
+
+        let max_offset = data.camera_range() * IAIGIRI_MAX_RANGE_SCALE;
+        let start = entity.transform.position;
+        let delta = target - start;
+        let end = start + delta.clamp_length_max(max_offset);
+
+        // Clamp to world border
+        let border_limit = world.radius - data.length.max(100.0);
+        let end = if end.length_squared() > border_limit.powi(2) {
+            end.normalize_or_zero() * border_limit
+        } else {
+            end
+        };
+
+        let altitude = entity.altitude;
+        
+        // Start cooldown
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_iaigiri(IAIGIRI_COOLDOWN)?;
+        
+        // Spawn mines along path
+        let mine_count = IAIGIRI_MINE_COUNT as usize;
+        for i in 0..mine_count {
+            let t = (i as f32 + 0.5) / mine_count as f32;
+            let mine_pos = start.lerp(end, t);
+            
+            let mut mine = Entity::new(EntityType::IaigiriMine, Some(Arc::clone(player_tuple)));
+            mine.transform.position = mine_pos;
+            mine.altitude = altitude;
+            world.spawn_here_or_nearby(mine, 5.0, None);
+        }
+
+        // Teleport to end position
+        let entity = &mut world.entities[entity_index];
+        entity.transform.position = end;
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for EngineBoost {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::engine_boost::{ENGINE_BOOST_MAX_DURATION, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_COOLDOWN};
+        
+        
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot boost while not alive"),
+        };
+
+        let entity = &mut world.entities[entity_index];
+        
+        // Only Minelayer49 can use EngineBoost
+        if entity.entity_type != EntityType::Minelayer49 {
+            return Err("engine boost not supported");
+        }
+
+        
+        entity.extension_mut().start_engine_boost(
+            ENGINE_BOOST_MAX_DURATION,
+            ENGINE_BOOST_DECEL_DURATION,
+            ENGINE_BOOST_COOLDOWN,
+        )?;
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for SonarPulse {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::sonar_pulse::{SONAR_PULSE_COOLDOWN, SONAR_PULSE_RADIUS, SONAR_PULSE_DURATION};
+        
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot sonar pulse while not alive"),
+        };
+
+        let entity = &world.entities[entity_index];
+        
+        // Only HunterKiller77 can use SonarPulse
+        if entity.entity_type != EntityType::HunterKiller77 {
+            return Err("sonar pulse not supported");
+        }
+
+        if entity.extension().sonar_pulse_cooldown_remaining() != Ticks::ZERO {
+            return Err("sonar pulse on cooldown");
+        }
+
+        let center = entity.transform.position;
+
+        // Start cooldown
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_sonar_pulse(SONAR_PULSE_COOLDOWN)?;
+
+        // Find and reveal submerged submarines in range
+        // Note: In a full implementation, we would need a "revealed" state that
+        // gets synced to clients. For now, we'll just set active sensors temporarily.
+        let targets: Vec<_> = world
+            .entities
+            .iter_radius(center, SONAR_PULSE_RADIUS)
+            .filter_map(|(target_index, target)| {
+                let data = target.data();
+                if data.sub_kind != EntitySubKind::Submarine {
+                    return None;
+                }
+                if !target.altitude.is_submerged() {
+                    return None;
+                }
+                if target.is_friendly_to_player(Some(player_tuple)) {
+                    return None;
+                }
+                Some(target_index)
+            })
+            .collect();
+
+        // Mark targets as detected (set their active sensor flag temporarily)
+        for target_index in targets {
+            let target = &mut world.entities[target_index];
+            target.extension_mut().set_active(true);
+        }
+
+        // Broadcast sonar pulse event for visual effect
+        world.events.push(WorldEvent::ZeroPulse { center, radius: SONAR_PULSE_RADIUS });
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for DepthChargeBarrage {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::depth_charge_barrage::{DCB_COOLDOWN, DCB_COUNT, DCB_RANGE, DCB_SPREAD_ANGLE};
+        
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot depth charge barrage while not alive"),
+        };
+
+        let entity = &world.entities[entity_index];
+        
+        // Only HunterKiller77 can use DepthChargeBarrage
+        if entity.entity_type != EntityType::HunterKiller77 {
+            return Err("depth charge barrage not supported");
+        }
+
+        if entity.extension().depth_charge_barrage_cooldown_remaining() != Ticks::ZERO {
+            return Err("depth charge barrage on cooldown");
+        }
+
+        let center = entity.transform.position;
+        let direction = entity.transform.direction;
+        let altitude = entity.altitude;
+
+        // Start cooldown
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_depth_charge_barrage(DCB_COOLDOWN)?;
+
+        // Spawn depth charges in a fan pattern
+        let half_angle = DCB_SPREAD_ANGLE / 2.0;
+        for i in 0..DCB_COUNT {
+            // Calculate angle offset within the fan
+            let t = if DCB_COUNT > 1 {
+                (i as f32) / ((DCB_COUNT - 1) as f32)
+            } else {
+                0.5
+            };
+            let angle_offset_deg = -half_angle + t * DCB_SPREAD_ANGLE;
+            let angle_offset = Angle::from_degrees(angle_offset_deg);
+            let launch_direction = direction + angle_offset;
+            
+            // Calculate spawn position
+            let offset = launch_direction.to_vec() * DCB_RANGE;
+            let spawn_pos = center + offset;
+
+            let mut depth_charge = Entity::new(EntityType::Mark9, Some(Arc::clone(player_tuple)));
+            depth_charge.transform.position = spawn_pos;
+            depth_charge.transform.direction = launch_direction;
+            depth_charge.altitude = altitude;
+            
+            world.spawn_here_or_nearby(depth_charge, 10.0, None);
+        }
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for AirSuperiority {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::air_superiority::AIR_SUPERIORITY_COOLDOWN;
+        
+        // Get entity_index from player status
+        let entity_index = {
+            let player = player_tuple.borrow_player();
+            match player.data.status {
+                Status::Alive { entity_index, .. } => entity_index,
+                _ => return Err("not alive"),
+            }
+        }; // player borrow dropped here
+
+        // Check entity type and cooldown
+        {
+            let entity = &world.entities[entity_index];
+            
+            if entity.entity_type != EntityType::FortressCarrier {
+                return Err("air superiority not supported");
+            }
+
+            if entity.extension().air_superiority_cooldown_remaining() != Ticks::ZERO {
+                return Err("air superiority on cooldown");
+            }
+        }
+
+        // Get position and direction
+        let (center, direction) = {
+            let entity = &world.entities[entity_index];
+            (entity.transform.position, entity.transform.direction)
+        };
+
+        // Start cooldown
+        {
+            let entity = &mut world.entities[entity_index];
+            entity.extension_mut().start_air_superiority(AIR_SUPERIORITY_COOLDOWN)?;
+        }
+
+        // Spawn Aircraft with player ownership
+        // Aircraft don't trigger create_index (only Boats do), so this is safe
+        for i in 0..10 {
+            let angle_offset = Angle::from_degrees((i as f32 - 5.0) * 20.0);
+            let spawn_direction = direction + angle_offset;
+            let offset = spawn_direction.to_vec() * 100.0;
+            let spawn_pos = center + offset;
+
+            // Create Aircraft WITH player ownership - this enables proper physics interactions
+            let mut drone = Entity::new(EntityType::Avenger, Some(Arc::clone(player_tuple)));
+            drone.transform.position = spawn_pos;
+            drone.transform.direction = spawn_direction;
+            drone.transform.velocity = Velocity::from_mps(50.0);
+            drone.guidance.direction_target = spawn_direction;
+            drone.guidance.velocity_target = Velocity::from_mps(50.0);
+            
+            // world.add is safe for Aircraft with player - doesn't call create_index
+            world.add(drone);
+        }
+
+        Ok(())
+    }
+}
+
+
+impl CommandTrait for EmergencyRepair {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::emergency_repair::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
+        
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("not alive"),
+        };
+
+        let entity = &world.entities[entity_index];
+        
+        // Only FortressCarrier can use EmergencyRepair
+        if entity.entity_type != EntityType::FortressCarrier {
+            return Err("emergency repair not supported");
+        }
+
+        if entity.extension().emergency_repair_cooldown_remaining() != Ticks::ZERO {
+            return Err("emergency repair on cooldown");
+        }
+
+        // Start repair
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_emergency_repair(REPAIR_DURATION, EMERGENCY_REPAIR_COOLDOWN)?;
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for SmokeScreen {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::smoke_screen::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
+        
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("not alive"),
+        };
+
+        let entity = &world.entities[entity_index];
+        
+        // Only Tianwangxing can use SmokeScreen
+        if entity.entity_type != EntityType::Tianwangxing {
+            return Err("smoke screen not supported");
+        }
+
+        if entity.extension().smoke_screen_cooldown_remaining() != Ticks::ZERO {
+            return Err("smoke screen on cooldown");
+        }
+
+        // Start smoke screen
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_smoke_screen(SMOKE_SCREEN_DURATION, SMOKE_SCREEN_COOLDOWN)?;
+
+        Ok(())
     }
 }

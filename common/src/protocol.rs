@@ -45,6 +45,13 @@ pub enum Command {
     Upgrade(Upgrade),
     Warp(Warp),
     ZeroPulse(ZeroPulse),
+    Iaigiri(Iaigiri),
+    EngineBoost(EngineBoost),
+    SonarPulse(SonarPulse),
+    DepthChargeBarrage(DepthChargeBarrage),
+    AirSuperiority(AirSuperiority),
+    EmergencyRepair(EmergencyRepair),
+    SmokeScreen(SmokeScreen),
 }
 
 /// Generic command to control one's ship.
@@ -114,6 +121,29 @@ pub struct Warp {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ZeroPulse;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Iaigiri {
+    pub target: Vec2,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct EngineBoost;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct SonarPulse;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct DepthChargeBarrage;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AirSuperiority;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct EmergencyRepair;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct SmokeScreen;
 
 #[cfg(test)]
 mod tests {

@@ -796,6 +796,13 @@ pub(crate) fn derive_entity_type(input: TokenStream) -> TokenStream {
                         -10
                     }
                 }
+                ("Boat", "Aeroplane") | ("Boat", "Helicopter") => {
+                    if entity.sub_kind() == "Carrier" {
+                        12
+                    } else {
+                        -10
+                    }
+                }
                 _ => {
                     panic!(
                         "unexpected {}/{}",

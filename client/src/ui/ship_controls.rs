@@ -127,6 +127,13 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
             {active_sensor_button(t, props.status.entity_type, props.status.active, props.status.altitude, &button_style, &button_selected_style, &ui_event_callback)}
             {warp_button(props.status.clone(), &button_style, &button_selected_style, &disabled_style, &warp_image_style, &consumption_style, &ui_event_callback)}
             {zero_pulse_button(props.status.clone(), &button_style, &disabled_style, &zero_pulse_image_style, &zero_pulse_label_style, &ui_event_callback)}
+            {iaigiri_button(props.status.clone(), &button_style, &button_selected_style, &disabled_style, &ui_event_callback)}
+            {engine_boost_button(props.status.clone(), &button_style, &button_selected_style, &disabled_style, &ui_event_callback)}
+            {sonar_pulse_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {depth_charge_barrage_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {air_superiority_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {emergency_repair_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {smoke_screen_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
         </Section>
     }
 }
@@ -258,6 +265,205 @@ fn zero_pulse_button(
         <div class={classes!(button_style.clone(), cooling.then(|| disabled_style.clone()))} {onclick} title={"Q 触发，冻结范围内敌方目标"}>
             <Sprite entity_type={EntityType::Blaster} image_class={classes!(zero_pulse_image_style.clone())}/>
             <span class={zero_pulse_label_style.clone()}>{format!("绝对零度 · {}", label)}</span>
+        </div>
+    }
+}
+
+fn iaigiri_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    button_selected_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::Minelayer49 {
+        return Html::default();
+    }
+
+    let cooling = status.iaigiri_cooldown_remaining > 0.0;
+    let selecting = status.iaigiri_selecting && !cooling;
+
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.iaigiri_cooldown_remaining)
+    } else if selecting {
+        "选择目标点".to_string()
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!cooling).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::IaigiriToggle));
+
+    html! {
+        <div class={classes!(button_style.clone(), selecting.then(|| button_selected_style.clone()), cooling.then(|| disabled_style.clone()))} {onclick} title={"J 触发，瞬移并在路径上布置水雷"}>
+            <Sprite entity_type={EntityType::IaigiriMine}/>
+            <span style="margin-left:0.5em;font-size:0.85em;">{"居合斩 · "}{label}</span>
+        </div>
+    }
+}
+
+fn engine_boost_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    button_selected_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::Minelayer49 {
+        return Html::default();
+    }
+
+    let boosting = status.engine_boost_remaining > 0.0;
+    let cooling = status.engine_boost_cooldown_remaining > 0.0;
+    let disabled = boosting || cooling;
+
+    let label = if boosting {
+        format!("加速中 {:.1}s", status.engine_boost_remaining)
+    } else if cooling {
+        format!("冷却 {:.1}s", status.engine_boost_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!disabled).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::EngineBoostToggle));
+
+    html! {
+        <div class={classes!(button_style.clone(), boosting.then(|| button_selected_style.clone()), disabled.then(|| disabled_style.clone()))} {onclick} title={"K 触发，速度提升至106节"}>
+            <span>{"引擎增压 · "}{label}</span>
+        </div>
+    }
+}
+
+fn sonar_pulse_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::HunterKiller77 {
+        return Html::default();
+    }
+
+    let cooling = status.sonar_pulse_cooldown_remaining > 0.0;
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.sonar_pulse_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!cooling).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::SonarPulse));
+
+    html! {
+        <div class={classes!(button_style.clone(), cooling.then(|| disabled_style.clone()))} {onclick} title={"J 触发，1500m范围内探测潜航潜艇"}>
+            <span>{"主动声纳 · "}{label}</span>
+        </div>
+    }
+}
+
+fn depth_charge_barrage_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::HunterKiller77 {
+        return Html::default();
+    }
+
+    let cooling = status.depth_charge_barrage_cooldown_remaining > 0.0;
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.depth_charge_barrage_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!cooling).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::DepthChargeBarrage));
+
+    html! {
+        <div class={classes!(button_style.clone(), cooling.then(|| disabled_style.clone()))} {onclick} title={"K 触发，120度扇形发射12枚深弹"}>
+            <span>{"深弹齐射 · "}{label}</span>
+        </div>
+    }
+}
+
+fn air_superiority_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::FortressCarrier {
+        return Html::default();
+    }
+
+    let cooling = status.air_superiority_cooldown_remaining > 0.0;
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.air_superiority_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!cooling).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::AirSuperiority));
+
+    html! {
+        <div class={classes!(button_style.clone(), cooling.then(|| disabled_style.clone()))} {onclick} title={"J 触发，释放10架无人机攻击敌人"}>
+            <span>{"制空权 · "}{label}</span>
+        </div>
+    }
+}
+
+fn emergency_repair_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::FortressCarrier {
+        return Html::default();
+    }
+
+    let cooling = status.emergency_repair_cooldown_remaining > 0.0;
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.emergency_repair_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!cooling).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::EmergencyRepair));
+
+    html! {
+        <div class={classes!(button_style.clone(), cooling.then(|| disabled_style.clone()))} {onclick} title={"K 触发，15秒内恢复20%生命值"}>
+            <span>{"紧急维修 · "}{label}</span>
+        </div>
+    }
+}
+
+fn smoke_screen_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::Tianwangxing {
+        return Html::default();
+    }
+
+    let active = status.smoke_screen_active_remaining > 0.0;
+    let cooling = status.smoke_screen_cooldown_remaining > 0.0 && !active;
+    
+    let label = if active {
+        format!("生效中 {:.1}s", status.smoke_screen_active_remaining)
+    } else if cooling {
+        format!("冷却 {:.1}s", status.smoke_screen_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let disabled = active || cooling;
+    let onclick = (!disabled).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::SmokeScreen));
+
+    html! {
+        <div class={classes!(button_style.clone(), disabled.then(|| disabled_style.clone()))} {onclick} title={"L 触发，释放持续30秒的烟幕干扰敌方制导"}>
+            <span>{"烟幕 · "}{label}</span>
         </div>
     }
 }

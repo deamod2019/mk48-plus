@@ -50,7 +50,8 @@ impl Transform {
     ) {
         debug_assert!(max_speed >= 0.0);
         debug_assert!(delta_seconds >= 0.0);
-        max_speed = max_speed.min(data.speed.to_mps());
+        // Note: max_speed is passed in from world_physics.rs and may already include
+        // boost multipliers. We no longer clamp it to base speed here.
 
         // Collectibles don't turn with guidance.
         // Shells and rockets (at least the ones currently in the game) can't turn.

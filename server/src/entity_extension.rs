@@ -53,6 +53,17 @@ pub struct EntityExtension {
     warp_state: Option<WarpState>,
     warp_cooldown: Ticks,
     zero_pulse_cooldown: Ticks,
+    iaigiri_cooldown: Ticks,
+    engine_boost_remaining: Ticks,
+    engine_boost_decel_remaining: Ticks,
+    engine_boost_cooldown: Ticks,
+    sonar_pulse_cooldown: Ticks,
+    depth_charge_barrage_cooldown: Ticks,
+    air_superiority_cooldown: Ticks,
+    emergency_repair_cooldown: Ticks,
+    emergency_repair_remaining: Ticks,
+    smoke_screen_cooldown: Ticks,
+    smoke_screen_remaining: Ticks,
 }
 
 impl EntityExtension {
@@ -82,6 +93,17 @@ impl EntityExtension {
         self.warp_state = None;
         self.warp_cooldown = Ticks::ZERO;
         self.zero_pulse_cooldown = Ticks::ZERO;
+        self.iaigiri_cooldown = Ticks::ZERO;
+        self.engine_boost_remaining = Ticks::ZERO;
+        self.engine_boost_decel_remaining = Ticks::ZERO;
+        self.engine_boost_cooldown = Ticks::ZERO;
+        self.sonar_pulse_cooldown = Ticks::ZERO;
+        self.depth_charge_barrage_cooldown = Ticks::ZERO;
+        self.air_superiority_cooldown = Ticks::ZERO;
+        self.emergency_repair_cooldown = Ticks::ZERO;
+        self.emergency_repair_remaining = Ticks::ZERO;
+        self.smoke_screen_cooldown = Ticks::ZERO;
+        self.smoke_screen_remaining = Ticks::ZERO;
     }
 
     /// Returns the target altitude of the boat from submerge.
@@ -244,6 +266,178 @@ impl Default for EntityExtension {
             warp_state: None,
             warp_cooldown: Ticks::ZERO,
             zero_pulse_cooldown: Ticks::ZERO,
+            iaigiri_cooldown: Ticks::ZERO,
+            engine_boost_remaining: Ticks::ZERO,
+            engine_boost_decel_remaining: Ticks::ZERO,
+            engine_boost_cooldown: Ticks::ZERO,
+            sonar_pulse_cooldown: Ticks::ZERO,
+            depth_charge_barrage_cooldown: Ticks::ZERO,
+            air_superiority_cooldown: Ticks::ZERO,
+            emergency_repair_cooldown: Ticks::ZERO,
+            emergency_repair_remaining: Ticks::ZERO,
+            smoke_screen_cooldown: Ticks::ZERO,
+            smoke_screen_remaining: Ticks::ZERO,
         }
+    }
+}
+
+impl EntityExtension {
+    // Iaigiri methods
+    pub fn start_iaigiri(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.iaigiri_cooldown != Ticks::ZERO {
+            return Err("iaigiri on cooldown");
+        }
+        self.iaigiri_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn iaigiri_cooldown_remaining(&self) -> Ticks {
+        self.iaigiri_cooldown
+    }
+
+    // Engine boost methods
+    pub fn start_engine_boost(&mut self, duration: Ticks, decel_duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.engine_boost_cooldown != Ticks::ZERO || self.engine_boost_remaining != Ticks::ZERO {
+            return Err("engine boost on cooldown");
+        }
+        self.engine_boost_remaining = duration;
+        self.engine_boost_decel_remaining = decel_duration;
+        self.engine_boost_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn is_engine_boosting(&self) -> bool {
+        self.engine_boost_remaining != Ticks::ZERO || self.engine_boost_decel_remaining != Ticks::ZERO
+    }
+
+    pub fn engine_boost_speed_multiplier(&self) -> f32 {
+        if self.engine_boost_remaining != Ticks::ZERO {
+            // Full boost phase: 106 knots
+            return 106.0 / 36.0; // ~2.94x multiplier for 36kn base speed
+        } else if self.engine_boost_decel_remaining != Ticks::ZERO {
+            // Decel phase: interpolate from 106 to 90 knots
+            let t = self.engine_boost_decel_remaining.to_secs() / 5.0;
+            return (90.0 + 16.0 * t) / 36.0;
+        }
+        1.0
+    }
+
+    pub fn advance_engine_boost(&mut self, delta: Ticks) {
+        if self.engine_boost_remaining != Ticks::ZERO {
+            self.engine_boost_remaining = self.engine_boost_remaining.saturating_sub(delta);
+        } else if self.engine_boost_decel_remaining != Ticks::ZERO {
+            self.engine_boost_decel_remaining = self.engine_boost_decel_remaining.saturating_sub(delta);
+        } else {
+            self.engine_boost_cooldown = self.engine_boost_cooldown.saturating_sub(delta);
+        }
+    }
+
+    pub fn advance_iaigiri(&mut self, delta: Ticks) {
+        self.iaigiri_cooldown = self.iaigiri_cooldown.saturating_sub(delta);
+    }
+
+    // SonarPulse methods
+    pub fn start_sonar_pulse(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.sonar_pulse_cooldown != Ticks::ZERO {
+            return Err("sonar pulse on cooldown");
+        }
+        self.sonar_pulse_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn sonar_pulse_cooldown_remaining(&self) -> Ticks {
+        self.sonar_pulse_cooldown
+    }
+
+    pub fn advance_sonar_pulse(&mut self, delta: Ticks) {
+        self.sonar_pulse_cooldown = self.sonar_pulse_cooldown.saturating_sub(delta);
+    }
+
+    // DepthChargeBarrage methods
+    pub fn start_depth_charge_barrage(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.depth_charge_barrage_cooldown != Ticks::ZERO {
+            return Err("depth charge barrage on cooldown");
+        }
+        self.depth_charge_barrage_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn depth_charge_barrage_cooldown_remaining(&self) -> Ticks {
+        self.depth_charge_barrage_cooldown
+    }
+
+    pub fn advance_depth_charge_barrage(&mut self, delta: Ticks) {
+        self.depth_charge_barrage_cooldown = self.depth_charge_barrage_cooldown.saturating_sub(delta);
+    }
+
+    // AirSuperiority methods
+    pub fn start_air_superiority(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.air_superiority_cooldown != Ticks::ZERO {
+            return Err("air superiority on cooldown");
+        }
+        self.air_superiority_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn air_superiority_cooldown_remaining(&self) -> Ticks {
+        self.air_superiority_cooldown
+    }
+
+    pub fn advance_air_superiority(&mut self, delta: Ticks) {
+        self.air_superiority_cooldown = self.air_superiority_cooldown.saturating_sub(delta);
+    }
+
+    // EmergencyRepair methods
+    pub fn start_emergency_repair(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.emergency_repair_cooldown != Ticks::ZERO {
+            return Err("emergency repair on cooldown");
+        }
+        self.emergency_repair_remaining = duration;
+        self.emergency_repair_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn emergency_repair_cooldown_remaining(&self) -> Ticks {
+        self.emergency_repair_cooldown
+    }
+
+    pub fn emergency_repair_remaining(&self) -> Ticks {
+        self.emergency_repair_remaining
+    }
+
+    pub fn is_repairing(&self) -> bool {
+        self.emergency_repair_remaining != Ticks::ZERO
+    }
+
+    pub fn advance_emergency_repair(&mut self, delta: Ticks) {
+        self.emergency_repair_remaining = self.emergency_repair_remaining.saturating_sub(delta);
+        self.emergency_repair_cooldown = self.emergency_repair_cooldown.saturating_sub(delta);
+    }
+
+    // Smoke screen methods
+    pub fn start_smoke_screen(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.smoke_screen_cooldown != Ticks::ZERO {
+            return Err("smoke screen on cooldown");
+        }
+        self.smoke_screen_remaining = duration;
+        self.smoke_screen_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn smoke_screen_cooldown_remaining(&self) -> Ticks {
+        self.smoke_screen_cooldown
+    }
+
+    pub fn smoke_screen_remaining(&self) -> Ticks {
+        self.smoke_screen_remaining
+    }
+
+    pub fn is_smoke_active(&self) -> bool {
+        self.smoke_screen_remaining != Ticks::ZERO
+    }
+
+    pub fn advance_smoke_screen(&mut self, delta: Ticks) {
+        self.smoke_screen_remaining = self.smoke_screen_remaining.saturating_sub(delta);
+        self.smoke_screen_cooldown = self.smoke_screen_cooldown.saturating_sub(delta);
     }
 }

@@ -91,6 +91,16 @@ pub struct Mk48Game {
     warp_charge_secs: f32,
     warp_cooldown_secs: f32,
     zero_pulse_cooldown_secs: f32,
+    iaigiri_selecting: bool,
+    iaigiri_cooldown_secs: f32,
+    engine_boost_remaining_secs: f32,
+    engine_boost_cooldown_secs: f32,
+    sonar_pulse_cooldown_secs: f32,
+    depth_charge_barrage_cooldown_secs: f32,
+    air_superiority_cooldown_secs: f32,
+    emergency_repair_cooldown_secs: f32,
+    smoke_screen_cooldown_secs: f32,
+    smoke_screen_active_secs: f32,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -220,6 +230,16 @@ impl GameClient for Mk48Game {
             warp_charge_secs: 0.0,
             warp_cooldown_secs: 0.0,
             zero_pulse_cooldown_secs: 0.0,
+            iaigiri_selecting: false,
+            iaigiri_cooldown_secs: 0.0,
+            engine_boost_remaining_secs: 0.0,
+            engine_boost_cooldown_secs: 0.0,
+            sonar_pulse_cooldown_secs: 0.0,
+            depth_charge_barrage_cooldown_secs: 0.0,
+            air_superiority_cooldown_secs: 0.0,
+            emergency_repair_cooldown_secs: 0.0,
+            smoke_screen_cooldown_secs: 0.0,
+            smoke_screen_active_secs: 0.0,
         })
     }
 
@@ -493,6 +513,16 @@ impl GameClient for Mk48Game {
                             )
                             .map(|Group { entity_type, .. }| *entity_type);
                     }
+                    Key::J => {
+                        if contact.entity_type() == Some(EntityType::Minelayer49) {
+                            if self.iaigiri_cooldown_secs == 0.0 {
+                                self.iaigiri_selecting = !self.iaigiri_selecting;
+                            }
+                        }
+                    }
+                    Key::K => {
+                        self.try_engine_boost(context);
+                    }
                     Key::Q => {
                         self.try_zero_pulse(context);
                     }
@@ -646,11 +676,23 @@ impl GameClient for Mk48Game {
             context.settings.shadows,
         );
 
+        // Determine smoke screen visual effect
+        let smoke_screen = if self.smoke_screen_active_secs > 0.0 {
+            if let Some(pc) = context.state.game.player_contact() {
+                Some((pc.transform().position, common::smoke_screen::SMOKE_SCREEN_RADIUS))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         layer.overlay.update(
             visual_range,
             visual_restriction,
             context.state.game.world_radius,
             area,
+            smoke_screen,
         );
 
         let mut anti_aircraft_volume = 0.0;
@@ -1536,6 +1578,7 @@ impl GameClient for Mk48Game {
         // Send command later, when lifetimes allow.
         let mut control: Option<Command> = None;
         let mut pending_warp: Option<Warp> = None;
+        let mut pending_iaigiri: Option<common::protocol::Iaigiri> = None;
 
         let player_contact = Self::maybe_contact_mut(
             &mut context.state.game.contacts,
@@ -1559,6 +1602,21 @@ impl GameClient for Mk48Game {
             );
             self.update_warp_timers(elapsed_seconds, is_star_destroyer);
             self.update_zero_pulse_timers(elapsed_seconds, has_zero_pulse);
+            let has_iaigiri = player_contact.view.entity_type() == Some(EntityType::Minelayer49);
+            self.update_iaigiri_timers(elapsed_seconds, has_iaigiri);
+            self.update_engine_boost_timers(elapsed_seconds, has_iaigiri);
+            let has_hunter_killer = player_contact.view.entity_type() == Some(EntityType::HunterKiller77);
+            self.update_sonar_pulse_timers(elapsed_seconds, has_hunter_killer);
+            self.update_depth_charge_barrage_timers(elapsed_seconds, has_hunter_killer);
+            let has_fortress_carrier = player_contact.view.entity_type() == Some(EntityType::FortressCarrier);
+            if has_fortress_carrier {
+                self.update_air_superiority_timers(elapsed_seconds);
+                self.update_emergency_repair_timers(elapsed_seconds);
+            }
+            let has_tianwangxing = player_contact.view.entity_type() == Some(EntityType::Tianwangxing);
+            if has_tianwangxing {
+                self.update_smoke_screen_timers(elapsed_seconds);
+            }
 
             let mut guidance = None;
 
@@ -1677,11 +1735,37 @@ impl GameClient for Mk48Game {
                 warp_charge_remaining: self.warp_charge_secs.max(0.0),
                 warp_cooldown_remaining: self.warp_cooldown_secs.max(0.0),
                 zero_pulse_cooldown_remaining: self.zero_pulse_cooldown_secs.max(0.0),
+                iaigiri_selecting: self.iaigiri_selecting,
+                iaigiri_cooldown_remaining: self.iaigiri_cooldown_secs.max(0.0),
+                engine_boost_remaining: self.engine_boost_remaining_secs.max(0.0),
+                engine_boost_cooldown_remaining: self.engine_boost_cooldown_secs.max(0.0),
+                sonar_pulse_cooldown_remaining: self.sonar_pulse_cooldown_secs.max(0.0),
+                depth_charge_barrage_cooldown_remaining: self.depth_charge_barrage_cooldown_secs.max(0.0),
+                air_superiority_cooldown_remaining: self.air_superiority_cooldown_secs.max(0.0),
+                emergency_repair_cooldown_remaining: self.emergency_repair_cooldown_secs.max(0.0),
+                smoke_screen_cooldown_remaining: self.smoke_screen_cooldown_secs.max(0.0),
+                smoke_screen_active_remaining: self.smoke_screen_active_secs.max(0.0),
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
                 let mut left_click = context.mouse.take_click(MouseButton::Left);
                 let cancel_warp = context.mouse.take_click(MouseButton::Right);
+
+                if self.iaigiri_selecting {
+                    if cancel_warp {
+                        self.iaigiri_selecting = false;
+                    }
+                    if left_click {
+                        if let Some(target) = aim_target {
+                            use common::iaigiri::IAIGIRI_COOLDOWN;
+                            
+                            self.iaigiri_cooldown_secs = IAIGIRI_COOLDOWN.to_secs();
+                            self.iaigiri_selecting = false;
+                            pending_iaigiri = Some(common::protocol::Iaigiri { target });
+                        }
+                        left_click = false;
+                    }
+                }
 
                 if self.warp_selecting {
                     if cancel_warp {
@@ -1791,6 +1875,10 @@ impl GameClient for Mk48Game {
             UiStatus::Spawning
         };
 
+        if let Some(iaigiri) = pending_iaigiri.take() {
+            context.send_to_game(Command::Iaigiri(iaigiri));
+        }
+
         if let Some(warp) = pending_warp.take() {
             context.send_to_game(Command::Warp(warp));
         }
@@ -1849,8 +1937,35 @@ impl GameClient for Mk48Game {
                     }
                 }
             }
+            UiEvent::IaigiriToggle => {
+                if let Some(contact) = context.state.game.player_contact() {
+                    if contact.entity_type() == Some(EntityType::Minelayer49)
+                        && self.iaigiri_cooldown_secs == 0.0
+                    {
+                        self.iaigiri_selecting = !self.iaigiri_selecting;
+                    }
+                }
+            }
+            UiEvent::EngineBoostToggle => {
+                self.try_engine_boost(context);
+            }
             UiEvent::ZeroPulse => {
                 self.try_zero_pulse(context);
+            }
+            UiEvent::SonarPulse => {
+                self.try_sonar_pulse(context);
+            }
+            UiEvent::DepthChargeBarrage => {
+                self.try_depth_charge_barrage(context);
+            }
+            UiEvent::AirSuperiority => {
+                self.try_air_superiority(context);
+            }
+            UiEvent::EmergencyRepair => {
+                self.try_emergency_repair(context);
+            }
+            UiEvent::SmokeScreen => {
+                self.try_smoke_screen(context);
             }
         }
     }
@@ -1920,9 +2035,169 @@ impl Mk48Game {
         }
     }
 
+    fn update_iaigiri_timers(&mut self, elapsed_seconds: f32, has_iaigiri: bool) {
+        if has_iaigiri || self.iaigiri_cooldown_secs > 0.0 {
+            self.iaigiri_cooldown_secs = (self.iaigiri_cooldown_secs - elapsed_seconds).max(0.0);
+        } else {
+            self.iaigiri_cooldown_secs = 0.0;
+            self.iaigiri_selecting = false;
+        }
+    }
+
+    fn update_engine_boost_timers(&mut self, elapsed_seconds: f32, has_boost: bool) {
+        if has_boost {
+            self.engine_boost_remaining_secs = (self.engine_boost_remaining_secs - elapsed_seconds).max(0.0);
+            if self.engine_boost_remaining_secs == 0.0 {
+                self.engine_boost_cooldown_secs = (self.engine_boost_cooldown_secs - elapsed_seconds).max(0.0);
+            }
+        } else {
+            self.engine_boost_remaining_secs = 0.0;
+            self.engine_boost_cooldown_secs = 0.0;
+        }
+    }
+
     fn reset_warp_state(&mut self) {
         self.warp_selecting = false;
         self.warp_charge_secs = 0.0;
         self.warp_cooldown_secs = 0.0;
+    }
+
+    fn try_engine_boost(&mut self, context: &mut Context<Self>) {
+        use common::engine_boost::{ENGINE_BOOST_COOLDOWN, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_MAX_DURATION};
+        use common::protocol::EngineBoost;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::Minelayer49)
+                && self.engine_boost_cooldown_secs == 0.0
+                && self.engine_boost_remaining_secs == 0.0
+            {
+                self.engine_boost_remaining_secs = ENGINE_BOOST_MAX_DURATION.to_secs() + ENGINE_BOOST_DECEL_DURATION.to_secs();
+                self.engine_boost_cooldown_secs = ENGINE_BOOST_COOLDOWN.to_secs();
+                context.send_to_game(Command::EngineBoost(EngineBoost));
+            }
+        }
+    }
+
+    fn update_sonar_pulse_timers(&mut self, elapsed_seconds: f32, has_skill: bool) {
+        if has_skill {
+            self.sonar_pulse_cooldown_secs = (self.sonar_pulse_cooldown_secs - elapsed_seconds).max(0.0);
+        } else {
+            self.sonar_pulse_cooldown_secs = 0.0;
+        }
+    }
+
+    fn update_depth_charge_barrage_timers(&mut self, elapsed_seconds: f32, has_skill: bool) {
+        if has_skill {
+            self.depth_charge_barrage_cooldown_secs = (self.depth_charge_barrage_cooldown_secs - elapsed_seconds).max(0.0);
+        } else {
+            self.depth_charge_barrage_cooldown_secs = 0.0;
+        }
+    }
+
+    fn try_sonar_pulse(&mut self, context: &mut Context<Self>) {
+        use common::sonar_pulse::SONAR_PULSE_COOLDOWN;
+        use common::protocol::SonarPulse;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::HunterKiller77)
+                && self.sonar_pulse_cooldown_secs == 0.0
+            {
+                self.sonar_pulse_cooldown_secs = SONAR_PULSE_COOLDOWN.to_secs();
+                context.send_to_game(Command::SonarPulse(SonarPulse));
+            }
+        }
+    }
+
+    fn try_depth_charge_barrage(&mut self, context: &mut Context<Self>) {
+        use common::depth_charge_barrage::DCB_COOLDOWN;
+        use common::protocol::DepthChargeBarrage;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::HunterKiller77)
+                && self.depth_charge_barrage_cooldown_secs == 0.0
+            {
+                self.depth_charge_barrage_cooldown_secs = DCB_COOLDOWN.to_secs();
+                context.send_to_game(Command::DepthChargeBarrage(DepthChargeBarrage));
+            }
+        }
+    }
+
+    fn try_air_superiority(&mut self, context: &mut Context<Self>) {
+        use common::air_superiority::AIR_SUPERIORITY_COOLDOWN;
+        use common::protocol::AirSuperiority;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::FortressCarrier)
+                && self.air_superiority_cooldown_secs == 0.0
+            {
+                self.air_superiority_cooldown_secs = AIR_SUPERIORITY_COOLDOWN.to_secs();
+                context.send_to_game(Command::AirSuperiority(AirSuperiority));
+            }
+        }
+    }
+
+    fn try_emergency_repair(&mut self, context: &mut Context<Self>) {
+        use common::emergency_repair::EMERGENCY_REPAIR_COOLDOWN;
+        use common::protocol::EmergencyRepair;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::FortressCarrier)
+                && self.emergency_repair_cooldown_secs == 0.0
+            {
+                self.emergency_repair_cooldown_secs = EMERGENCY_REPAIR_COOLDOWN.to_secs();
+                context.send_to_game(Command::EmergencyRepair(EmergencyRepair));
+            }
+        }
+    }
+
+    fn update_air_superiority_timers(&mut self, elapsed_seconds: f32) {
+        if self.air_superiority_cooldown_secs > 0.0 {
+            self.air_superiority_cooldown_secs = (self.air_superiority_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn update_emergency_repair_timers(&mut self, elapsed_seconds: f32) {
+        if self.emergency_repair_cooldown_secs > 0.0 {
+            self.emergency_repair_cooldown_secs = (self.emergency_repair_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn try_smoke_screen(&mut self, context: &mut Context<Self>) {
+        use common::smoke_screen::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
+        use common::protocol::SmokeScreen;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::Tianwangxing)
+                && self.smoke_screen_cooldown_secs == 0.0
+            {
+                self.smoke_screen_cooldown_secs = SMOKE_SCREEN_COOLDOWN.to_secs();
+                self.smoke_screen_active_secs = SMOKE_SCREEN_DURATION.to_secs();
+                context.send_to_game(Command::SmokeScreen(SmokeScreen));
+            }
+        }
+    }
+
+    fn update_smoke_screen_timers(&mut self, elapsed_seconds: f32) {
+        if self.smoke_screen_cooldown_secs > 0.0 {
+            self.smoke_screen_cooldown_secs = (self.smoke_screen_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+        if self.smoke_screen_active_secs > 0.0 {
+            self.smoke_screen_active_secs = (self.smoke_screen_active_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    /// Returns true if the player's ship has an active smoke screen
+    pub fn is_smoke_screen_active(&self) -> bool {
+        self.smoke_screen_active_secs > 0.0
+    }
+
+    /// Returns the smoke screen remaining duration ratio (0.0-1.0)
+    pub fn smoke_screen_ratio(&self) -> f32 {
+        use common::smoke_screen::SMOKE_SCREEN_DURATION;
+        if self.smoke_screen_active_secs > 0.0 {
+            self.smoke_screen_active_secs / SMOKE_SCREEN_DURATION.to_secs()
+        } else {
+            0.0
+        }
     }
 }

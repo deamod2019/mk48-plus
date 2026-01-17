@@ -28,6 +28,13 @@ impl AsCommandTrait for Command {
             Command::Upgrade(ref v) => v as &dyn CommandTrait,
             Command::Warp(ref v) => v as &dyn CommandTrait,
             Command::ZeroPulse(ref v) => v as &dyn CommandTrait,
+            Command::Iaigiri(ref v) => v as &dyn CommandTrait,
+            Command::EngineBoost(ref v) => v as &dyn CommandTrait,
+            Command::SonarPulse(ref v) => v as &dyn CommandTrait,
+            Command::DepthChargeBarrage(ref v) => v as &dyn CommandTrait,
+            Command::AirSuperiority(ref v) => v as &dyn CommandTrait,
+            Command::EmergencyRepair(ref v) => v as &dyn CommandTrait,
+            Command::SmokeScreen(ref v) => v as &dyn CommandTrait,
         }
     }
 }

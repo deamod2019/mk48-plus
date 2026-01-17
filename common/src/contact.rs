@@ -135,7 +135,8 @@ impl Contact {
                 {
                     EntityData::SURFACING_PROJECTILE_SPEED_LIMIT
                 }
-                _ => f32::INFINITY,
+                // Use the entity's actual max speed for proper prediction
+                _ => entity_type.data().speed.to_mps(),
             };
             let damage = self.damage;
             self.transform_mut().apply_guidance(

@@ -270,6 +270,13 @@ pub enum UiEvent {
     Upgrade(EntityType),
     WarpToggle,
     ZeroPulse,
+    IaigiriToggle,
+    EngineBoostToggle,
+    SonarPulse,
+    DepthChargeBarrage,
+    AirSuperiority,
+    EmergencyRepair,
+    SmokeScreen,
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -306,6 +313,16 @@ pub struct UiStatusPlaying {
     pub warp_charge_remaining: f32,
     pub warp_cooldown_remaining: f32,
     pub zero_pulse_cooldown_remaining: f32,
+    pub iaigiri_selecting: bool,
+    pub iaigiri_cooldown_remaining: f32,
+    pub engine_boost_remaining: f32,
+    pub engine_boost_cooldown_remaining: f32,
+    pub sonar_pulse_cooldown_remaining: f32,
+    pub depth_charge_barrage_cooldown_remaining: f32,
+    pub air_superiority_cooldown_remaining: f32,
+    pub emergency_repair_cooldown_remaining: f32,
+    pub smoke_screen_cooldown_remaining: f32,
+    pub smoke_screen_active_remaining: f32,
 }
 
 #[derive(PartialEq, Clone)]

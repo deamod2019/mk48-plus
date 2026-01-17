@@ -154,7 +154,7 @@ impl World {
                             let other_data = other_boat.data();
 
 
-                            if data.anti_aircraft > 0.0 && other_data.sub_kind == EntitySubKind::Aeroplane && other_boat.altitude.is_airborne() {
+                            if data.anti_aircraft > 0.0 && other_data.sub_kind == EntitySubKind::Aeroplane && other_boat.altitude.is_airborne() && boat.player.is_some() {
                                 let d2 = other_boat.transform.position.distance_squared(boat.transform.position);
                                 let r2 = data.anti_aircraft_range().powi(2);
                                 // In range of aa.
@@ -516,9 +516,11 @@ impl World {
                             // Velocity change to cause repulsion.
                             let impulse = Velocity::from_mps(2.0 * pos_diff_closest_point_on_other_keel.dot(boat.transform.direction.to_vec()) * relative_mass);
 
-                            mutate(boat, Mutation::CollidedWithBoat{other_player: Arc::clone(other_boat.player.as_ref().unwrap()), damage, ram: other_data.ram_damage > 1.0, impulse});
+                            if other_boat.player.is_some() {
+                                mutate(boat, Mutation::CollidedWithBoat{other_player: Arc::clone(other_boat.player.as_ref().unwrap()), damage, ram: other_data.ram_damage > 1.0, impulse});
+                            }
                         }
-                    } else if boats.len() == 1 && weapons.len() == 1 && !friendly {
+                    } else if boats.len() == 1 && weapons.len() == 1 && !friendly && weapons[0].player.is_some() {
                         let boat_data = boats[0].data();
                         let weapon_data = weapons[0].data();
 
@@ -538,6 +540,25 @@ impl World {
 
                         if weapon_data.sub_kind == EntitySubKind::Sam && !boats[0].altitude.is_airborne() {
                             damage = ticks::from_damage(0.0);
+                        }
+
+                        // Smoke screen protection: guided weapons lose accuracy and deal reduced damage
+                        // Only affects missiles, torpedoes, and homing weapons - not shells/rockets
+                        if boats[0].extension().is_smoke_active() {
+                            match weapon_data.sub_kind {
+                                EntitySubKind::Missile
+                                | EntitySubKind::Torpedo
+                                | EntitySubKind::RocketTorpedo => {
+                                    // 80% chance to miss target completely in smoke
+                                    if rand::random::<f32>() < 0.8 {
+                                        debug_remove!(weapons[0], "deflected by smoke");
+                                        continue;
+                                    }
+                                    // Even if hit, reduce damage by 50%
+                                    damage = Ticks::from_secs(damage.to_secs() * 0.5);
+                                }
+                                _ => {}
+                            }
                         }
 
                         mutate(
