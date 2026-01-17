@@ -19,7 +19,30 @@ use std::fmt::Formatter;
 use std::iter::repeat_with;
 use std::sync::Arc;
 
-pub type ReloadsStorage = u64;
+pub type ReloadsStorage = [u32; 2];
+
+/// Total bits available in ReloadsStorage (64 bits)
+pub const RELOADS_STORAGE_BITS: usize = 64;
+/// Total bytes in ReloadsStorage (8 bytes)
+pub const RELOADS_STORAGE_BYTES: usize = 8;
+
+/// Helper to convert ReloadsStorage to little-endian bytes
+#[inline]
+pub fn reloads_to_le_bytes(storage: &ReloadsStorage) -> [u8; RELOADS_STORAGE_BYTES] {
+    let mut bytes = [0u8; RELOADS_STORAGE_BYTES];
+    bytes[0..4].copy_from_slice(&storage[0].to_le_bytes());
+    bytes[4..8].copy_from_slice(&storage[1].to_le_bytes());
+    bytes
+}
+
+/// Helper to convert little-endian bytes to ReloadsStorage
+#[inline]
+pub fn reloads_from_le_bytes(bytes: [u8; RELOADS_STORAGE_BYTES]) -> ReloadsStorage {
+    [
+        u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+        u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+    ]
+}
 
 pub trait ContactTrait {
     fn altitude(&self) -> Altitude;
@@ -34,7 +57,7 @@ pub trait ContactTrait {
 
     fn player_id(&self) -> Option<PlayerId>;
 
-    fn reloads(&self) -> &BitSlice<ReloadsStorage>;
+    fn reloads(&self) -> &BitSlice<u32>;
 
     /// Whether reloads() will return real data or all zeroes.
     fn reloads_known(&self) -> bool;
@@ -260,7 +283,7 @@ impl ContactTrait for Contact {
     }
 
     #[inline]
-    fn reloads(&self) -> &BitSlice<ReloadsStorage> {
+    fn reloads(&self) -> &BitSlice<u32> {
         self.reloads.as_ref().map_or(&RELOADS_ARRAY_ZERO, |a| {
             &a.as_bitslice()[0..self.entity_type.unwrap().data().armaments.len()]
         })
@@ -439,7 +462,8 @@ impl<'a> Serialize for ContactSerializer<'a> {
         if self.h.has_reloads {
             // Round bits up to bytes.
             let size: usize = (self.c.entity_type.unwrap().data().armaments.len() + 7) / 8;
-            let reloads = &self.c.reloads.unwrap().data.to_le_bytes()[..size];
+            let all_bytes = reloads_to_le_bytes(&self.c.reloads.unwrap().data);
+            let reloads = &all_bytes[..size];
             if reloads.is_empty() {
                 tup.serialize_element(&())?;
             } else {
@@ -614,10 +638,10 @@ impl<'de, 'a> Visitor<'de> for ContactDeserializer<'a> {
             } else {
                 let bytes = seq
                     .next_element_seed(
-                        ByteDeserializer::<{ ReloadsStorage::BITS as usize / 8 }>::new(size),
+                        ByteDeserializer::<RELOADS_STORAGE_BYTES>::new(size),
                     )?
                     .unwrap();
-                self.c.reloads = Some(BitArray::from(ReloadsStorage::from_le_bytes(bytes)));
+                self.c.reloads = Some(BitArray::from(reloads_from_le_bytes(bytes)));
             }
         }
 

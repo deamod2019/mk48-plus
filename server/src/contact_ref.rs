@@ -6,7 +6,7 @@ use bitvec::prelude::*;
 use common::altitude::Altitude;
 use common::angle::Angle;
 use common::contact::{
-    Contact, ContactTrait, ReloadsStorage, ANGLE_ARRAY_ZERO, RELOADS_ARRAY_ZERO,
+    Contact, ContactTrait, ReloadsStorage, RELOADS_STORAGE_BITS, ANGLE_ARRAY_ZERO, RELOADS_ARRAY_ZERO,
 };
 use common::entity::EntityId;
 use common::entity::EntityType;
@@ -30,7 +30,7 @@ impl<'a> ContactRef<'a> {
             let reloads = &*entity.extension().reloads;
             let mut arr = BitArray::ZERO;
             assert!(
-                reloads.len() <= ReloadsStorage::MAX.count_ones() as usize,
+                reloads.len() <= RELOADS_STORAGE_BITS,
                 "not enough bits in reloads storage"
             );
             for (mut b, t) in arr.as_mut_bitslice().into_iter().zip(reloads.iter()) {
@@ -119,7 +119,7 @@ impl<'a> ContactTrait for ContactRef<'a> {
     }
 
     #[inline]
-    fn reloads(&self) -> &BitSlice<ReloadsStorage> {
+    fn reloads(&self) -> &BitSlice<u32> {
         self.reloads
             .as_ref()
             .map(|a| &a.as_bitslice()[0..self.entity.entity_type.data().armaments.len()])
