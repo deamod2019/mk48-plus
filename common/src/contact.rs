@@ -19,7 +19,7 @@ use std::fmt::Formatter;
 use std::iter::repeat_with;
 use std::sync::Arc;
 
-pub type ReloadsStorage = u32;
+pub type ReloadsStorage = u64;
 
 pub trait ContactTrait {
     fn altitude(&self) -> Altitude;

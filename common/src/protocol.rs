@@ -214,6 +214,7 @@ mod tests {
                         .map(|_| rng.gen())
                         .collect()
                 }),
+                rng.gen_bool(0.5), // horn
             );
 
             let options = DefaultOptions::new()
