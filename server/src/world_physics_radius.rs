@@ -211,7 +211,13 @@ impl World {
                                                 target_data.kind == EntityKind::Boat || target_data.kind == EntityKind::Decoy
                                             },
                                             EntitySubKind::Missile => {
-                                                target_data.kind == EntityKind::Boat && weapon.altitude_overlapping(target)
+                                                if target_data.kind == EntityKind::Boat {
+                                                    weapon.altitude_overlapping(target)
+                                                } else {
+                                                    target_data.kind == EntityKind::Decoy
+                                                        && target_data.sub_kind == EntitySubKind::Flare
+                                                        && target.altitude.is_airborne()
+                                                }
                                             }
                                             EntitySubKind::GlideBomb => {
                                                 target_data.kind == EntityKind::Boat
@@ -249,14 +255,29 @@ impl World {
                                                 if is_rocket_torpedo {
                                                     rocket_torpedo_sensed = true;
                                                 } else {
-                                                    let mut size = target_data.radius;
-                                                    if target_data.kind == EntityKind::Decoy {
-                                                        // Decoys appear very large to weapons.
-                                                        size += 200.0;
-                                                    } else if target_data.kind == EntityKind::Boat && target_data.sensors.any() && target.extension().is_active() {
-                                                        // So do boats with active sensors.
-                                                        size += 75.0;
-                                                    }
+                                            let mut size = target_data.radius;
+                                            if target_data.kind == EntityKind::Decoy {
+                                                // Decoys appear very large to weapons.
+                                                let bonus = if target_data.sub_kind == EntitySubKind::Flare
+                                                    && target_data.range > 0.0
+                                                {
+                                                    target_data.range
+                                                } else {
+                                                    200.0
+                                                };
+                                                size += bonus;
+                                            } else if target_data.kind == EntityKind::Boat && target_data.sensors.any() && target.extension().is_active() {
+                                                // So do boats with active sensors.
+                                                size += 75.0;
+                                            }
+
+                                            if target_data.kind == EntityKind::Decoy
+                                                && target_data.sub_kind == EntitySubKind::Flare
+                                                && target_data.range > 0.0
+                                                && distance_squared > target_data.range.powi(2)
+                                            {
+                                                continue;
+                                            }
 
                                                     // Switch target from keel to center of boat if it's rotating away.
                                                     let center_diff = weapon.transform.position - target.transform.position;
@@ -507,16 +528,18 @@ impl World {
                             .distance_squared(weapons[0].transform.position);
                         let r2 = boat_data.radius.powi(2);
 
-                        let damage_resistance = boat_data.resistance_to_subkind(weapon_data.sub_kind) * boats[0].extension().spawn_protection();
-                        
+                        let damage_resistance = boat_data.resistance_to_subkind(weapon_data.sub_kind)
+                            * boats[0].extension().spawn_protection();
+
                         let mut damage = ticks::from_damage(
-                            weapon_data.damage * collision_multiplier(d2, r2, boat_data.sub_kind == EntitySubKind::Submarine) * damage_resistance,
+                            weapon_data.damage * collision_multiplier(d2, r2, boat_data.sub_kind == EntitySubKind::Submarine)
+                                * damage_resistance,
                         );
 
                         if weapon_data.sub_kind == EntitySubKind::Sam && !boats[0].altitude.is_airborne() {
                             damage = ticks::from_damage(0.0);
                         }
-                        
+
                         mutate(
                             boats[0],
                             Mutation::HitBy(

@@ -52,6 +52,7 @@ pub struct EntityExtension {
     /// Space warp info for special ships.
     warp_state: Option<WarpState>,
     warp_cooldown: Ticks,
+    zero_pulse_cooldown: Ticks,
 }
 
 impl EntityExtension {
@@ -80,6 +81,7 @@ impl EntityExtension {
         self.turrets = Arc::from_iter(data.turrets.iter().map(|t| t.angle));
         self.warp_state = None;
         self.warp_cooldown = Ticks::ZERO;
+        self.zero_pulse_cooldown = Ticks::ZERO;
     }
 
     /// Returns the target altitude of the boat from submerge.
@@ -146,6 +148,7 @@ impl EntityExtension {
         self.deactivate_delay = self.deactivate_delay.saturating_sub(delta);
         self.horn_delay = self.horn_delay.saturating_sub(delta);
         self.spawn_protection_remaining = self.spawn_protection_remaining.saturating_sub(delta);
+        self.zero_pulse_cooldown = self.zero_pulse_cooldown.saturating_sub(delta);
     }
 
     /// reloads_mut returns a mutable reference to the reloads component of the extension.
@@ -194,6 +197,18 @@ impl EntityExtension {
         self.warp_cooldown
     }
 
+    pub fn zero_pulse_cooldown_remaining(&self) -> Ticks {
+        self.zero_pulse_cooldown
+    }
+
+    pub fn start_zero_pulse(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.zero_pulse_cooldown != Ticks::ZERO {
+            return Err("zero pulse on cooldown");
+        }
+        self.zero_pulse_cooldown = cooldown;
+        Ok(())
+    }
+
     /// Advances warp timers. Returns Some(target) when teleport should occur.
     pub fn advance_warp(&mut self, delta: Ticks) -> Option<Vec2> {
         if let Some(mut warp) = self.warp_state.take() {
@@ -228,6 +243,7 @@ impl Default for EntityExtension {
             turrets: arc_default_n(0),
             warp_state: None,
             warp_cooldown: Ticks::ZERO,
+            zero_pulse_cooldown: Ticks::ZERO,
         }
     }
 }

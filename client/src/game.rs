@@ -29,7 +29,10 @@ use common::angle::Angle;
 use common::contact::{Contact, ContactTrait};
 use common::entity::{EntityData, EntityId, EntityKind, EntitySubKind, EntityType};
 use common::guidance::Guidance;
-use common::protocol::{Command, Control, Fire, Hint, Pay, Spawn, Update, Upgrade, Warp};
+use common::protocol::{
+    Command, Control, Fire, Hint, Pay, Spawn, Update, Upgrade, Warp, WorldEvent, ZeroPulse,
+};
+use common::zero_pulse::ZERO_PULSE_COOLDOWN;
 use common::ticks::Ticks;
 use common::transform::Transform;
 use common::velocity::Velocity;
@@ -87,6 +90,7 @@ pub struct Mk48Game {
     warp_selecting: bool,
     warp_charge_secs: f32,
     warp_cooldown_secs: f32,
+    zero_pulse_cooldown_secs: f32,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -215,6 +219,7 @@ impl GameClient for Mk48Game {
             warp_selecting: false,
             warp_charge_secs: 0.0,
             warp_cooldown_secs: 0.0,
+            zero_pulse_cooldown_secs: 0.0,
         })
     }
 
@@ -327,6 +332,21 @@ impl GameClient for Mk48Game {
             .player_contact()
             .map(|c| c.altitude())
             .unwrap_or(Altitude::ZERO);
+
+        if play_sounds {
+            for event in &update.events {
+                match event {
+                    WorldEvent::ZeroPulse { center, radius } => {
+                        let distance = player_position.distance(*center);
+                        if distance <= *radius {
+                            context
+                                .audio
+                                .play_with_volume(Audio::Impact, Self::volume_at(distance));
+                        }
+                    }
+                }
+            }
+        }
 
         let mut aircraft_volume: f32 = 0.0;
         let mut jet_volume: f32 = 0.0;
@@ -472,6 +492,9 @@ impl GameClient for Mk48Game {
                                     .unwrap_or(0),
                             )
                             .map(|Group { entity_type, .. }| *entity_type);
+                    }
+                    Key::Q => {
+                        self.try_zero_pulse(context);
                     }
                     _ => {
                         if let Some(digit) = event.key.digit_with_ten() {
@@ -1527,7 +1550,15 @@ impl GameClient for Mk48Game {
         let status = if let Some(player_contact) = player_contact {
             let is_star_destroyer =
                 player_contact.view.entity_type() == Some(EntityType::StarDestroyer);
+            let has_zero_pulse = matches!(
+                player_contact
+                    .model
+                    .entity_type()
+                    .or(player_contact.view.entity_type()),
+                Some(EntityType::Leviathan) | Some(EntityType::StarDestroyer)
+            );
             self.update_warp_timers(elapsed_seconds, is_star_destroyer);
+            self.update_zero_pulse_timers(elapsed_seconds, has_zero_pulse);
 
             let mut guidance = None;
 
@@ -1645,6 +1676,7 @@ impl GameClient for Mk48Game {
                 warp_selecting: self.warp_selecting,
                 warp_charge_remaining: self.warp_charge_secs.max(0.0),
                 warp_cooldown_remaining: self.warp_cooldown_secs.max(0.0),
+                zero_pulse_cooldown_remaining: self.zero_pulse_cooldown_secs.max(0.0),
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
@@ -1751,9 +1783,11 @@ impl GameClient for Mk48Game {
             .cloned()
         {
             self.reset_warp_state();
+            self.zero_pulse_cooldown_secs = 0.0;
             UiStatus::Respawning(UiStatusRespawning { death_reason })
         } else {
             self.reset_warp_state();
+            self.zero_pulse_cooldown_secs = 0.0;
             UiStatus::Spawning
         };
 
@@ -1804,13 +1838,19 @@ impl GameClient for Mk48Game {
             }
             UiEvent::WarpToggle => {
                 if let Some(contact) = context.state.game.player_contact() {
-                    if contact.entity_type() == Some(EntityType::StarDestroyer)
+                    if matches!(
+                        contact.entity_type(),
+                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer)
+                    )
                         && self.warp_charge_secs == 0.0
                         && self.warp_cooldown_secs == 0.0
                     {
                         self.warp_selecting = !self.warp_selecting;
                     }
                 }
+            }
+            UiEvent::ZeroPulse => {
+                self.try_zero_pulse(context);
             }
         }
     }
@@ -1840,6 +1880,22 @@ impl Mk48Game {
         self.ui_state.submerge = submerge;
     }
 
+    fn try_zero_pulse(&mut self, context: &mut Context<Self>) {
+        let entity_type = context
+            .state
+            .game
+            .player_interpolated_contact()
+            .and_then(|c| c.model.entity_type().or(c.view.entity_type()));
+        if matches!(
+            entity_type,
+            Some(EntityType::Leviathan) | Some(EntityType::StarDestroyer)
+        ) && self.zero_pulse_cooldown_secs == 0.0
+        {
+            context.send_to_game(Command::ZeroPulse(ZeroPulse));
+            self.zero_pulse_cooldown_secs = ZERO_PULSE_COOLDOWN.to_secs();
+        }
+    }
+
     fn update_warp_timers(&mut self, elapsed_seconds: f32, has_warp: bool) {
         if !has_warp {
             self.reset_warp_state();
@@ -1852,6 +1908,15 @@ impl Mk48Game {
             }
         } else {
             self.warp_cooldown_secs = (self.warp_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn update_zero_pulse_timers(&mut self, elapsed_seconds: f32, has_zero_pulse: bool) {
+        if has_zero_pulse || self.zero_pulse_cooldown_secs > 0.0 {
+            self.zero_pulse_cooldown_secs =
+                (self.zero_pulse_cooldown_secs - elapsed_seconds).max(0.0);
+        } else {
+            self.zero_pulse_cooldown_secs = 0.0;
         }
     }
 

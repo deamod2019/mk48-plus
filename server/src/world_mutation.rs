@@ -127,6 +127,10 @@ impl Mutation {
             Self::HitBy(other_player, weapon_type, damage) => {
                 let e = &mut entities[index];
                 if e.damage(damage) {
+                    if e.player.is_none() {
+                        world.remove(index, DeathReason::Unknown);
+                        return true;
+                    }
                     let killer_alias = {
                         let e_score = e.borrow_player().score;
                         let mut other_player = other_player.borrow_player_mut();
@@ -187,6 +191,10 @@ impl Mutation {
                 anti_aircraft,
             } => {
                 let entity = &mut entities[index];
+                if entity.player.is_none() {
+                    world.remove(index, DeathReason::Unknown);
+                    return true;
+                }
                 let e_score = entity.borrow_player().score;
 
                 if entity.kill_in(delta, Ticks::from_secs(1.0 / anti_aircraft)) {

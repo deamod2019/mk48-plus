@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::ui::sprite::Sprite;
-use common::entity::{EntitySubKind, EntityType};
+use common::entity::{EntityData, EntitySubKind, EntityType};
 use common::util::score_to_level;
 use common::world::outside_strict_area;
 use glam::Vec2;
@@ -90,7 +90,7 @@ pub fn ship_menu(props: &ShipMenuProps) -> Html {
     let moderator = core_state.player().map(|p| p.moderator).unwrap_or(false);
     if moderator {
         min_level = 1;
-        max_level = 12;
+        max_level = EntityData::MAX_BOAT_LEVEL;
     }
 
     if min_level > max_level {

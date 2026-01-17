@@ -110,6 +110,7 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
                     send.then(|| contact.into_contact())
                 })
                 .collect(),
+            events: self.world.events.clone(),
             death_reason,
             score: self.player.score,
             world_radius: self.world.radius,

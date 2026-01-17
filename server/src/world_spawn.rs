@@ -355,6 +355,7 @@ impl World {
             ticks,
             id: unset_entity_id(),
             altitude: Altitude::ZERO,
+            frozen: Ticks::ZERO,
         });
     }
 }

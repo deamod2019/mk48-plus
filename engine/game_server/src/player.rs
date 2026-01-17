@@ -461,6 +461,11 @@ impl<G: GameArenaService> PlayerData<G> {
         self.player_id.is_bot()
     }
 
+    /// Returns true iff the player has never been alive yet.
+    pub fn never_played(&self) -> bool {
+        !self.was_ever_alive
+    }
+
     /// Returns true iff the player 1) never played yet 2) stopped playing over half a minute ago.
     pub fn is_out_of_game(&self) -> bool {
         !self.was_ever_alive

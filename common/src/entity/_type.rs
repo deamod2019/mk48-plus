@@ -254,6 +254,93 @@ pub enum EntityType {
     #[armament(GreenBlaster)]
     TieFighter, //"3D T.I.E Fighter - Star Wars model" (https://skfb.ly/Q98Y) by Mickael Boitte is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
     #[info(
+        label = "TIE Starfighter (Torpedo)",
+        link = "https://starwars.fandom.com/wiki/TIE/ln_space_superiority_starfighter"
+    )]
+    #[entity(Aircraft, Plane, level = 14)]
+    #[size(length = 7.24, width = 6.7)]
+    #[props(speed = 333.333, range = 1000000)]
+    #[sensors(visual)]
+    #[armament(Mark48)]
+    TieFighterMk48,
+    #[info(
+        label = "TIE Bomber",
+        link = "https://starwars.fandom.com/wiki/TIE/sa_bomber"
+    )]
+    #[entity(Aircraft, Plane, level = 15)]
+    #[size(length = 7.24, width = 6.7)]
+    #[props(speed = 140.0, range = 1000000)]
+    #[sensors(visual)]
+    #[armament(PlasmaGun, count = 6, external)]
+    TieBomber,
+    #[info(
+        label = "S.H.I.E.L.D. Helicarrier",
+        link = "https://marvel.fandom.com/wiki/Helicarrier"
+    )]
+    #[entity(Boat, Aeroplane, level = 13)]
+    #[size(length = 396.2, width = 80.0, draft = 0.0)]
+    #[props(
+        speed = 15.5,
+        damage = 569.0,
+        stealth = 0.30,
+        torpedo_resistance = 0.20
+    )]
+    #[sensors(visual = 800, radar = 800)]
+    #[armament(F35B, forward = 140.0, side = 12.0, angle = 0.0, count = 2, external)]
+    #[armament(F35B, forward = 140.0, side = -12.0, angle = 0.0, count = 2, external)]
+    #[armament(F35C, forward = 40.0, side = 0.0, angle = 0.0, count = 2, external)]
+    #[armament(F35C, forward = -40.0, side = 0.0, angle = 0.0, count = 2, external)]
+    #[armament(QuinjetA, forward = 80.0, side = 25.0, angle = 0.0, count = 1, external)]
+    #[armament(QuinjetA, forward = 0.0, side = 25.0, angle = 0.0, count = 1, external)]
+    #[armament(QuinjetA, forward = -80.0, side = 25.0, angle = 0.0, count = 1, external)]
+    #[armament(QuinjetB, forward = 80.0, side = -25.0, angle = 0.0, count = 1, external)]
+    #[armament(QuinjetB, forward = 0.0, side = -25.0, angle = 0.0, count = 1, external)]
+    #[armament(QuinjetB, forward = -80.0, side = -25.0, angle = 0.0, count = 1, external)]
+    #[armament(Mark48, forward = 0.0, side = 30.0, angle = 90.0, external)]
+    #[armament(Mark48, forward = 0.0, side = -30.0, angle = -90.0, external)]
+    #[armament(Jagm, forward = 190.0, side = 0.0, angle = 0.0, external)]
+    #[turret(Essm, forward = 160.0, side = 10.0, fast)]
+    #[turret(Essm, forward = 160.0, side = -10.0, fast)]
+    #[turret(Essm, forward = -160.0, side = 10.0, fast)]
+    #[turret(Essm, forward = -160.0, side = -10.0, fast)]
+    #[turret(Rim116, forward = 120.0, side = 25.0, fast)]
+    #[turret(Rim116, forward = 120.0, side = -25.0, fast)]
+    #[turret(Rim116, forward = -120.0, side = 25.0, fast)]
+    #[turret(Rim116, forward = -120.0, side = -25.0, fast)]
+    #[turret(OtoMelara76Mm, forward = 180.0, side = 30.0, fast)]
+    #[turret(OtoMelara76Mm, forward = 180.0, side = -30.0, fast)]
+    #[turret(OtoMelara76Mm, forward = -180.0, side = 30.0, fast)]
+    #[turret(OtoMelara76Mm, forward = -180.0, side = -30.0, fast)]
+    ShieldHelicarrier,
+    #[info(label = "F-35B Lightning II", link = "https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II")]
+    #[entity(Aircraft, Plane, level = 13)]
+    #[size(length = 15.6, width = 10.7)]
+    #[props(speed = 140.0, range = 800000)]
+    #[sensors(visual)]
+    #[armament(Jagm, count = 2, external)]
+    F35B,
+    #[info(label = "F-35C Lightning II", link = "https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II")]
+    #[entity(Aircraft, Plane, level = 13)]
+    #[size(length = 15.8, width = 13.1)]
+    #[props(speed = 140.0, range = 800000)]
+    #[sensors(visual)]
+    #[armament(Essm, count = 2, external)]
+    F35C,
+    #[info(label = "Quinjet A", link = "https://marvel.fandom.com/wiki/Quinjet")]
+    #[entity(Aircraft, Plane, level = 13)]
+    #[size(length = 20.0, width = 14.0)]
+    #[props(speed = 140.0, range = 800000)]
+    #[sensors(visual)]
+    #[armament(Essm, count = 1, external)]
+    QuinjetA,
+    #[info(label = "Quinjet B", link = "https://marvel.fandom.com/wiki/Quinjet")]
+    #[entity(Aircraft, Plane, level = 13)]
+    #[size(length = 20.0, width = 14.0)]
+    #[props(speed = 140.0, range = 800000)]
+    #[sensors(visual)]
+    #[armament(Jagm, count = 4, external)]
+    QuinjetB,
+    #[info(
         label = "Harbin Z-9",
         link = "https://en.wikipedia.org/wiki/Harbin_Z-9"
     )]
@@ -434,6 +521,7 @@ pub enum EntityType {
     #[props(speed = 282.944)]
     #[sensors(visual = 1000, radar = 1000)]
     #[armament(Mk82, count = 12, hidden)]
+    #[armament(FlareB2, forward = -10, side = 0, angle = 180, count = 8)]
     B2,
     #[info(
         label = "Clemenceau",
@@ -565,6 +653,7 @@ pub enum EntityType {
     #[props(speed = 333.3)]
     #[armament(Ls6, forward = 2, side = 0, count = 4, hidden)]
     #[armament(Pl12, forward = 2, side = 0, count = 8, hidden)]
+    #[armament(FlareJ20, forward = -6, side = 0, angle = 180, count = 8)]
     #[sensors(visual = 800, radar = 1300)]
     J20,
     #[info(
@@ -577,8 +666,22 @@ pub enum EntityType {
     #[armament(Jagm, forward = -3, side = 3, symmetrical)]
     #[armament(Jagm, forward = -3, side = 3, symmetrical)]
     #[armament(Jagm, forward = -3, side = 3, symmetrical)]
+    #[armament(FlareF35, forward = -5, side = 0, angle = 180, count = 8)]
     #[sensors(visual = 800, radar = 1500)]
     F35,
+    #[info(
+        label = "SU-57",
+        link = "https://en.wikipedia.org/wiki/Sukhoi_Su-57"
+    )]
+    #[entity(Boat, Aeroplane, level = 13)]
+    #[size(length = 22.5, width = 14.6, draft = 1.0)]
+    #[props(speed = 380.0)]
+    #[sensors(visual = 1000, radar = 1500)]
+    #[armament(Su57MissileHeavy, forward = 2, side = 0, count = 4, hidden)]
+    #[armament(Su57MissileMid, forward = 2, side = 0, count = 4, hidden)]
+    #[armament(Su57MissileLight, forward = 2, side = 0, count = 4, hidden)]
+    #[armament(FlareSu57, forward = -6, side = 0, angle = 180, count = 16)]
+    Su57,
     #[info(
         label = "Dreadnought",
         link = "https://en.wikipedia.org/wiki/HMS_Dreadnought_(1906)"
@@ -684,6 +787,17 @@ pub enum EntityType {
     #[turret(_6Pounder, forward = -11.5, angle = 180, fast)]
     #[exhaust(forward = 0)]
     FairmileD,
+    #[info(label = "坚韧号")]
+    #[entity(Boat, Mtb, level = 1)]
+    #[size(length = 35, width = 6.35, draft = 1.45)]
+    #[props(speed = 15.9477)]
+    #[sensors(visual)]
+    #[armament(Mark18, forward = -7, side = 2.3, angle = 7.5, symmetrical, external)]
+    #[armament(P15, forward = 5.0, side = 1.8, angle = 0, symmetrical, external)]
+    #[turret(_57X441MmR, forward = 8, fast)]
+    #[turret(_57X441MmR, forward = -11.5, angle = 180, fast)]
+    #[exhaust(forward = 0)]
+    JianRen,
     #[info(
         label = "Fletcher",
         link = "https://en.wikipedia.org/wiki/Fletcher-class_destroyer"
@@ -1192,6 +1306,17 @@ pub enum EntityType {
         vertical
     )]
     _039A,
+    #[info(label = "096 Type", link = "https://en.wikipedia.org/wiki/Type_096_submarine")]
+    #[entity(Boat, Submarine, level = 13)]
+    #[size(length = 150.0, width = 14.0, draft = 10.0)]
+    #[props(speed = 20.0, depth = 254, torpedo_resistance = 0.4, damage = 21.6)]
+    #[sensors(visual = 450, radar = 650, sonar = 450)]
+    #[armament(Yu10, forward = 30.0, side = 2.0, angle = 0, count = 3, symmetrical)]
+    #[armament(Jl3, forward = -10.0, side = 0.0, angle = 0.0, vertical)]
+    #[armament(Yj18, forward = 10.0, side = 3.0, angle = 0.0, count = 2, symmetrical, vertical)]
+    #[armament(Hq9, forward = -20.0, side = 2.0, angle = 0.0, count = 1, symmetrical, vertical)]
+    #[armament(Brosok, forward = -40.0, side = 0.0, angle = 180)]
+    Sub096,
     #[info(
         label = "Skjold",
         link = "https://en.wikipedia.org/wiki/Skjold-class_corvette"
@@ -1219,11 +1344,11 @@ pub enum EntityType {
         label = "Imperial II-Class Star Destroyer",
         link = "https://starwars.fandom.com/wiki/Imperial_II-class_Star_Destroyer"
     )]
-    #[entity(Boat, Starship, level = 12)]
+    #[entity(Boat, Starship, level = 14)]
     #[size(length = 1600, width = 878, draft = 0.0)]
     #[props(speed = 400.0, damage = 8.0)]
     #[sensors(visual, radar, sonar = 900)]
-    #[armament(TieFighter, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
+    #[armament(TieFighterMk48, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
     #[armament(Mark48, forward = 120.0, side = 60.0, angle = 0.0, count = 2, symmetrical)]
     #[turret(Turbolaser, forward = 130.8086, side = -215.0364, symmetrical)]
     #[turret(Turbolaser, forward = 72.7645, side = -232.6973, symmetrical)]
@@ -1368,6 +1493,7 @@ pub enum EntityType {
     #[armament(VBlaster, forward = 5.0, count = 8, hidden)]
     #[armament(VMissiles, forward = 5.0, count = 8, hidden)]
     #[armament(VProjector, forward = 5.0, count = 1, hidden)]
+    #[armament(FlareVindicator, forward = -8, side = 0, angle = 180, count = 8)]
     Vindicator,
     #[info(
         label = "Visby",
@@ -1436,6 +1562,16 @@ pub enum EntityType {
     #[armament(Blaster, forward = 2, side = 5.6, count = 4, hidden, symmetrical)]
     Xwing,
     #[info(
+        label = "Millennium Falcon",
+        link = "https://starwars.fandom.com/wiki/Millennium_Falcon"
+    )]
+    #[entity(Boat, Aeroplane, level = 13)]
+    #[size(length = 34.7, width = 25.0, draft = 6.0)]
+    #[props(speed = 600.0, damage = 5.0)]
+    #[sensors(visual = 1000, radar = 1000)]
+    #[armament(QuadBlasterCannon, forward = 2.0, side = 7.0, count = 16, hidden, symmetrical)]
+    MillenniumFalcon,
+    #[info(
         label = "Yamato",
         link = "https://en.wikipedia.org/wiki/Japanese_battleship_Yamato"
     )]
@@ -1450,6 +1586,85 @@ pub enum EntityType {
     #[turret(_45Type94, forward = -64.996, angle = 180, slow, azimuth_b = 40)]
     #[exhaust(forward = -24.7)]
     Yamato,
+    #[info(
+        label = "Space Battleship Yamato",
+        link = "https://en.wikipedia.org/wiki/Space_Battleship_Yamato"
+    )]
+    #[entity(Boat, Aeroplane, level = 13)]
+    #[size(length = 333.0, width = 40.0, draft = 0.0, mast = 55.0)]
+    #[props(speed = 150.0, torpedo_resistance = 0.4, damage = 2.0)]
+    #[sensors(visual = 1000, radar = 1000)]
+    #[armament(TieFighter, forward = 0.0, side = 0.0, angle = 0.0, count = 6, hidden)]
+    #[armament(Mark18, forward = 60.0, side = 6.0, angle = 0.0, count = 2, symmetrical)]
+    #[armament(Yj18, forward = -30.0, side = 8.0, angle = 0.0, count = 6, symmetrical, vertical)]
+    #[turret(Turbolaser, forward = 120.0, side = 0.0, fast, azimuth_b = 10)]
+    #[turret(_45Type94, forward = 65.4, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = 37.0, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -82.3, angle = 180, slow, azimuth_b = 40)]
+    #[exhaust(forward = -31.3)]
+    SpaceYamato,
+    #[info(
+        label = "Leviathan-Class Integrated Platform",
+        link = "https://en.wikipedia.org/wiki/Battleship"
+    )]
+    #[entity(Boat, Carrier, level = 13)]
+    #[size(length = 420.0, width = 90.0, draft = 12.0, mast = 60.0)]
+    #[props(speed = 16.5, torpedo_resistance = 0.5, stealth = 0.1, damage = 200.0)]
+    #[sensors(visual = 1000, radar = 1000)]
+    #[armament(TieFighter, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
+    #[turret(_458X1980MmR, forward = 160.0, side = 0.0, slow, azimuth_b = 10)]
+    #[turret(_458X1980MmR, forward = 100.0, slow, azimuth_b = 25)]
+    #[turret(_458X1980MmR, forward = -60.0, angle = 180, slow, azimuth_b = 25)]
+    #[turret(_458X1980MmR, forward = -120.0, angle = 180, slow, azimuth_b = 10)]
+    #[turret(Turbolaser, forward = 140.0, side = 25.0, symmetrical)]
+    #[turret(Turbolaser, forward = -40.0, side = 25.0, symmetrical)]
+    #[turret(_127X680MmR, forward = 120.0, side = 20.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = 120.0, side = -20.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = 40.0, side = 25.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = 40.0, side = -25.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = -20.0, side = 22.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = -20.0, side = -22.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = -90.0, side = 18.0, fast, azimuth_b = 120)]
+    #[turret(_127X680MmR, forward = -90.0, side = -18.0, fast, azimuth_b = 120)]
+    #[exhaust(forward = -45.0)]
+    Leviathan,
+    #[info(
+        label = "Xyston-class Star Destroyer",
+        link = "https://starwars.fandom.com/wiki/Xyston-class_Star_Destroyer"
+    )]
+    #[entity(Boat, Starship, level = 15)]
+    #[size(length = 802.0, width = 267.0, draft = 0.0)]
+    #[props(speed = 270.8, damage = 4.0)]
+    #[sensors(visual = 1000, radar = 1000)]
+    #[armament(AxialSuperlaserBeam, forward = 400.0, side = 0.0, count = 1)]
+    #[armament(TieBomber, forward = -67.0, side = 0.0, count = 15, hidden)]
+    #[turret(TurboLaserIITurret, forward = 100.0, side = 20.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = 67.0, side = 20.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = 33.0, side = 20.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = 0.0, side = 20.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -33.0, side = 20.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -67.0, side = 20.0, fast, symmetrical)]
+    #[turret(PlasmaGunTurret, forward = 50.0, side = 13.0, fast, symmetrical)]
+    #[turret(PlasmaGunTurret, forward = -50.0, side = 13.0, fast, symmetrical)]
+    #[exhaust(forward = -107.0)]
+    XystonStarDestroyer,
+    #[info(label = "UNS Pangu (BBGN-X)")]
+    #[entity(Boat, Battleship, level = 15)]
+    #[size(length = 480.0, width = 110.0, draft = 12.0, mast = 60.0)]
+    #[props(speed = 12.0, torpedo_resistance = 0.5, damage = 180.0)]
+    #[sensors(visual = 1000, radar = 1000, sonar = 900)]
+    #[armament(ObsidianCruiseMissile, forward = -20.0, side = 0.0, count = 7, symmetrical, vertical)]
+    #[armament(PoseidonTorpedo, forward = 80.0, side = 6.0, angle = 0.0, count = 2, symmetrical)]
+    #[turret(ThorRailgun, forward = 170.0, side = 0.0, slow, azimuth_b = 10)]
+    #[turret(ThorRailgun, forward = 140.0, side = 12.0, slow, azimuth_b = 20, symmetrical)]
+    #[turret(ThorRailgun, forward = 90.0, side = 0.0, slow, azimuth_b = 30)]
+    #[turret(ThorRailgun, forward = 40.0, side = 12.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(ThorRailgun, forward = -70.0, side = 0.0, slow, azimuth_b = 40)]
+    #[turret(ThorRailgun, forward = -100.0, side = 12.0, slow, azimuth_b = 30, symmetrical)]
+    #[turret(LightShieldLaser, forward = 200.0, side = 25.0, fast, azimuth_b = 140, symmetrical)]
+    #[turret(LightShieldLaser, forward = -140.0, side = 25.0, fast, azimuth_b = 140, symmetrical)]
+    #[exhaust(forward = -60.0)]
+    Pangu,
     #[info(
         label = "Yasen",
         link = "https://en.wikipedia.org/wiki/Yasen-class_submarine"
@@ -1466,6 +1681,20 @@ pub enum EntityType {
     #[armament(Brosok, forward = 43, side = 3, angle = 0, symmetrical)]
     #[armament(Brosok, forward = -16.5, side = 1.5, angle = -180, symmetrical)]
     Yasen,
+    #[info(
+        label = "Typhoon",
+        link = "https://en.wikipedia.org/wiki/Typhoon-class_submarine"
+    )]
+    #[entity(Boat, Submarine, level = 11)]
+    #[size(length = 175, width = 23, draft = 11, mast = 6)]
+    #[props(speed = 12.5, depth = 480, torpedo_resistance = 0.5, stealth = 0.15, damage = 7.5)]
+    #[sensors(sonar = 600, visual = 600, radar = 600)]
+    #[armament(Set65, forward = 40, side = 2, count = 4, symmetrical)]
+    #[armament(Rpk6, forward = -10, side = 0, count = 2, symmetrical, vertical)]
+    #[armament(Igla, forward = 5, side = 2, count = 2, symmetrical, vertical)]
+    #[armament(BrahMos, forward = 15, side = 3, count = 4, symmetrical, vertical)]
+    #[armament(Brosok, forward = -50, side = 2, count = 2, symmetrical, angle = 180)]
+    Typhoon,
     #[info(label = "Zubr", link = "https://en.wikipedia.org/wiki/Zubr-class_LCAC")]
     #[entity(Boat, Hovercraft, level = 2)]
     #[size(length = 57, width = 21.152344, draft = 1.6)]
@@ -1561,6 +1790,31 @@ pub enum EntityType {
     #[size(length = 2.69, width = 0.159)]
     #[props(speed = 15, lifespan = 30)]
     Mk3,
+    #[info(label = "J-20 Heat Flares")]
+    #[entity(Decoy, Flare, level = 10)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 30, lifespan = 7, reload = 12, range = 180)]
+    FlareJ20,
+    #[info(label = "F-35 Heat Flares")]
+    #[entity(Decoy, Flare, level = 11)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 30, lifespan = 7, reload = 12, range = 170)]
+    FlareF35,
+    #[info(label = "B-2 Heat Flares")]
+    #[entity(Decoy, Flare, level = 11)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 30, lifespan = 7, reload = 14, range = 170)]
+    FlareB2,
+    #[info(label = "Vindicator Heat Flares")]
+    #[entity(Decoy, Flare, level = 12)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 30, lifespan = 7, reload = 10, range = 200)]
+    FlareVindicator,
+    #[info(label = "SU-57 Heat Flares")]
+    #[entity(Decoy, Flare, level = 13)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 30, lifespan = 7, reload = 12, range = 180)]
+    FlareSu57,
     #[info(
         label = "P-270 Moskit",
         link = "https://en.wikipedia.org/wiki/P-270_Moskit"
@@ -1579,6 +1833,30 @@ pub enum EntityType {
     #[props(speed = 1000, range = 8000)]
     #[sensors(radar)]
     Jagm,
+    #[info(label = "Obsidian Hypersonic Cruise Missile")]
+    #[entity(Weapon, Missile, level = 13)]
+    #[size(length = 6.0, width = 0.9)]
+    #[props(speed = 1200, range = 200000, reload = 10, damage = 12.0)]
+    #[sensors(radar)]
+    ObsidianCruiseMissile,
+    #[info(label = "SU-57 Heavy Missile")]
+    #[entity(Weapon, Missile, level = 13)]
+    #[size(length = 1.8, width = 0.18)]
+    #[props(speed = 1000, range = 8000, reload = 6, damage = 1.5)]
+    #[sensors(radar)]
+    Su57MissileHeavy,
+    #[info(label = "SU-57 Medium Missile")]
+    #[entity(Weapon, Missile, level = 13)]
+    #[size(length = 1.8, width = 0.18)]
+    #[props(speed = 1000, range = 8000, reload = 6, damage = 1.0)]
+    #[sensors(radar)]
+    Su57MissileMid,
+    #[info(label = "SU-57 Light Missile")]
+    #[entity(Weapon, Missile, level = 13)]
+    #[size(length = 1.8, width = 0.18)]
+    #[props(speed = 1000, range = 8000, reload = 6, damage = 0.5)]
+    #[sensors(radar)]
+    Su57MissileLight,
     #[info(label = "Acacia")]
     #[entity(Obstacle, Tree)]
     #[size(length = 10, width = 10)]
@@ -1622,6 +1900,30 @@ pub enum EntityType {
     #[offset(forward = 0.0)]
     #[armament(_30X165MmR, forward = 1.1, count = 4, angle = 0)]
     Type730,
+    #[info(label = "Thor Railgun")]
+    #[entity(Turret, Gun)]
+    #[size(length = 20.0, width = 6.0)]
+    #[offset(forward = 5.0)]
+    #[armament(_508X2200MmR, forward = 2.0, angle = 0)]
+    ThorRailgun,
+    #[info(label = "Light Shield Laser")]
+    #[entity(Turret, Gun)]
+    #[size(length = 6.0, width = 3.0)]
+    #[offset(forward = 0.0)]
+    #[armament(LightShieldBeam, angle = 0)]
+    LightShieldLaser,
+    #[info(label = "Turbo Laser II Turret")]
+    #[entity(Turret, Gun)]
+    #[size(length = 1.0, width = 1.0)]
+    #[offset(forward = 0.0)]
+    #[armament(TurboLaserII, angle = 0)]
+    TurboLaserIITurret,
+    #[info(label = "Plasma Gun Turret")]
+    #[entity(Turret, Gun)]
+    #[size(length = 1.0, width = 1.0)]
+    #[offset(forward = 0.0)]
+    #[armament(PlasmaGun, angle = 0)]
+    PlasmaGunTurret,
     #[info(label = "Turbolaser Batteries")]
     #[entity(Turret, Gun)]
     #[size(length = 1, width = 1)]
@@ -1888,6 +2190,26 @@ pub enum EntityType {
     #[size(length = 2.0, width = 0.3)]
     #[props(speed = 1184, range = 100000)]
     Blaster,
+    #[info(label = "Axial Superlaser Beam")]
+    #[entity(Weapon, Laser)]
+    #[size(length = 30.0, width = 2.0)]
+    #[props(speed = 1000.0, range = 30000.0, reload = 60.0, damage = 17.777)]
+    AxialSuperlaserBeam,
+    #[info(label = "Turbo Laser II")]
+    #[entity(Weapon, Laser)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 1000.0, range = 30000.0, reload = 5.0, damage = 7.8)]
+    TurboLaserII,
+    #[info(label = "Plasma Gun")]
+    #[entity(Weapon, Laser)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 1000.0, range = 8000.0, reload = 0.5, damage = 1.0)]
+    PlasmaGun,
+    #[info(label = "Quad Blaster Cannon")]
+    #[entity(Weapon, Laser)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 1000.0, range = 8000.0, reload = 0.5)]
+    QuadBlasterCannon,
     #[info(label = "Green Blaster")]
     #[entity(Weapon, Laser)]
     #[size(length = 2.0, width = 0.3)]
@@ -1901,7 +2223,13 @@ pub enum EntityType {
     #[info(label = "Turbolaser Beam")]
     #[entity(Weapon, Laser)]
     #[size(length = 2.0, width = 0.3)]
-    #[props(speed = 2000.0, range = 200000.0, reload = 0.5, damage = 18.0)]    TurbolaserBeam,
+    #[props(speed = 2000.0, range = 200000.0, reload = 0.5, damage = 18.0)]
+    TurbolaserBeam,
+    #[info(label = "Light Shield Beam")]
+    #[entity(Weapon, Laser)]
+    #[size(length = 2.0, width = 0.3)]
+    #[props(speed = 2000.0, range = 8000.0, reload = 0.2, damage = 0.3)]
+    LightShieldBeam,
     #[info(label = "Vindicator Projector")]
     #[entity(Weapon, Shell)]
     #[size(length = 25.0, width = 0.0)]
@@ -1966,6 +2294,11 @@ pub enum EntityType {
     #[size(length = 1.4, width = 0.3)]
     #[props(speed = 914, range = 21500)]
     _300X1400MmR,
+    #[info(label = "508 x 2200 mmR")]
+    #[entity(Weapon, Shell)]
+    #[size(length = 2.2, width = 0.508)]
+    #[props(speed = 2000, range = 200000, reload = 4, damage = 25.0)]
+    _508X2200MmR,
     #[info(label = "380 x 1700 mmR")]
     #[entity(Weapon, Shell)]
     #[size(length = 1.7, width = 0.38)]
@@ -2109,6 +2442,18 @@ pub enum EntityType {
     #[props(speed = 28.2944, range = 38000, damage = 1.33)]
     #[sensors(sonar)]
     Mark48,
+    #[info(label = "Yu-10")]
+    #[entity(Weapon, Torpedo, level = 13)]
+    #[size(length = 6.2, width = 0.62)]
+    #[props(speed = 28.3, range = 30000, reload = 12.0, damage = 3.0)]
+    #[sensors(sonar)]
+    Yu10,
+    #[info(label = "Poseidon Supercavitating Torpedo")]
+    #[entity(Weapon, Torpedo, level = 13)]
+    #[size(length = 7.0, width = 0.62)]
+    #[props(speed = 30.0, range = 40000, reload = 12.0, damage = 35.0)]
+    #[sensors(sonar)]
+    PoseidonTorpedo,
     #[info(
         label = "Mark 54",
         link = "https://en.wikipedia.org/wiki/Mark_54_Lightweight_Torpedo"
@@ -2323,4 +2668,10 @@ pub enum EntityType {
     #[props(speed = 265.04, range = 540000)]
     #[sensors(radar)]
     Yj18,
+    #[info(label = "JL-3 (Nuke)")]
+    #[entity(Weapon, Missile, level = 13)]
+    #[size(length = 12.0, width = 1.2)]
+    #[props(speed = 150.0, range = 200000.0, reload = 60.0, damage = 15.0)]
+    #[sensors(radar)]
+    Jl3,
 }

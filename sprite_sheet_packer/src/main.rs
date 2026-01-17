@@ -16,6 +16,7 @@ use sprite_sheet_util::{
 use std::borrow::Cow;
 use std::fs;
 use std::sync::Mutex;
+use std::collections::HashSet;
 
 fn main() {
     pack_monochrome(
@@ -49,6 +50,10 @@ fn main() {
     let non_entity_sprites = Mutex::new(Vec::<Image>::new());
     let animations = Mutex::new(Vec::<Animation>::new());
 
+    let entity_names: HashSet<String> = EntityType::iter()
+        .map(|entity_type| entity_type.as_str().to_owned())
+        .collect();
+
     fs::read_dir("../assets/sprites/")
         .unwrap()
         .filter_map(Result::ok)
@@ -61,6 +66,10 @@ fn main() {
                 let name = name_os.to_str().unwrap();
 
                 if let Some(name) = name.strip_suffix(".png").map(str::to_owned) {
+                    if entity_names.contains(&name) {
+                        // Avoid overriding entity render sprites with icon files of the same name.
+                        return;
+                    }
                     println!("Including sprite {}", &name);
                     non_entity_sprites.lock().unwrap().push(Image {
                         file: format!("../assets/sprites/{}.png", name),

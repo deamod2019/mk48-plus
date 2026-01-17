@@ -269,6 +269,7 @@ pub enum UiEvent {
     Submerge(bool),
     Upgrade(EntityType),
     WarpToggle,
+    ZeroPulse,
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -304,6 +305,7 @@ pub struct UiStatusPlaying {
     pub warp_selecting: bool,
     pub warp_charge_remaining: f32,
     pub warp_cooldown_remaining: f32,
+    pub zero_pulse_cooldown_remaining: f32,
 }
 
 #[derive(PartialEq, Clone)]

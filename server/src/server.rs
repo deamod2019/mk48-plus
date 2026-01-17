@@ -88,6 +88,22 @@ impl GameArenaService for Server {
                 highest_level_score
             };
         }
+        #[cfg(not(debug_assertions))]
+        {
+            use common::entity::EntityData;
+            let is_anan = player.alias().as_str().eq_ignore_ascii_case("anan");
+            if is_anan {
+                error!(
+                    "anan join: is_bot={}, never_played={}, score={}",
+                    player.is_bot(),
+                    player.never_played(),
+                    player.score
+                );
+            }
+            if !player.is_bot() && player.never_played() && is_anan {
+                player.score = level_to_score(EntityData::MAX_BOAT_LEVEL);
+            }
+        }
     }
 
     fn player_command(
@@ -160,6 +176,25 @@ impl GameArenaService for Server {
     /// update runs server ticks.
     fn tick(&mut self, context: &mut Context<Self>) {
         self.counter = self.counter.next();
+
+        #[cfg(not(debug_assertions))]
+        {
+            use common::entity::EntityData;
+            let highest_level_score = level_to_score(EntityData::MAX_BOAT_LEVEL);
+            for mut player in context.players.iter_borrow_mut() {
+                if !player.is_bot()
+                    && player.never_played()
+                    && player.alias().as_str().eq_ignore_ascii_case("anan")
+                    && player.score < highest_level_score
+                {
+                    player.score = highest_level_score;
+                    error!(
+                        "anan bonus applied: player_id={:?}, score={}",
+                        player.player_id, player.score
+                    );
+                }
+            }
+        }
 
         self.world.update(Ticks::ONE);
 

@@ -14,6 +14,7 @@ use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
 use common::util::{level_to_score, score_to_level};
 use common::warp::{WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE};
+use common::zero_pulse::{ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
 use game_server::player::PlayerTuple;
@@ -264,7 +265,9 @@ impl CommandTrait for Warp {
 
         let entity = &mut world.entities[entity_index];
         let data = entity.data();
-        if entity.entity_type != EntityType::StarDestroyer {
+        if entity.entity_type != EntityType::StarDestroyer
+            && entity.entity_type != EntityType::XystonStarDestroyer
+        {
             return Err("warp not supported");
         }
 
@@ -299,6 +302,58 @@ impl CommandTrait for Warp {
     }
 }
 
+impl CommandTrait for ZeroPulse {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        let player = player_tuple.borrow_player();
+
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot pulse while not alive"),
+        };
+
+        let entity = &mut world.entities[entity_index];
+        if entity.entity_type != EntityType::Leviathan && entity.entity_type != EntityType::StarDestroyer {
+            return Err("zero pulse not supported");
+        }
+
+        entity
+            .extension_mut()
+            .start_zero_pulse(ZERO_PULSE_COOLDOWN)?;
+
+        let center = entity.transform.position;
+        let radius = ZERO_PULSE_RADIUS;
+
+        let targets: Vec<_> = world
+            .entities
+            .iter_radius(center, radius)
+            .filter_map(|(target_index, target)| {
+                let data = target.data();
+                if !(data.kind == EntityKind::Boat || data.kind == EntityKind::Aircraft) {
+                    return None;
+                }
+                if target.is_friendly_to_player(Some(player_tuple)) {
+                    return None;
+                }
+                Some(target_index)
+            })
+            .collect();
+
+        for target_index in targets {
+            world.entities[target_index].freeze_for(ZERO_PULSE_DURATION);
+        }
+
+        world
+            .events
+            .push(WorldEvent::ZeroPulse { center, radius });
+
+        Ok(())
+    }
+}
+
 impl CommandTrait for Fire {
     fn apply(
         &self,
@@ -322,6 +377,9 @@ impl CommandTrait for Fire {
 
             if entity.extension().is_warping() {
                 return Err("cannot fire while warping");
+            }
+            if entity.is_frozen() {
+                return Err("cannot fire while frozen");
             }
 
             let data = entity.data();

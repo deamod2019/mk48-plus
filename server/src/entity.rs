@@ -39,6 +39,8 @@ pub struct Entity {
     /// When it represents damage, it is less than or equal to self.data().max_health(). Otherwise,
     /// it represents lifetime (for entities with finite lifespan).
     pub ticks: Ticks,
+    /// Remaining freeze duration (Absolute Zero Pulse).
+    pub frozen: Ticks,
 }
 
 /// unset_entity_id returns a nonexistent id that will be overwritten by world.add
@@ -57,6 +59,7 @@ impl Entity {
             altitude: Altitude::ZERO,
             player,
             ticks: Ticks::ZERO,
+            frozen: Ticks::ZERO,
         }
     }
 
@@ -74,6 +77,14 @@ impl Entity {
     pub fn extension_mut(&mut self) -> &mut EntityExtension {
         assert!(self.is_boat());
         unsafe { &mut *self.player.as_ref().unwrap().extension.0.get() }
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        self.frozen != Ticks::ZERO
+    }
+
+    pub fn freeze_for(&mut self, duration: Ticks) {
+        self.frozen = self.frozen.max(duration);
     }
 
     /// change_entity_type is the only valid way to change an entity's type.
@@ -533,6 +544,7 @@ impl Entity {
             },
             EntityKind::Decoy => match data.sub_kind {
                 EntitySubKind::Sonar => Altitude::MIN,
+                EntitySubKind::Flare => Altitude::MAX,
                 _ => Altitude::ZERO,
             },
             _ => Altitude::ZERO,
@@ -587,6 +599,7 @@ impl Entity {
             },
             EntityKind::Decoy => match data.sub_kind {
                 EntitySubKind::Sonar => -unguided_weapon_altitude,
+                EntitySubKind::Flare => unguided_weapon_altitude,
                 _ => {
                     debug_assert!(false, "{:?}", data.sub_kind);
                     Altitude::ZERO

@@ -50,6 +50,13 @@ impl World {
             .filter_map(|(index, entity)| {
                 let index = index as EntityIndex;
                 let data = entity.data();
+                let mut frozen = entity.is_frozen();
+
+                if frozen {
+                    entity.frozen = entity.frozen.saturating_sub(delta);
+                    entity.guidance.velocity_target = Velocity::ZERO;
+                    entity.guidance.direction_target = entity.transform.direction;
+                }
 
                 if data.lifespan != Ticks::ZERO {
                     entity.ticks = entity.ticks.saturating_add(delta);
@@ -84,6 +91,10 @@ impl World {
 
                 let mut max_speed = data.speed.to_mps();
                 let mut repair_eligible = true;
+
+                if frozen {
+                    max_speed = 0.0;
+                }
 
                 match data.kind {
                     EntityKind::Aircraft => {
@@ -454,7 +465,9 @@ impl World {
                 }
 
                 if data.kind == EntityKind::Boat {
-                    entity.update_turret_aim(delta_seconds);
+                    if !frozen {
+                        entity.update_turret_aim(delta_seconds);
+                    }
                     entity.reload(delta);
                     entity.extension_mut().update_tickers(delta);
 

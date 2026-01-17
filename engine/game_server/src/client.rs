@@ -45,6 +45,7 @@ use std::marker::PhantomData;
 use std::net::IpAddr;
 use std::num::NonZeroU64;
 use std::ops::Deref;
+use std::env;
 use std::str;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -72,12 +73,19 @@ struct ReferrerSnippet;
 
 impl<G: GameArenaService> ClientRepo<G> {
     pub fn new(trace_log: Option<String>, authenticate: RateLimiterProps) -> Self {
+        let snippets = match env::var("DISABLE_REFERRER_SNIPPETS")
+            .map(|v| v.to_ascii_lowercase())
+            .as_deref()
+        {
+            Ok("1") | Ok("true") | Ok("yes") => HashMap::new(),
+            _ => Self::load_default_snippets(),
+        };
         Self {
             authenticate_rate_limiter: authenticate.into(),
             prune_rate_limiter: RateLimiter::new(Duration::from_secs(1), 0),
             database_rate_limiter: RateLimiter::new(Duration::from_secs(30), 0),
             pending_session_write: Vec::new(),
-            snippets: Self::load_default_snippets(),
+            snippets,
             trace_log: trace_log.map(Into::into),
             _spooky: PhantomData,
         }

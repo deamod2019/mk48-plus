@@ -79,6 +79,21 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
         "#
     );
 
+    let zero_pulse_image_style = css!(
+        r#"
+        filter: hue-rotate(200deg) brightness(1.25);
+        "#
+    );
+
+    let zero_pulse_label_style = css!(
+        r#"
+        display: block;
+        margin-left: 0.5em;
+        font-size: 0.85em;
+        opacity: 0.85;
+        "#,
+    );
+
     let data: &'static EntityData = props.status.entity_type.data();
 
     let ui_event_callback = use_ui_event_callback::<Mk48Game>();
@@ -111,6 +126,7 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
             {surface_button(t, props.status.entity_type, props.status.submerge, &button_style, &button_selected_style, &ui_event_callback)}
             {active_sensor_button(t, props.status.entity_type, props.status.active, props.status.altitude, &button_style, &button_selected_style, &ui_event_callback)}
             {warp_button(props.status.clone(), &button_style, &button_selected_style, &disabled_style, &warp_image_style, &consumption_style, &ui_event_callback)}
+            {zero_pulse_button(props.status.clone(), &button_style, &disabled_style, &zero_pulse_image_style, &zero_pulse_label_style, &ui_event_callback)}
         </Section>
     }
 }
@@ -184,7 +200,9 @@ fn warp_button(
     consumption_style: &StyleSource,
     ui_event_callback: &Callback<UiEvent>,
 ) -> Html {
-    if status.entity_type != EntityType::StarDestroyer {
+    if status.entity_type != EntityType::StarDestroyer
+        && status.entity_type != EntityType::XystonStarDestroyer
+    {
         return Html::default();
     }
 
@@ -209,6 +227,37 @@ fn warp_button(
         <div class={classes!(button_style.clone(), selecting.then(|| button_selected_style.clone()), (charging || cooling).then(|| disabled_style.clone()))} {onclick} title={"在视野内选定跃迁目标，3秒充能后瞬移"}>
             <Sprite entity_type={EntityType::GreenBlaster} image_class={classes!(warp_image_style.clone())}/>
             <span class={consumption_style.clone()}>{label}</span>
+        </div>
+    }
+}
+
+fn zero_pulse_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    zero_pulse_image_style: &StyleSource,
+    zero_pulse_label_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::Leviathan
+        && status.entity_type != EntityType::StarDestroyer
+    {
+        return Html::default();
+    }
+
+    let cooling = status.zero_pulse_cooldown_remaining > 0.0;
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.zero_pulse_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let onclick = (!cooling).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::ZeroPulse));
+
+    html! {
+        <div class={classes!(button_style.clone(), cooling.then(|| disabled_style.clone()))} {onclick} title={"Q 触发，冻结范围内敌方目标"}>
+            <Sprite entity_type={EntityType::Blaster} image_class={classes!(zero_pulse_image_style.clone())}/>
+            <span class={zero_pulse_label_style.clone()}>{format!("绝对零度 · {}", label)}</span>
         </div>
     }
 }

@@ -16,6 +16,8 @@ use serde::{Deserialize, Serialize};
 pub struct Update {
     /// All currently visible contacts.
     pub contacts: Vec<Contact>,
+    /// World events (1-tick, non-persistent).
+    pub events: Vec<WorldEvent>,
     /// Why the player died, if they died, otherwise None.
     pub death_reason: Option<DeathReason>,
     /// Player's current score.
@@ -23,6 +25,11 @@ pub struct Update {
     /// Current world border radius.
     pub world_radius: f32,
     pub terrain: Box<TerrainUpdate>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum WorldEvent {
+    ZeroPulse { center: Vec2, radius: f32 },
 }
 
 /// Updates for terrain chunks.
@@ -37,6 +44,7 @@ pub enum Command {
     Spawn(Spawn),
     Upgrade(Upgrade),
     Warp(Warp),
+    ZeroPulse(ZeroPulse),
 }
 
 /// Generic command to control one's ship.
@@ -103,6 +111,9 @@ pub struct Warp {
     /// 目标世界坐标，服务器会再次裁剪。
     pub target: Vec2,
 }
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ZeroPulse;
 
 #[cfg(test)]
 mod tests {

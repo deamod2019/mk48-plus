@@ -7,6 +7,7 @@ use crate::entity::Entity;
 use crate::noise::noise_generator;
 use crate::world_mutation::Mutation;
 use common::death_reason::DeathReason;
+use common::protocol::WorldEvent;
 //use common::entity::{EntityKind, EntityType};
 use common::terrain::Terrain;
 use common::ticks::Ticks;
@@ -17,6 +18,7 @@ pub struct World {
     pub entities: Entities,
     pub terrain: Terrain,
     pub radius: f32,
+    pub events: Vec<WorldEvent>,
 }
 
 impl World {
@@ -27,11 +29,13 @@ impl World {
             entities: Entities::new(),
             terrain: Terrain::with_generator(noise_generator),
             radius: initial_radius,
+            events: Vec::new(),
         }
     }
 
     /// Updates the internals of the world, spawning and updating existing entities.
     pub fn update(&mut self, delta: Ticks) {
+        self.events.clear();
         self.spawn_statics(delta);
         self.physics(delta);
         self.physics_radius(delta);
