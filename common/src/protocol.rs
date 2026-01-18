@@ -25,6 +25,9 @@ pub struct Update {
     /// Current world border radius.
     pub world_radius: f32,
     pub terrain: Box<TerrainUpdate>,
+    /// Whether bot alliance mode is enabled (high-score bots form alliance against players).
+    #[serde(default)]
+    pub bot_alliance_enabled: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -52,6 +55,7 @@ pub enum Command {
     AirSuperiority(AirSuperiority),
     EmergencyRepair(EmergencyRepair),
     SmokeScreen(SmokeScreen),
+    BurstLoading(BurstLoading),
 }
 
 /// Generic command to control one's ship.
@@ -144,6 +148,9 @@ pub struct EmergencyRepair;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct SmokeScreen;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct BurstLoading;
 
 #[cfg(test)]
 mod tests {

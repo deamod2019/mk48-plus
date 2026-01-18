@@ -10,7 +10,7 @@ use proc_macro::TokenStream;
 
 #[proc_macro_derive(
     EntityTypeData,
-    attributes(info, entity, size, offset, props, sensors, armament, turret, exhaust)
+    attributes(info, entity, size, offset, props, sensors, armament, turret, exhaust, skills)
 )]
 pub fn entity_type_data(input: TokenStream) -> TokenStream {
     crate::entity_type::derive_entity_type(input)

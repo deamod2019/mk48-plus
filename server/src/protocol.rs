@@ -35,6 +35,7 @@ impl AsCommandTrait for Command {
             Command::AirSuperiority(ref v) => v as &dyn CommandTrait,
             Command::EmergencyRepair(ref v) => v as &dyn CommandTrait,
             Command::SmokeScreen(ref v) => v as &dyn CommandTrait,
+            Command::BurstLoading(ref v) => v as &dyn CommandTrait,
         }
     }
 }

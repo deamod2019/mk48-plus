@@ -47,6 +47,9 @@ impl GameArenaService for Server {
     /// How long a player can remain in limbo after they lose connection.
     const LIMBO: Duration = Duration::from_secs(6);
 
+    /// Show bots on the liveboard.
+    const LIVEBOARD_BOTS: bool = true;
+
     //const TEAM_MEMBERS_MAX: usize = 2;
     //const TEAM_JOINERS_MAX: usize = 2;
 

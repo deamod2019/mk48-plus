@@ -1,5 +1,6 @@
 use crate::altitude::Altitude;
 use crate::entity::{Armament, EntityKind, EntitySubKind, Exhaust, Sensors, Turret};
+use crate::skill::SkillType;
 use crate::ticks;
 use crate::ticks::Ticks;
 use crate::transform::Transform;
@@ -41,6 +42,8 @@ pub struct EntityData {
     pub range: f32,
     pub position_forward: f32,
     pub position_side: f32,
+    /// Skills available to this entity (boats only)
+    pub skills: &'static [SkillType],
 }
 
 impl EntityData {
@@ -50,6 +53,11 @@ impl EntityData {
 
     /// Constant used for checking whether a depth charge should explode.
     pub const DEPTH_CHARGE_PROXIMITY: f32 = 30.0;
+
+    /// Check if this entity has a specific skill.
+    pub fn has_skill(&self, skill: SkillType) -> bool {
+        self.skills.contains(&skill)
+    }
 
     /// radii range of throttle (0-100%) and limit of collecting things.
     pub fn radii(&self) -> Range<f32> {

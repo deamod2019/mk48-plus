@@ -13,9 +13,8 @@ use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
 use common::velocity::Velocity;
+use common::skill::{SkillType, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS};
 use common::util::{level_to_score, score_to_level};
-use common::warp::{WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE};
-use common::zero_pulse::{ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
 use game_server::player::PlayerTuple;
@@ -266,9 +265,8 @@ impl CommandTrait for Warp {
 
         let entity = &mut world.entities[entity_index];
         let data = entity.data();
-        if entity.entity_type != EntityType::StarDestroyer
-            && entity.entity_type != EntityType::XystonStarDestroyer
-        {
+        // Check if entity has Warp skill
+        if !data.has_skill(SkillType::Warp) {
             return Err("warp not supported");
         }
 
@@ -317,7 +315,8 @@ impl CommandTrait for ZeroPulse {
         };
 
         let entity = &mut world.entities[entity_index];
-        if entity.entity_type != EntityType::Leviathan && entity.entity_type != EntityType::StarDestroyer {
+        // Check if entity has ZeroPulse skill
+        if !entity.data().has_skill(SkillType::ZeroPulse) {
             return Err("zero pulse not supported");
         }
 
@@ -666,7 +665,7 @@ impl CommandTrait for Iaigiri {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::iaigiri::{IAIGIRI_COOLDOWN, IAIGIRI_MAX_RANGE_SCALE, IAIGIRI_MINE_COUNT};
+        use common::skill::{IAIGIRI_COOLDOWN, IAIGIRI_MAX_RANGE_SCALE, IAIGIRI_MINE_COUNT};
         
         let player = player_tuple.borrow_player();
         let entity_index = match player.data.status {
@@ -676,8 +675,8 @@ impl CommandTrait for Iaigiri {
 
         let entity = &world.entities[entity_index];
         
-        // Only Minelayer49 can use Iaigiri
-        if entity.entity_type != EntityType::Minelayer49 {
+        // Check if entity has Iaigiri skill
+        if !entity.data().has_skill(SkillType::Iaigiri) {
             return Err("iaigiri not supported");
         }
 
@@ -738,7 +737,7 @@ impl CommandTrait for EngineBoost {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::engine_boost::{ENGINE_BOOST_MAX_DURATION, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_COOLDOWN};
+        use common::skill::{ENGINE_BOOST_MAX_DURATION, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_COOLDOWN};
         
         
         let player = player_tuple.borrow_player();
@@ -749,8 +748,8 @@ impl CommandTrait for EngineBoost {
 
         let entity = &mut world.entities[entity_index];
         
-        // Only Minelayer49 can use EngineBoost
-        if entity.entity_type != EntityType::Minelayer49 {
+        // Check if entity has EngineBoost skill
+        if !entity.data().has_skill(SkillType::EngineBoost) {
             return Err("engine boost not supported");
         }
 
@@ -771,7 +770,7 @@ impl CommandTrait for SonarPulse {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::sonar_pulse::{SONAR_PULSE_COOLDOWN, SONAR_PULSE_RADIUS, SONAR_PULSE_DURATION};
+        use common::skill::{SONAR_PULSE_COOLDOWN, SONAR_PULSE_RADIUS};
         
         let player = player_tuple.borrow_player();
         let entity_index = match player.data.status {
@@ -781,8 +780,8 @@ impl CommandTrait for SonarPulse {
 
         let entity = &world.entities[entity_index];
         
-        // Only HunterKiller77 can use SonarPulse
-        if entity.entity_type != EntityType::HunterKiller77 {
+        // Check if entity has SonarPulse skill
+        if !entity.data().has_skill(SkillType::SonarPulse) {
             return Err("sonar pulse not supported");
         }
 
@@ -836,7 +835,7 @@ impl CommandTrait for DepthChargeBarrage {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::depth_charge_barrage::{DCB_COOLDOWN, DCB_COUNT, DCB_RANGE, DCB_SPREAD_ANGLE};
+        use common::skill::{DCB_COOLDOWN, DCB_COUNT, DCB_RANGE, DCB_SPREAD_ANGLE};
         
         let player = player_tuple.borrow_player();
         let entity_index = match player.data.status {
@@ -846,8 +845,8 @@ impl CommandTrait for DepthChargeBarrage {
 
         let entity = &world.entities[entity_index];
         
-        // Only HunterKiller77 can use DepthChargeBarrage
-        if entity.entity_type != EntityType::HunterKiller77 {
+        // Check if entity has DepthChargeBarrage skill
+        if !entity.data().has_skill(SkillType::DepthChargeBarrage) {
             return Err("depth charge barrage not supported");
         }
 
@@ -898,7 +897,7 @@ impl CommandTrait for AirSuperiority {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::air_superiority::AIR_SUPERIORITY_COOLDOWN;
+        use common::skill::AIR_SUPERIORITY_COOLDOWN;
         
         // Get entity_index from player status
         let entity_index = {
@@ -913,7 +912,8 @@ impl CommandTrait for AirSuperiority {
         {
             let entity = &world.entities[entity_index];
             
-            if entity.entity_type != EntityType::FortressCarrier {
+            // Check if entity has AirSuperiority skill
+            if !entity.data().has_skill(SkillType::AirSuperiority) {
                 return Err("air superiority not supported");
             }
 
@@ -965,7 +965,7 @@ impl CommandTrait for EmergencyRepair {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::emergency_repair::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
+        use common::skill::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
         
         let player = player_tuple.borrow_player();
         let entity_index = match player.data.status {
@@ -975,8 +975,8 @@ impl CommandTrait for EmergencyRepair {
 
         let entity = &world.entities[entity_index];
         
-        // Only FortressCarrier can use EmergencyRepair
-        if entity.entity_type != EntityType::FortressCarrier {
+        // Check if entity has EmergencyRepair skill
+        if !entity.data().has_skill(SkillType::EmergencyRepair) {
             return Err("emergency repair not supported");
         }
 
@@ -998,7 +998,7 @@ impl CommandTrait for SmokeScreen {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::smoke_screen::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
+        use common::skill::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
         
         let player = player_tuple.borrow_player();
         let entity_index = match player.data.status {
@@ -1008,8 +1008,8 @@ impl CommandTrait for SmokeScreen {
 
         let entity = &world.entities[entity_index];
         
-        // Only Tianwangxing can use SmokeScreen
-        if entity.entity_type != EntityType::Tianwangxing {
+        // Check if entity has SmokeScreen skill
+        if !entity.data().has_skill(SkillType::SmokeScreen) {
             return Err("smoke screen not supported");
         }
 
@@ -1020,6 +1020,38 @@ impl CommandTrait for SmokeScreen {
         // Start smoke screen
         let entity = &mut world.entities[entity_index];
         entity.extension_mut().start_smoke_screen(SMOKE_SCREEN_DURATION, SMOKE_SCREEN_COOLDOWN)?;
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for BurstLoading {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::skill::{BURST_LOADING_COOLDOWN, BURST_LOADING_DURATION};
+
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("not alive"),
+        };
+        let entity = &world.entities[entity_index];
+
+        // Check if entity has BurstLoading skill
+        if !entity.data().has_skill(SkillType::BurstLoading) {
+            return Err("entity does not have burst loading skill");
+        }
+
+        if entity.extension().burst_loading_cooldown_remaining() != Ticks::ZERO {
+            return Err("burst loading on cooldown");
+        }
+
+        // Start burst loading effect (duration-based reload speed buff)
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_burst_loading(BURST_LOADING_DURATION, BURST_LOADING_COOLDOWN)?;
 
         Ok(())
     }

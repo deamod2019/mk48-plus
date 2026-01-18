@@ -19,12 +19,12 @@ use std::fmt::Formatter;
 use std::iter::repeat_with;
 use std::sync::Arc;
 
-pub type ReloadsStorage = [u32; 2];
+pub type ReloadsStorage = [u32; 4];
 
-/// Total bits available in ReloadsStorage (64 bits)
-pub const RELOADS_STORAGE_BITS: usize = 64;
-/// Total bytes in ReloadsStorage (8 bytes)
-pub const RELOADS_STORAGE_BYTES: usize = 8;
+/// Total bits available in ReloadsStorage (128 bits)
+pub const RELOADS_STORAGE_BITS: usize = 128;
+/// Total bytes in ReloadsStorage (16 bytes)
+pub const RELOADS_STORAGE_BYTES: usize = 16;
 
 /// Helper to convert ReloadsStorage to little-endian bytes
 #[inline]
@@ -32,6 +32,8 @@ pub fn reloads_to_le_bytes(storage: &ReloadsStorage) -> [u8; RELOADS_STORAGE_BYT
     let mut bytes = [0u8; RELOADS_STORAGE_BYTES];
     bytes[0..4].copy_from_slice(&storage[0].to_le_bytes());
     bytes[4..8].copy_from_slice(&storage[1].to_le_bytes());
+    bytes[8..12].copy_from_slice(&storage[2].to_le_bytes());
+    bytes[12..16].copy_from_slice(&storage[3].to_le_bytes());
     bytes
 }
 
@@ -41,6 +43,8 @@ pub fn reloads_from_le_bytes(bytes: [u8; RELOADS_STORAGE_BYTES]) -> ReloadsStora
     [
         u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
         u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+        u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+        u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
     ]
 }
 

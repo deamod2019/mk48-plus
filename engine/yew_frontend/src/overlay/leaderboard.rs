@@ -32,6 +32,9 @@ pub struct LeaderboardProps {
     pub children: Option<Children>,
     #[prop_or(LeaderboardProps::fmt_precise)]
     pub fmt_score: fn(u32) -> String,
+    /// Whether bot alliance mode is enabled (bots with high scores are in alliance).
+    #[prop_or(false)]
+    pub bot_alliance_enabled: bool,
 }
 
 impl LeaderboardProps {
@@ -104,6 +107,12 @@ pub fn leaderboard_overlay(props: &LeaderboardProps) -> Html {
             font-weight: bold;
             text-align: right;
         }
+
+        td.alliance {
+            color: #FF6432;
+            font-weight: bold;
+            text-align: left;
+        }
     "#
     );
 
@@ -159,15 +168,24 @@ pub fn leaderboard_overlay(props: &LeaderboardProps) -> Html {
                             .team_id
                             .and_then(|team_id| core_state.teams.get(&team_id))
                             .map(|team_dto| team_dto.name);
+                        
+                        // Check if this is an alliance bot (high-score bot when alliance mode enabled)
+                        const ELITE_BOT_SCORE_THRESHOLD: u32 = 5000;
+                        let is_alliance_bot = props.bot_alliance_enabled 
+                            && dto.player_id.is_bot() 
+                            && dto.score >= ELITE_BOT_SCORE_THRESHOLD;
+                        let alliance_marker = if is_alliance_bot { "⚔️ " } else { "" };
+                        let name_class = if is_alliance_bot { "alliance" } else { "name" };
+                        
                         html_nested! {
                             <tr class={fake.then(|| fake_style.clone())}>
                                 if team_name.is_some() {
                                     <td class="team">{format!("[{}]", team_name.unwrap())}</td>
-                                    <td class="name">{player.alias}</td>
+                                    <td class={name_class}>{format!("{}{}", alliance_marker, player.alias)}</td>
                                 }
                                 else {
                                     <td class="team">{""}</td>
-                                    <td class="name">{player.alias}</td>
+                                    <td class={name_class}>{format!("{}{}", alliance_marker, player.alias)}</td>
                                 }
                                 <td class="score">{(props.fmt_score)(dto.score)}</td>
                             </tr>

@@ -134,6 +134,7 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
             {air_superiority_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
             {emergency_repair_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
             {smoke_screen_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {burst_loading_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
         </Section>
     }
 }
@@ -209,6 +210,7 @@ fn warp_button(
 ) -> Html {
     if status.entity_type != EntityType::StarDestroyer
         && status.entity_type != EntityType::XystonStarDestroyer
+        && status.entity_type != EntityType::UnscInfinite
     {
         return Html::default();
     }
@@ -443,7 +445,9 @@ fn smoke_screen_button(
     disabled_style: &StyleSource,
     ui_event_callback: &Callback<UiEvent>,
 ) -> Html {
-    if status.entity_type != EntityType::Tianwangxing {
+    if status.entity_type != EntityType::Tianwangxing
+        && status.entity_type != EntityType::Richelieu
+    {
         return Html::default();
     }
 
@@ -464,6 +468,37 @@ fn smoke_screen_button(
     html! {
         <div class={classes!(button_style.clone(), disabled.then(|| disabled_style.clone()))} {onclick} title={"L 触发，释放持续30秒的烟幕干扰敌方制导"}>
             <span>{"烟幕 · "}{label}</span>
+        </div>
+    }
+}
+
+fn burst_loading_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::Richelieu {
+        return Html::default();
+    }
+
+    let active = status.burst_loading_active_remaining > 0.0;
+    let cooling = status.burst_loading_cooldown_remaining > 0.0 && !active;
+    
+    let label = if active {
+        format!("生效中 {:.1}s", status.burst_loading_active_remaining)
+    } else if cooling {
+        format!("冷却 {:.1}s", status.burst_loading_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let disabled = active || cooling;
+    let onclick = (!disabled).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::BurstLoading));
+
+    html! {
+        <div class={classes!(button_style.clone(), disabled.then(|| disabled_style.clone()))} {onclick} title={"B 触发，30秒内武器装填速度提升200倍"}>
+            <span>{"爆发装填 · "}{label}</span>
         </div>
     }
 }

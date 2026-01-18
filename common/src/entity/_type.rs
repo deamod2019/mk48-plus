@@ -2,6 +2,7 @@ use crate::altitude::Altitude;
 use crate::entity::{
     Armament, EntityData, EntityKind, EntitySubKind, Exhaust, Sensor, Sensors, Turret,
 };
+use crate::skill::SkillType;
 use crate::ticks::Ticks;
 use crate::util::{level_to_score, natural_death_coins};
 use crate::velocity::Velocity;
@@ -516,6 +517,7 @@ pub enum EntityType {
     #[armament(Mark9, forward = -10, side = 3.0, angle = 60, symmetrical, external)]
     #[turret(OtoMelara76Mm, forward = 28, fast, azimuth_b = 20)]
     #[exhaust(forward = -5)]
+    #[skills(SonarPulse, DepthChargeBarrage)]
     HunterKiller77,
     #[info(
         label = "Buyan",
@@ -625,6 +627,7 @@ pub enum EntityType {
     #[turret(Type730, forward = 120, side = 35, slow)]
     #[turret(Type730, forward = -130, side = -35, slow)]
     #[exhaust(forward = -50, side = -30)]
+    #[skills(AirSuperiority, EmergencyRepair)]
     FortressCarrier,
     #[info(
         label = "Liaoning",
@@ -1169,6 +1172,7 @@ pub enum EntityType {
     #[armament(Wz0839, forward = -42, side = 1.75, symmetrical, external)]
     #[armament(IaigiriMine, count = 1, hidden)]
     #[exhaust(forward = -20)]
+    #[skills(EngineBoost, Iaigiri)]
     Minelayer49,
     #[info(
         label = "Momi",
@@ -1222,6 +1226,26 @@ pub enum EntityType {
     #[exhaust(forward = 10)]
     #[exhaust(forward = -14.5)]
     Montana,
+    #[info(
+        label = "Richelieu",
+        link = "https://en.wikipedia.org/wiki/French_battleship_Richelieu"
+    )]
+    #[entity(Boat, Battleship, level = 8)]
+    #[size(length = 247.8, width = 33.0, draft = 10.0)]
+    #[props(speed = 23.1, torpedo_resistance = 0.3, damage = 8.26)]
+    #[sensors(radar, visual)]
+    // Main turrets (4 dual 380mm = 8 guns total, forward-facing)
+    #[turret(_38CmSkc34, forward = 85.0, slow, azimuth_b = 20)]
+    #[turret(_38CmSkc34, forward = 65.0, slow, azimuth_b = 30)]
+    #[turret(_38CmSkc34, forward = 45.0, slow, azimuth_b = 40)]
+    #[turret(_38CmSkc34, forward = 25.0, slow, azimuth_b = 50)]
+    // Secondary turrets (using _100Mm gun turrets)
+    #[turret(_100Mm, forward = -20.0, angle = 180, fast, azimuth_b = 90)]
+    #[turret(_100Mm, forward = -40.0, side = 12.0, fast, azimuth_b = 120, symmetrical)]
+    #[turret(_100Mm, forward = -60.0, side = 12.0, fast, azimuth_b = 120, symmetrical)]
+    #[exhaust(forward = -30)]
+    #[skills(BurstLoading, SmokeScreen)]
+    Richelieu,
     #[info(
         label = "Moskva",
         link = "https://en.wikipedia.org/wiki/Moskva-class_helicopter_carrier"
@@ -1407,6 +1431,7 @@ pub enum EntityType {
     #[turret(Turbolaser, forward = 72.7645, side = -232.6973, symmetrical)]
     #[turret(Turbolaser, forward = 19.7676, side = -249.5172, symmetrical)]
     #[turret(Turbolaser, forward = -259.5174, side = -335.2989, symmetrical)]
+    #[skills(Warp, ZeroPulse)]
     StarDestroyer, //"Star Wars: Imperial II Star Destroyer" (https://skfb.ly/LuuA) by Daniel is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
     #[info(
         label = "Oil Tanker",
@@ -1528,13 +1553,69 @@ pub enum EntityType {
     #[turret(forward = -30, medium)]
     #[turret(forward = -55, medium)]
     #[turret(forward = -80, medium)]
+    // 原有 6 门主炮 (turret 0-5)
     #[armament(_127X680MmR, forward = 60, turret = 0)]
     #[armament(_127X680MmR, forward = 35, turret = 1)]
     #[armament(_127X680MmR, forward = 10, turret = 2)]
     #[armament(_127X680MmR, forward = -30, turret = 3)]
     #[armament(_127X680MmR, forward = -55, turret = 4)]
     #[armament(_127X680MmR, forward = -80, turret = 5)]
+    // ============ 测试 128 位武器存储 (目标 > 100 个武器槽) ============
+    // 反舰导弹 YJ-18 x32 (symmetrical = 2 slots each, 16 declarations = 32 slots)
+    #[armament(Yj18, forward = 55, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 52, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 49, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 46, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 43, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 40, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 37, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = 34, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -40, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -43, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -46, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -49, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -52, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -55, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -58, side = 6, symmetrical, vertical)]
+    #[armament(Yj18, forward = -61, side = 6, symmetrical, vertical)]
+    // 防空导弹 HQ-9 x24 (symmetrical = 2 slots each, 12 declarations = 24 slots)
+    #[armament(Hq9, forward = 30, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = 27, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = 24, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = 21, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = 18, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = 15, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = -15, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = -18, side = 5, symmetrical, vertical)]
+    #[armament(Yj18, forward = -21, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = -24, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = -27, side = 5, symmetrical, vertical)]
+    #[armament(Hq9, forward = -30, side = 5, symmetrical, vertical)]
+    // 鱼雷 Yu-6 x24 (symmetrical = 2 slots each, 12 declarations = 24 slots)
+    #[armament(Yu6, forward = 8, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = 5, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = 2, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -1, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -4, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -7, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -10, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -13, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -16, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -19, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -22, side = 7, angle = 90, symmetrical)]
+    #[armament(Yu6, forward = -25, side = 7, angle = 90, symmetrical)]
+    // 深水炸弹 x16 (symmetrical = 2 slots each, 8 declarations = 16 slots)
+    #[armament(Mark9, forward = -65, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -68, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -71, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -74, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -77, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -80, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -83, side = 4, angle = 180, symmetrical, external)]
+    #[armament(Mark9, forward = -86, side = 4, angle = 180, symmetrical, external)]
+    // 总计: 6 + 32 + 24 + 24 + 16 = 102 个武器槽 ✅
     #[exhaust(forward = -10)]
+    #[skills(SmokeScreen)]
     Tianwangxing,
     #[info(label = "Titanic", link = "https://en.wikipedia.org/wiki/Titanic")]
     #[entity(Boat, Passenger, level = 7)]
@@ -1702,6 +1783,7 @@ pub enum EntityType {
     #[turret(_127X680MmR, forward = -90.0, side = 18.0, fast, azimuth_b = 120)]
     #[turret(_127X680MmR, forward = -90.0, side = -18.0, fast, azimuth_b = 120)]
     #[exhaust(forward = -45.0)]
+    #[skills(ZeroPulse)]
     Leviathan,
     #[info(
         label = "Xyston-class Star Destroyer",
@@ -1722,6 +1804,7 @@ pub enum EntityType {
     #[turret(PlasmaGunTurret, forward = 50.0, side = 13.0, fast, symmetrical)]
     #[turret(PlasmaGunTurret, forward = -50.0, side = 13.0, fast, symmetrical)]
     #[exhaust(forward = -107.0)]
+    #[skills(Warp)]
     XystonStarDestroyer,
     #[info(label = "UNS Pangu (BBGN-X)")]
     #[entity(Boat, Battleship, level = 15)]
@@ -1823,6 +1906,7 @@ pub enum EntityType {
     #[turret(Mark51, forward = 25.2885, medium, azimuth_b = 30)]
     #[exhaust(forward = -0.09, side = 0.1)]
     #[exhaust(forward = -18.58, side = -0.72)]
+    #[skills(Warp)]
     Zumwalt,
     #[info(label = "Barrel")]
     #[entity(Collectible, Score, level = 1)]
@@ -2754,4 +2838,182 @@ pub enum EntityType {
     #[props(speed = 150.0, range = 200000.0, reload = 60.0, damage = 15.0)]
     #[sensors(radar)]
     Jl3,
+    // ============ UNSC Infinite Weapons ============
+    #[info(label = "P-270 Moskit", link = "https://en.wikipedia.org/wiki/P-270_Moskit")]
+    #[entity(Weapon, Missile, level = 6)]
+    #[size(length = 9.745, width = 2.2)]
+    #[props(speed = 850.0, range = 120000)]
+    #[sensors(radar)]
+    P270,
+    #[info(label = "MAC Cannon", link = "https://halo.fandom.com/wiki/Magnetic_Accelerator_Cannon")]
+    #[entity(Weapon, Shell)]
+    #[size(length = 3.0, width = 0.6)]
+    #[props(speed = 2000.0, range = 50000, damage = 35.0)]
+    Mac,
+    #[info(label = "High Explosive Shell")]
+    #[entity(Weapon, Shell)]
+    #[size(length = 1.5, width = 0.4)]
+    #[props(speed = 1200.0, range = 30000, damage = 4.0)]
+    HighExplosive,
+    #[info(label = "MAC Turret")]
+    #[entity(Turret, Gun)]
+    #[size(length = 25.0, width = 10.0)]
+    #[offset(forward = 12.0)]
+    #[armament(Mac, angle = 0)]
+    MacTurret,
+    #[info(label = "HE Turret")]
+    #[entity(Turret, Gun)]
+    #[size(length = 8.0, width = 4.0)]
+    #[offset(forward = 4.0)]
+    #[armament(HighExplosive, angle = 0)]
+    HeTurret,
+    // ============ UNSC Infinite Ship ============
+    #[info(
+        label = "UNSC Infinite",
+        link = "https://halo.fandom.com/wiki/UNSC_Infinity"
+    )]
+    #[entity(Boat, Starship, level = 15)]
+    #[size(length = 950.0, width = 200.0, draft = 0.0)]
+    #[props(speed = 270.8, damage = 15.0)]
+    #[sensors(visual = 1500, radar = 1500)]
+    // 主炮 MAC x4 (turret 0-3)
+    #[turret(MacTurret, forward = 350.0, slow, azimuth_b = 15)]
+    #[turret(MacTurret, forward = 200.0, slow, azimuth_b = 30)]
+    #[turret(MacTurret, forward = -150.0, angle = 180, slow, azimuth_b = 30)]
+    #[turret(MacTurret, forward = -300.0, angle = 180, slow, azimuth_b = 15)]
+    // 高爆弹炮塔 x8 (turret 4-11)
+    #[turret(HeTurret, forward = 250.0, side = 50.0, fast, symmetrical)]
+    #[turret(HeTurret, forward = 100.0, side = 60.0, fast, symmetrical)]
+    #[turret(HeTurret, forward = -50.0, side = 60.0, fast, symmetrical)]
+    #[turret(HeTurret, forward = -200.0, side = 50.0, fast, symmetrical)]
+    // P270 导弹 x36 (symmetrical = 2 slots each, 18 declarations = 36 slots)
+    #[armament(P270, forward = 300.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 280.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 260.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 240.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 220.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 200.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 180.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 160.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = 140.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -140.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -160.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -180.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -200.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -220.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -240.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -260.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -280.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P270, forward = -300.0, side = 30.0, symmetrical, vertical)]
+    // P700 Granit 导弹 x32 (symmetrical = 2 slots each, 16 declarations = 32 slots)
+    #[armament(P700, forward = 290.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 260.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 230.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 200.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 170.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 140.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 110.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 80.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -80.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -110.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -140.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -170.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -200.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -230.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -260.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = -290.0, side = 45.0, symmetrical, vertical)]
+    // 防空导弹 Hq9 x24 (symmetrical = 2 slots each, 12 declarations = 24 slots)
+    #[armament(Hq9, forward = 320.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = 300.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = 280.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = -280.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = -300.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = -320.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = 100.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = 80.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = 60.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = -60.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = -80.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Hq9, forward = -100.0, side = 25.0, symmetrical, vertical)]
+    // 舰载机 x12 (F35B 美式隐身战机)
+    #[armament(F35B, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
+    // 反潜直升机 x12 (Seahawk 海鹰)
+    #[armament(Seahawk, forward = -100.0, side = 0.0, angle = 0.0, count = 12, hidden)]
+    // 总计: 4主炮 + 8高爆炮塔 + 36 P270 + 32 P700 + 24 Hq9 + 12 F35B + 12 Seahawk = 128 武器槽 ✅
+    #[exhaust(forward = -350.0)]
+    #[skills(Warp)]
+    UnscInfinite,
+    // ============ 五十万吨战列舰 ============
+    #[info(label = "五十万吨战列舰")]
+    #[entity(Boat, Battleship, level = 12)]
+    #[size(length = 600.0, width = 100.0, draft = 15.0, mast = 80.0)]
+    #[props(speed = 21.6, damage = 60.0)]
+    #[sensors(visual = 1200, radar = 1200, sonar = 800)]
+    // 主炮塔 460mm三联装 x6 (turret 0-5)
+    #[turret(_458X1980MmR, forward = 250.0, slow, azimuth_b = 20)]
+    #[turret(_458X1980MmR, forward = 180.0, slow, azimuth_b = 30)]
+    #[turret(_458X1980MmR, forward = 110.0, slow, azimuth_b = 40)]
+    #[turret(_458X1980MmR, forward = -110.0, angle = 180, slow, azimuth_b = 40)]
+    #[turret(_458X1980MmR, forward = -180.0, angle = 180, slow, azimuth_b = 30)]
+    #[turret(_458X1980MmR, forward = -250.0, angle = 180, slow, azimuth_b = 20)]
+    // 副炮 127mm x12 (turret 6-17, symmetrical = 6 pairs)
+    #[turret(_127X680MmR, forward = 200.0, side = 35.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = 140.0, side = 40.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = 80.0, side = 40.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = -80.0, side = 40.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = -140.0, side = 40.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = -200.0, side = 35.0, fast, symmetrical)]
+    // 近防系统 x8 (turret 18-25, symmetrical = 4 pairs) - 使用 Rim116
+    #[turret(Rim116, forward = 220.0, side = 30.0, fast, symmetrical)]
+    #[turret(Rim116, forward = 100.0, side = 45.0, fast, symmetrical)]
+    #[turret(Rim116, forward = -100.0, side = 45.0, fast, symmetrical)]
+    #[turret(Rim116, forward = -220.0, side = 30.0, fast, symmetrical)]
+    // 巡航导弹 Tomahawk x32 (symmetrical = 2 slots each, 16 declarations = 32 slots)
+    #[armament(Tomahawk, forward = 60.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = 50.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = 40.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = 30.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = 20.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = 10.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = 0.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -10.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -20.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -30.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -40.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -50.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -60.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -70.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -80.0, side = 25.0, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -90.0, side = 25.0, symmetrical, vertical)]
+    // 防空导弹 ESSM x24 (symmetrical = 2 slots each, 12 declarations = 24 slots)
+    #[armament(Essm, forward = 150.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = 140.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = 130.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = -130.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = -140.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = -150.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = 70.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = 60.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = 50.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = -50.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = -60.0, side = 20.0, symmetrical, vertical)]
+    #[armament(Essm, forward = -70.0, side = 20.0, symmetrical, vertical)]
+    // 反潜直升机 x8
+    #[armament(Seahawk, forward = -180.0, side = 0.0, angle = 0.0, count = 8, hidden)]
+    // 总计: 6主炮 + 12副炮 + 8近防 + 32巡航 + 24防空 + 8直升机 = 90炮塔武器 + 64导弹武器 + 8直升机
+    // 炮塔产生武器槽: 6 + 12 + 8 = 26 个炮塔
+    // 导弹武器槽: 32 + 24 + 8 = 64 个
+    // 加上鱼雷 x16 达到 106 武器槽
+    #[armament(Mark48, forward = 100.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = 80.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = 60.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = 40.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -40.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -60.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -80.0, side = 45.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -100.0, side = 45.0, angle = 90, symmetrical)]
+    // 总计: 32 Tomahawk + 24 SM-2 + 8 Seahawk + 16 Mark48 + 26 炮塔 = 106 武器槽 ✅
+    #[exhaust(forward = -60.0)]
+    #[exhaust(forward = -80.0)]
+    Battleship500k,
 }

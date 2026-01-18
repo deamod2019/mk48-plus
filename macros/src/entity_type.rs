@@ -416,6 +416,17 @@ pub(crate) fn derive_entity_type(input: TokenStream) -> TokenStream {
 
                         entity.exhausts.push(exhaust);
                     }
+                    "skills" => {
+                        // Parse skill type identifiers like: #[skills(Warp, EngineBoost, Iaigiri)]
+                        for nested in list.nested {
+                            let NestedMeta::Meta(Meta::Path(path)) = nested else {
+                                panic!("expected skill type identifier");
+                            };
+
+                            let skill_name = path.get_ident().unwrap().to_string();
+                            entity.skills.push(skill_name);
+                        }
+                    }
                     _ => panic!("unexpected path {path}"),
                 }
             }
@@ -933,6 +944,7 @@ struct Entity {
     anti_aircraft: f32,
     radius: f32,
     inv_size: f32,
+    skills: Vec<String>,
 }
 
 impl Entity {
@@ -1128,6 +1140,11 @@ impl quote::ToTokens for Entity {
         let position_forward = self.position_forward.unwrap_or_default();
         let position_side = self.position_side.unwrap_or_default();
 
+        // Convert skill names to SkillType identifiers
+        let skills: Vec<Ident> = self.skills.iter()
+            .map(|s| Ident::new(s, Span::call_site()))
+            .collect();
+
         let ts: proc_macro2::TokenStream = {
             quote! {
                 EntityData{
@@ -1170,6 +1187,7 @@ impl quote::ToTokens for Entity {
                     range: #range,
                     position_forward: #position_forward,
                     position_side: #position_side,
+                    skills: &[#(SkillType::#skills),*],
                 }
             }
         }

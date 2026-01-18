@@ -6,7 +6,7 @@ use common::angle::Angle;
 use common::entity::*;
 use common::ticks::Ticks;
 use common::util::make_mut_slice;
-use common::warp::WARP_COOLDOWN;
+use common::skill::WARP_COOLDOWN;
 use common_util::alloc::{arc_default_n, box_default_n};
 use glam::Vec2;
 use std::iter::FromIterator;
@@ -64,6 +64,8 @@ pub struct EntityExtension {
     emergency_repair_remaining: Ticks,
     smoke_screen_cooldown: Ticks,
     smoke_screen_remaining: Ticks,
+    burst_loading_cooldown: Ticks,
+    burst_loading_remaining: Ticks,
 }
 
 impl EntityExtension {
@@ -277,6 +279,8 @@ impl Default for EntityExtension {
             emergency_repair_remaining: Ticks::ZERO,
             smoke_screen_cooldown: Ticks::ZERO,
             smoke_screen_remaining: Ticks::ZERO,
+            burst_loading_cooldown: Ticks::ZERO,
+            burst_loading_remaining: Ticks::ZERO,
         }
     }
 }
@@ -439,5 +443,33 @@ impl EntityExtension {
     pub fn advance_smoke_screen(&mut self, delta: Ticks) {
         self.smoke_screen_remaining = self.smoke_screen_remaining.saturating_sub(delta);
         self.smoke_screen_cooldown = self.smoke_screen_cooldown.saturating_sub(delta);
+    }
+
+    // Burst loading methods
+    pub fn start_burst_loading(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.burst_loading_cooldown != Ticks::ZERO {
+            return Err("burst loading on cooldown");
+        }
+        // Start burst loading effect
+        self.burst_loading_remaining = duration;
+        self.burst_loading_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn burst_loading_cooldown_remaining(&self) -> Ticks {
+        self.burst_loading_cooldown
+    }
+
+    pub fn burst_loading_remaining(&self) -> Ticks {
+        self.burst_loading_remaining
+    }
+
+    pub fn is_burst_loading_active(&self) -> bool {
+        self.burst_loading_remaining != Ticks::ZERO
+    }
+
+    pub fn advance_burst_loading(&mut self, delta: Ticks) {
+        self.burst_loading_remaining = self.burst_loading_remaining.saturating_sub(delta);
+        self.burst_loading_cooldown = self.burst_loading_cooldown.saturating_sub(delta);
     }
 }

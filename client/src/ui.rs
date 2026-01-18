@@ -168,6 +168,7 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                     <LeaderboardOverlay
                         position={Position::TopRight{margin}}
                         style="max-width:25%;"
+                        bot_alliance_enabled={playing.bot_alliance_enabled}
                     />
                     <ChatOverlay
                         position={Position::BottomRight{margin}}
@@ -277,6 +278,7 @@ pub enum UiEvent {
     AirSuperiority,
     EmergencyRepair,
     SmokeScreen,
+    BurstLoading,
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -323,6 +325,10 @@ pub struct UiStatusPlaying {
     pub emergency_repair_cooldown_remaining: f32,
     pub smoke_screen_cooldown_remaining: f32,
     pub smoke_screen_active_remaining: f32,
+    pub burst_loading_cooldown_remaining: f32,
+    pub burst_loading_active_remaining: f32,
+    /// Whether bot alliance mode is enabled.
+    pub bot_alliance_enabled: bool,
 }
 
 #[derive(PartialEq, Clone)]

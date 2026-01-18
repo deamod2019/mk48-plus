@@ -85,6 +85,18 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
 
         *loaded_chunks = new_loaded_chunks;
 
+        // Read bot alliance setting (cached using Once pattern like server/entity.rs)
+        use std::sync::{Once, atomic::{AtomicBool, Ordering}};
+        static BOT_ALLIANCE_INIT: Once = Once::new();
+        static BOT_ALLIANCE_ENABLED: AtomicBool = AtomicBool::new(false);
+        BOT_ALLIANCE_INIT.call_once(|| {
+            let enabled = std::env::var("MK48_BOT_ALLIANCE")
+                .map(|v| v == "1" || v.to_lowercase() == "true")
+                .unwrap_or(false);
+            BOT_ALLIANCE_ENABLED.store(enabled, Ordering::Relaxed);
+        });
+        let bot_alliance_enabled = BOT_ALLIANCE_ENABLED.load(Ordering::Relaxed);
+
         Update {
             contacts: self
                 .contacts
@@ -115,6 +127,7 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
             score: self.player.score,
             world_radius: self.world.radius,
             terrain,
+            bot_alliance_enabled,
         }
     }
 }

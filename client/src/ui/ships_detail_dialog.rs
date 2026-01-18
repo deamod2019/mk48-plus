@@ -6,6 +6,7 @@ use crate::translation::Mk48Translation;
 use crate::ui::sprite::Sprite;
 use common::altitude::Altitude;
 use common::entity::{EntityData, EntityKind, EntitySubKind, EntityType};
+use common::skill::SkillType;
 use common::ticks::Ticks;
 use common::velocity::Velocity;
 use core_protocol::id::LanguageId;
@@ -165,6 +166,36 @@ fn entity_card(
                     <Sprite {entity_type}/>
                 </td>
             </tr>
+            // Skills section
+            if !data.skills.is_empty() {
+                <tr>
+                    <td colspan="2">
+                        <h4 style="margin: 0.5em 0 0.3em 0; color: #ffd700;">{"🎯 Skills"}</h4>
+                        <ul style="margin: 0; padding-left: 1.5em;">
+                            {data.skills.iter().map(|skill| {
+                                let skill_data = skill.data();
+                                let cooldown = skill_data.cooldown.to_secs();
+                                let duration_str = skill_data.duration
+                                    .map(|d| format!(" | Duration: {:.0}s", d.to_secs()))
+                                    .unwrap_or_default();
+                                let charge_str = skill_data.charge_time
+                                    .map(|c| format!(" | Charge: {:.0}s", c.to_secs()))
+                                    .unwrap_or_default();
+                                html_nested!{
+                                    <li style="margin: 0.2em 0;">
+                                        <strong style="color: #87ceeb;">{skill_data.label}</strong>
+                                        {" - "}
+                                        <span style="color: #aaa;">{skill_data.description}</span>
+                                        <span style="color: #888; font-size: 0.85em;">
+                                            {format!(" (CD: {:.0}s{}{})", cooldown, duration_str, charge_str)}
+                                        </span>
+                                    </li>
+                                }
+                            }).collect::<Html>()}
+                        </ul>
+                    </td>
+                </tr>
+            }
             {group_armaments(&data.armaments, &[]).into_iter().map(|Group{entity_type, total, ..}| html_nested!{
                 <tr>
                     <td colspan="2">

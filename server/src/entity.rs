@@ -647,14 +647,43 @@ impl Entity {
         }
 
         let player = player.borrow_player();
+        let other_player_ref = other_player.borrow_player();
+
+        // Elite Bot Alliance System:
+        // When enabled, high-scoring bots form an alliance with each other
+        // to challenge the player. Controlled by MK48_BOT_ALLIANCE env var.
+        // Default: disabled (bots fight each other normally)
+        use std::sync::{Once, atomic::{AtomicBool, Ordering}};
+        static BOT_ALLIANCE_INIT: Once = Once::new();
+        static BOT_ALLIANCE_ENABLED: AtomicBool = AtomicBool::new(false);
+        BOT_ALLIANCE_INIT.call_once(|| {
+            let enabled = std::env::var("MK48_BOT_ALLIANCE")
+                .map(|v| v == "1" || v.to_lowercase() == "true")
+                .unwrap_or(false);
+            BOT_ALLIANCE_ENABLED.store(enabled, Ordering::Relaxed);
+        });
+        let bot_alliance_enabled = BOT_ALLIANCE_ENABLED.load(Ordering::Relaxed);
+        
+        const ELITE_BOT_SCORE_THRESHOLD: u32 = 5000; // ~Level 6+
+        
+        if bot_alliance_enabled {
+            let self_is_bot = player.player_id.is_bot();
+            let other_is_bot = other_player_ref.player_id.is_bot();
+            
+            // High-scoring bots are friendly to each other (forming an alliance against players)
+            if self_is_bot && other_is_bot 
+               && player.score >= ELITE_BOT_SCORE_THRESHOLD 
+               && other_player_ref.score >= ELITE_BOT_SCORE_THRESHOLD
+            {
+                return true;
+            }
+        }
 
         if player.team_id().is_none() {
             return false;
         }
 
-        let other_player = other_player.borrow_player();
-
-        player.team_id() == other_player.team_id()
+        player.team_id() == other_player_ref.team_id()
     }
 
     /// Returns true if and only two entities have some, identical players.

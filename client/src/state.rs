@@ -20,6 +20,8 @@ pub struct Mk48State {
     pub score: u32,
     pub terrain: Terrain,
     pub world_radius: f32,
+    /// Whether bot alliance mode is enabled (high-score bots ally against players).
+    pub bot_alliance_enabled: bool,
     terrain_reset: bool,
 }
 
@@ -34,6 +36,7 @@ impl Default for Mk48State {
             terrain: Terrain::default(),
             // Keep border off splash screen by assuming radius.
             world_radius: 10000.0,
+            bot_alliance_enabled: false,
             terrain_reset: false,
         }
     }
@@ -72,6 +75,7 @@ impl Apply<Update> for Mk48State {
 
         self.world_radius = update.world_radius;
         self.score = update.score;
+        self.bot_alliance_enabled = update.bot_alliance_enabled;
     }
 
     fn reset(&mut self) {

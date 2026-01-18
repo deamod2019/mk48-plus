@@ -32,11 +32,10 @@ use common::guidance::Guidance;
 use common::protocol::{
     Command, Control, Fire, Hint, Pay, Spawn, Update, Upgrade, Warp, WorldEvent, ZeroPulse,
 };
-use common::zero_pulse::ZERO_PULSE_COOLDOWN;
+use common::skill::{ZERO_PULSE_COOLDOWN, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, SMOKE_SCREEN_RADIUS};
 use common::ticks::Ticks;
 use common::transform::Transform;
 use common::velocity::Velocity;
-use common::warp::{WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE};
 use common::world::strict_area_border;
 use common_util::range::{gen_radius, lerp, map_ranges};
 use core_protocol::id::{GameId, TeamId};
@@ -101,6 +100,8 @@ pub struct Mk48Game {
     emergency_repair_cooldown_secs: f32,
     smoke_screen_cooldown_secs: f32,
     smoke_screen_active_secs: f32,
+    burst_loading_cooldown_secs: f32,
+    burst_loading_active_secs: f32,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -240,6 +241,8 @@ impl GameClient for Mk48Game {
             emergency_repair_cooldown_secs: 0.0,
             smoke_screen_cooldown_secs: 0.0,
             smoke_screen_active_secs: 0.0,
+            burst_loading_cooldown_secs: 0.0,
+            burst_loading_active_secs: 0.0,
         })
     }
 
@@ -679,7 +682,7 @@ impl GameClient for Mk48Game {
         // Determine smoke screen visual effect
         let smoke_screen = if self.smoke_screen_active_secs > 0.0 {
             if let Some(pc) = context.state.game.player_contact() {
-                Some((pc.transform().position, common::smoke_screen::SMOKE_SCREEN_RADIUS))
+                Some((pc.transform().position, SMOKE_SCREEN_RADIUS))
             } else {
                 None
             }
@@ -720,13 +723,24 @@ impl GameClient for Mk48Game {
 
         for InterpolatedContact { view: contact, .. } in context.state.game.contacts.values() {
             let friendly = context.state.core.is_friendly(contact.player_id());
+            
+            // Check if this is an alliance bot (high-score bot when alliance mode is enabled)
+            const ELITE_BOT_SCORE_THRESHOLD: u32 = 5000;
+            let is_alliance_bot = context.state.game.bot_alliance_enabled
+                && contact.player_id().map(|id| id.is_bot()).unwrap_or(false)
+                && context.state.core.liveboard.iter()
+                    .find(|lb| lb.player_id == contact.player_id().unwrap())
+                    .map(|lb| lb.score >= ELITE_BOT_SCORE_THRESHOLD)
+                    .unwrap_or(false);
 
             let color_bytes = if friendly {
-                [58, 255, 140]
+                [58, 255, 140]  // Green for friendly
+            } else if is_alliance_bot {
+                [255, 100, 50]  // Orange-red for alliance bots
             } else if contact.is_boat() {
-                [255; 3]
+                [255; 3]  // White for normal boats
             } else {
-                [231, 76, 60]
+                [231, 76, 60]  // Red for enemy weapons
             };
             let color = rgb_array(color_bytes);
 
@@ -1591,14 +1605,16 @@ impl GameClient for Mk48Game {
         );
 
         let status = if let Some(player_contact) = player_contact {
-            let is_star_destroyer =
-                player_contact.view.entity_type() == Some(EntityType::StarDestroyer);
+            let is_star_destroyer = matches!(
+                player_contact.view.entity_type(),
+                Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite)
+            );
             let has_zero_pulse = matches!(
                 player_contact
                     .model
                     .entity_type()
                     .or(player_contact.view.entity_type()),
-                Some(EntityType::Leviathan) | Some(EntityType::StarDestroyer)
+                Some(EntityType::Leviathan | EntityType::StarDestroyer)
             );
             self.update_warp_timers(elapsed_seconds, is_star_destroyer);
             self.update_zero_pulse_timers(elapsed_seconds, has_zero_pulse);
@@ -1615,6 +1631,11 @@ impl GameClient for Mk48Game {
             }
             let has_tianwangxing = player_contact.view.entity_type() == Some(EntityType::Tianwangxing);
             if has_tianwangxing {
+                self.update_smoke_screen_timers(elapsed_seconds);
+            }
+            let has_richelieu = player_contact.view.entity_type() == Some(EntityType::Richelieu);
+            if has_richelieu {
+                self.update_burst_loading_timers(elapsed_seconds);
                 self.update_smoke_screen_timers(elapsed_seconds);
             }
 
@@ -1745,6 +1766,9 @@ impl GameClient for Mk48Game {
                 emergency_repair_cooldown_remaining: self.emergency_repair_cooldown_secs.max(0.0),
                 smoke_screen_cooldown_remaining: self.smoke_screen_cooldown_secs.max(0.0),
                 smoke_screen_active_remaining: self.smoke_screen_active_secs.max(0.0),
+                burst_loading_cooldown_remaining: self.burst_loading_cooldown_secs.max(0.0),
+                burst_loading_active_remaining: self.burst_loading_active_secs.max(0.0),
+                bot_alliance_enabled: context.state.game.bot_alliance_enabled,
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
@@ -1757,7 +1781,7 @@ impl GameClient for Mk48Game {
                     }
                     if left_click {
                         if let Some(target) = aim_target {
-                            use common::iaigiri::IAIGIRI_COOLDOWN;
+                        use common::skill::IAIGIRI_COOLDOWN;
                             
                             self.iaigiri_cooldown_secs = IAIGIRI_COOLDOWN.to_secs();
                             self.iaigiri_selecting = false;
@@ -1928,7 +1952,7 @@ impl GameClient for Mk48Game {
                 if let Some(contact) = context.state.game.player_contact() {
                     if matches!(
                         contact.entity_type(),
-                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer)
+                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite)
                     )
                         && self.warp_charge_secs == 0.0
                         && self.warp_cooldown_secs == 0.0
@@ -1967,6 +1991,9 @@ impl GameClient for Mk48Game {
             UiEvent::SmokeScreen => {
                 self.try_smoke_screen(context);
             }
+            UiEvent::BurstLoading => {
+                self.try_burst_loading(context);
+            }
         }
     }
 }
@@ -2003,7 +2030,7 @@ impl Mk48Game {
             .and_then(|c| c.model.entity_type().or(c.view.entity_type()));
         if matches!(
             entity_type,
-            Some(EntityType::Leviathan) | Some(EntityType::StarDestroyer)
+            Some(EntityType::Leviathan | EntityType::StarDestroyer)
         ) && self.zero_pulse_cooldown_secs == 0.0
         {
             context.send_to_game(Command::ZeroPulse(ZeroPulse));
@@ -2063,7 +2090,7 @@ impl Mk48Game {
     }
 
     fn try_engine_boost(&mut self, context: &mut Context<Self>) {
-        use common::engine_boost::{ENGINE_BOOST_COOLDOWN, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_MAX_DURATION};
+        use common::skill::{ENGINE_BOOST_COOLDOWN, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_MAX_DURATION};
         use common::protocol::EngineBoost;
         
         if let Some(contact) = context.state.game.player_contact() {
@@ -2095,7 +2122,7 @@ impl Mk48Game {
     }
 
     fn try_sonar_pulse(&mut self, context: &mut Context<Self>) {
-        use common::sonar_pulse::SONAR_PULSE_COOLDOWN;
+        use common::skill::SONAR_PULSE_COOLDOWN;
         use common::protocol::SonarPulse;
         
         if let Some(contact) = context.state.game.player_contact() {
@@ -2109,7 +2136,7 @@ impl Mk48Game {
     }
 
     fn try_depth_charge_barrage(&mut self, context: &mut Context<Self>) {
-        use common::depth_charge_barrage::DCB_COOLDOWN;
+        use common::skill::DCB_COOLDOWN;
         use common::protocol::DepthChargeBarrage;
         
         if let Some(contact) = context.state.game.player_contact() {
@@ -2123,7 +2150,7 @@ impl Mk48Game {
     }
 
     fn try_air_superiority(&mut self, context: &mut Context<Self>) {
-        use common::air_superiority::AIR_SUPERIORITY_COOLDOWN;
+        use common::skill::AIR_SUPERIORITY_COOLDOWN;
         use common::protocol::AirSuperiority;
         
         if let Some(contact) = context.state.game.player_contact() {
@@ -2137,7 +2164,7 @@ impl Mk48Game {
     }
 
     fn try_emergency_repair(&mut self, context: &mut Context<Self>) {
-        use common::emergency_repair::EMERGENCY_REPAIR_COOLDOWN;
+        use common::skill::EMERGENCY_REPAIR_COOLDOWN;
         use common::protocol::EmergencyRepair;
         
         if let Some(contact) = context.state.game.player_contact() {
@@ -2163,13 +2190,14 @@ impl Mk48Game {
     }
 
     fn try_smoke_screen(&mut self, context: &mut Context<Self>) {
-        use common::smoke_screen::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
+        use common::skill::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
         use common::protocol::SmokeScreen;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::Tianwangxing)
-                && self.smoke_screen_cooldown_secs == 0.0
-            {
+            let entity_type = contact.entity_type();
+            let has_smoke_screen = entity_type == Some(EntityType::Tianwangxing)
+                || entity_type == Some(EntityType::Richelieu);
+            if has_smoke_screen && self.smoke_screen_cooldown_secs == 0.0 {
                 self.smoke_screen_cooldown_secs = SMOKE_SCREEN_COOLDOWN.to_secs();
                 self.smoke_screen_active_secs = SMOKE_SCREEN_DURATION.to_secs();
                 context.send_to_game(Command::SmokeScreen(SmokeScreen));
@@ -2193,11 +2221,35 @@ impl Mk48Game {
 
     /// Returns the smoke screen remaining duration ratio (0.0-1.0)
     pub fn smoke_screen_ratio(&self) -> f32 {
-        use common::smoke_screen::SMOKE_SCREEN_DURATION;
+        use common::skill::SMOKE_SCREEN_DURATION;
         if self.smoke_screen_active_secs > 0.0 {
             self.smoke_screen_active_secs / SMOKE_SCREEN_DURATION.to_secs()
         } else {
             0.0
+        }
+    }
+
+    fn try_burst_loading(&mut self, context: &mut Context<Self>) {
+        use common::skill::{BURST_LOADING_COOLDOWN, BURST_LOADING_DURATION};
+        use common::protocol::BurstLoading;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::Richelieu)
+                && self.burst_loading_cooldown_secs == 0.0
+            {
+                self.burst_loading_cooldown_secs = BURST_LOADING_COOLDOWN.to_secs();
+                self.burst_loading_active_secs = BURST_LOADING_DURATION.to_secs();
+                context.send_to_game(Command::BurstLoading(BurstLoading));
+            }
+        }
+    }
+
+    fn update_burst_loading_timers(&mut self, elapsed_seconds: f32) {
+        if self.burst_loading_active_secs > 0.0 {
+            self.burst_loading_active_secs = (self.burst_loading_active_secs - elapsed_seconds).max(0.0);
+        }
+        if self.burst_loading_cooldown_secs > 0.0 {
+            self.burst_loading_cooldown_secs = (self.burst_loading_cooldown_secs - elapsed_seconds).max(0.0);
         }
     }
 }

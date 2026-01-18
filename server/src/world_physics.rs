@@ -486,6 +486,15 @@ impl World {
                     entity.extension_mut().update_tickers(delta);
                     entity.extension_mut().advance_engine_boost(delta);
                     entity.extension_mut().advance_iaigiri(delta);
+                    // Advance burst loading timers and apply reload boost
+                    if entity.extension().is_burst_loading_active() {
+                        // When burst loading is active, instantly reload weapons by setting reload to max
+                        entity.extension_mut().advance_burst_loading(delta);
+                        // Apply massive reload boost (effectively 0.05s reload)
+                        entity.reload(delta * 200.0);  // 200x normal reload speed
+                    } else {
+                        entity.extension_mut().advance_burst_loading(delta);
+                    }
 
                     if repair_eligible {
                         let repair_amount = if data.length > 200.0 {
