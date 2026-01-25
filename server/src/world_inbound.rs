@@ -14,7 +14,7 @@ use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
 use common::velocity::Velocity;
-use common::skill::{SkillType, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS, NUCLEAR_STRIKE_CHARGE, NUCLEAR_STRIKE_COOLDOWN, NUCLEAR_STRIKE_RADIUS, ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN};
+use common::skill::{SkillType, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS, NUCLEAR_STRIKE_COOLDOWN, NUCLEAR_STRIKE_RADIUS, ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN};
 use common::util::{level_to_score, score_to_level};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
@@ -1071,6 +1071,9 @@ impl CommandTrait for NuclearStrike {
             Status::Alive { entity_index, .. } => entity_index,
             _ => return Err("cannot use nuclear strike while not alive"),
         };
+        
+        // Drop the player borrow BEFORE calling is_friendly_to_player in the iterator
+        drop(player);
 
         let entity = &world.entities[entity_index];
         

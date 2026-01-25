@@ -16,8 +16,9 @@ use common::util::hash_u32_to_f32;
 use common::velocity::Velocity;
 use maybe_parallel_iterator::{IntoMaybeParallelIterator, MaybeParallelSort};
 use rand::{thread_rng, Rng};
+use std::cell::RefCell;
 use std::sync::Arc;
-use std::sync::Mutex;
+use thread_local::ThreadLocal;
 
 pub const MINE_SPEED: f32 = 8.0;
 
@@ -65,9 +66,12 @@ impl World {
     /// update_entities_and_others performs updates on each pair of entities, with some exceptions.
     pub fn physics_radius(&mut self, delta: Ticks) {
         let delta_seconds = delta.to_secs();
+        
+        // Frame counter for temporal spreading of low-priority interactions
+        let frame_mod = self.frame_counter % 3;
 
-        // TODO: look into lock free data structures.
-        let mutations = Mutex::new(Vec::new());
+        // Thread-local mutation collection for lock-free parallel processing
+        let mutations: ThreadLocal<RefCell<Vec<(EntityIndex, Mutation)>>> = ThreadLocal::new();
 
         self.entities
             .par_iter()
@@ -93,7 +97,7 @@ impl World {
                         // Entities do not interact with themselves.
                         continue;
                     }
-                    let _other_data = other_entity.data();
+                    let other_data = other_entity.data();
 
                     // Only want to process each pair of entities once, but without stopping early
                     // and assuming A.radius > B.radius, would process A -> B and, depending on
@@ -104,6 +108,49 @@ impl World {
                     let other_radius = Self::minimum_scan_radius(other_entity, delta_seconds);
                     #[allow(clippy::float_cmp)]
                     if other_radius > radius || (other_radius == radius && other_index > index) {
+                        continue;
+                    }
+
+                    // === SAFE EARLY EXIT OPTIMIZATION ===
+                    // Only skip pairs that are KNOWN to never interact.
+                    // New EntityKind additions will default to full detection (safe).
+                    let entity_kind = data.kind;
+                    let other_kind = other_data.kind;
+                    
+                    let can_skip = match (entity_kind, other_kind) {
+                        // Same-kind pairs that never interact with each other
+                        (EntityKind::Obstacle, EntityKind::Obstacle) => true,
+                        (EntityKind::Collectible, EntityKind::Collectible) => true,
+                        (EntityKind::Decoy, EntityKind::Decoy) => true,
+                        
+                        // Weapon vs Weapon: only SAM can intercept missiles
+                        (EntityKind::Weapon, EntityKind::Weapon) => {
+                            let is_sam = data.sub_kind == EntitySubKind::Sam;
+                            let other_is_sam = other_data.sub_kind == EntitySubKind::Sam;
+                            !(is_sam || other_is_sam)
+                        }
+                        
+                        // Altitude layer separation: submerged vs airborne
+                        // Exception: Aircraft/Weapon can cross layers (torpedoes, depth charges)
+                        _ => {
+                            let is_submerged = entity.altitude.is_submerged();
+                            let other_is_airborne = other_entity.altitude.is_airborne();
+                            let is_airborne = entity.altitude.is_airborne();
+                            let other_is_submerged = other_entity.altitude.is_submerged();
+                            
+                            // Submerged entity vs airborne entity
+                            if is_submerged && other_is_airborne {
+                                // Aircraft can attack subs with torpedoes, Weapons can cross layers
+                                !matches!(other_kind, EntityKind::Aircraft | EntityKind::Weapon)
+                            } else if is_airborne && other_is_submerged {
+                                !matches!(entity_kind, EntityKind::Aircraft | EntityKind::Weapon)
+                            } else {
+                                false // Default: do NOT skip, perform full detection
+                            }
+                        }
+                    };
+                    
+                    if can_skip {
                         continue;
                     }
 
@@ -133,8 +180,12 @@ impl World {
                         }
                     };
 
-                    let mutate =
-                        |e: &Entity, m: Mutation| mutations.lock().unwrap().push((get_index(e), m));
+                    let mutate = |e: &Entity, m: Mutation| {
+                        mutations
+                            .get_or(|| RefCell::new(Vec::with_capacity(32)))
+                            .borrow_mut()
+                            .push((get_index(e), m))
+                    };
 
                     macro_rules! debug_remove {
                         ($entity:expr, $($arg:tt)*) => {
@@ -164,22 +215,27 @@ impl World {
                             }
                         }
 
-                        if collectibles.len() == 1 && altitude_overlap {
+                        // LOW PRIORITY: Collectible attractions (every 3 frames)
+                        // Compensate by 3x velocity when processed
+                        if frame_mod == 0 && collectibles.len() == 1 && altitude_overlap {
                             // Collectibles gravitate towards players (except if the player created them).
                             if boats.len() == 1 && (!entity.has_same_player(other_entity) || collectibles[0].ticks > Ticks::from_secs(5.0)) {
-                                mutate(collectibles[0], Mutation::Attraction(boats[0].transform.position - collectibles[0].transform.position, Velocity::from_mps(20.0), boats[0].altitude - collectibles[0].altitude));
+                                // 3x velocity to compensate for 1/3 processing rate
+                                mutate(collectibles[0], Mutation::Attraction(boats[0].transform.position - collectibles[0].transform.position, Velocity::from_mps(60.0), boats[0].altitude - collectibles[0].altitude));
                             }
 
                             // Payments gravitate towards oil rigs.
                             if obstacles.len() == 1 && obstacles[0].entity_type == EntityType::OilPlatform && collectibles[0].player.is_some() {
-                                mutate(collectibles[0], Mutation::Attraction(obstacles[0].transform.position - collectibles[0].transform.position, Velocity::from_mps(10.0), Altitude::ZERO));
+                                // 3x velocity to compensate for 1/3 processing rate
+                                mutate(collectibles[0], Mutation::Attraction(obstacles[0].transform.position - collectibles[0].transform.position, Velocity::from_mps(30.0), Altitude::ZERO));
                             }
                         }
 
+                        // LOW PRIORITY: Obstacle repair (every 3 frames)
                         // Repair obstacles near non bots to prevent them from decaying in front of players.
-                        if boats.len() == 1 && obstacles.len() == 1 && !boats[0].borrow_player().player_id.is_bot() && obstacles[0].data().lifespan != Ticks::ZERO {
-                            // Repair them ten times as fast as they decay.
-                            mutate(obstacles[0], Mutation::Repair(delta * 10.0));
+                        if frame_mod == 1 && boats.len() == 1 && obstacles.len() == 1 && !boats[0].borrow_player().player_id.is_bot() && obstacles[0].data().lifespan != Ticks::ZERO {
+                            // Repair them 30x (10x * 3) as fast as they decay to compensate for 1/3 processing rate.
+                            mutate(obstacles[0], Mutation::Repair(delta * 30.0));
                         }
 
                         if !friendly {
@@ -617,7 +673,11 @@ impl World {
                 }
             });
 
-        let mut mutations = mutations.into_inner().unwrap();
+        // Collect mutations from all thread-local storage
+        let mut mutations: Vec<(EntityIndex, Mutation)> = mutations
+            .into_iter()
+            .flat_map(|cell| cell.into_inner())
+            .collect();
 
         // Sort by reverse EntityIndex while prioritizing Mutation ordering.
         mutations.maybe_par_sort_unstable_by(|a, b| {

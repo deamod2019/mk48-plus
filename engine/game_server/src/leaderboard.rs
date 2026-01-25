@@ -31,11 +31,13 @@ pub struct LeaderboardRepo<G: GameArenaService> {
     pending: HashMap<(PlayerAlias, PeriodId), u32>,
     take_pending_rate_limit: RateLimiter,
     read_database_rate_limit: RateLimiter,
+    /// If true, skip database operations.
+    disabled: bool,
     _spooky: PhantomData<G>,
 }
 
 impl<G: GameArenaService> LeaderboardRepo<G> {
-    pub fn new() -> Self {
+    pub fn new(disabled: bool) -> Self {
         Self {
             leaderboards: [
                 (Vec::new().into(), false),
@@ -45,6 +47,7 @@ impl<G: GameArenaService> LeaderboardRepo<G> {
             pending: HashMap::new(),
             take_pending_rate_limit: RateLimiter::new(Duration::from_secs(60), 0),
             read_database_rate_limit: RateLimiter::new(Duration::from_secs(110), 0),
+            disabled,
             _spooky: PhantomData,
         }
     }
@@ -143,6 +146,10 @@ impl<G: GameArenaService> LeaderboardRepo<G> {
         infrastructure: &mut Infrastructure<G>,
         ctx: &mut ActorContext<Infrastructure<G>>,
     ) {
+        if infrastructure.leaderboard.disabled {
+            return;
+        }
+
         if infrastructure
             .leaderboard
             .read_database_rate_limit
@@ -190,6 +197,10 @@ impl<G: GameArenaService> LeaderboardRepo<G> {
         infrastructure: &mut Infrastructure<G>,
         ctx: &mut ActorContext<Infrastructure<G>>,
     ) {
+        if infrastructure.leaderboard.disabled {
+            return;
+        }
+
         let database = infrastructure.database();
         let stream: Option<FuturesUnordered<_>> =
             infrastructure

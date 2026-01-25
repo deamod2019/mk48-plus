@@ -29,6 +29,8 @@ pub struct Health {
     ticks: usize,
     /// Start of TPS measurement.
     tps_start: Instant,
+    /// If true, skip system health checks.
+    disabled: bool,
 }
 
 impl Health {
@@ -118,7 +120,7 @@ impl Health {
     }
 
     fn refresh_if_necessary(&mut self) {
-        if self.last.elapsed() <= Self::CACHE {
+        if self.disabled || self.last.elapsed() <= Self::CACHE {
             return;
         }
         self.last = Instant::now();
@@ -134,10 +136,9 @@ impl Health {
         // Note: Written with the intention that NaN's do not result in unhealthy.
         self.healthy = !((self.cpu + self.cpu_steal).max(self.ram) > 0.8);
     }
-}
 
-impl Default for Health {
-    fn default() -> Self {
+    /// Creates a new Health instance. If disabled is true, system health checks are skipped.
+    pub fn new(disabled: bool) -> Self {
         Self {
             system: SimpleServerStatus::new(),
             last: Instant::now() - Self::CACHE * 2,
@@ -151,6 +152,13 @@ impl Default for Health {
             spt: ContinuousExtremaMetric::default(),
             tps: ContinuousExtremaMetric::default(),
             tps_start: Instant::now(),
+            disabled,
         }
+    }
+}
+
+impl Default for Health {
+    fn default() -> Self {
+        Self::new(false)
     }
 }

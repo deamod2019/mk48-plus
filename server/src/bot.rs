@@ -77,6 +77,40 @@ impl Bot {
         terrain.sample(pos).unwrap_or(Altitude::MIN) >= terrain::SAND_LEVEL
     }
 
+    /// Pre-checks if a given armament can be fired based on altitude/surfacing conditions.
+    /// This mirrors the checks in world_inbound.rs to avoid generating invalid fire commands.
+    fn can_fire_armament<C: ContactTrait>(
+        boat: &C,
+        boat_data: &EntityData,
+        armament_data: &EntityData,
+    ) -> bool {
+        let altitude = boat.altitude();
+        
+        // Can't fire if boat is a submerged former submarine (or non-submarine that upgraded from sub)
+        if altitude.is_submerged() {
+            if boat_data.sub_kind != EntitySubKind::Submarine {
+                return false;
+            }
+            // Submarines can't fire certain weapons while submerged
+            if matches!(
+                armament_data.sub_kind,
+                EntitySubKind::Shell | EntitySubKind::Sam | EntitySubKind::TankShell
+            ) || matches!(armament_data.kind, EntityKind::Aircraft) {
+                return false;
+            }
+        }
+        
+        // Can't fire if flying high (except for aircraft/starships)
+        if altitude > Altitude(50) && !matches!(
+            boat_data.sub_kind,
+            EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::Helicopter
+        ) {
+            return false;
+        }
+        
+        true
+    }
+
     /// update processes a complete update and returns some command (or None to quit).
     fn update<'a, U: 'a + CompleteTrait<'a>>(
         &mut self,
@@ -224,6 +258,12 @@ impl Bot {
                     }
 
                     let armament_entity_data: &EntityData = armament.entity_type.data();
+                    
+                    // Pre-check if we can fire this armament (avoids generating invalid commands)
+                    if !Self::can_fire_armament(&boat, data, armament_entity_data) {
+                        continue;
+                    }
+                    
                     if !matches!(
                         armament_entity_data.kind,
                         EntityKind::Weapon | EntityKind::Aircraft | EntityKind::Decoy

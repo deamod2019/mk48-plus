@@ -116,7 +116,7 @@ impl<G: GameArenaService> ClientRepo<G> {
 
                 match str::from_utf8(&value) {
                     Ok(js_src) => {
-                        log::info!(
+                        log::debug!(
                             "referrer snippet for cohort {:?}, referrer {:?} is {}",
                             cohort_id,
                             referrer,

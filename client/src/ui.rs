@@ -254,6 +254,7 @@ impl Default for UiState {
     }
 }
 
+#[derive(Clone)]
 pub enum UiEvent {
     /// Sensors active.
     Active(bool),
@@ -334,6 +335,80 @@ pub struct UiStatusPlaying {
     pub energy_shield_active_remaining: f32,
     /// Whether bot alliance mode is enabled.
     pub bot_alliance_enabled: bool,
+}
+
+/// Skill runtime state for UI rendering.
+#[derive(PartialEq, Clone, Debug)]
+pub enum SkillState {
+    Ready,
+    Selecting,
+    Charging(f32),
+    Active(f32),
+    Cooling(f32),
+}
+
+impl UiStatusPlaying {
+    /// Query the current state of a skill for UI rendering.
+    pub fn get_skill_state(&self, skill: common::skill::SkillType) -> SkillState {
+        use common::skill::SkillType;
+        match skill {
+            SkillType::Warp => {
+                if self.warp_selecting { SkillState::Selecting }
+                else if self.warp_charge_remaining > 0.0 { SkillState::Charging(self.warp_charge_remaining) }
+                else if self.warp_cooldown_remaining > 0.0 { SkillState::Cooling(self.warp_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::ZeroPulse => {
+                if self.zero_pulse_cooldown_remaining > 0.0 { SkillState::Cooling(self.zero_pulse_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::Iaigiri => {
+                if self.iaigiri_selecting { SkillState::Selecting }
+                else if self.iaigiri_cooldown_remaining > 0.0 { SkillState::Cooling(self.iaigiri_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::EngineBoost => {
+                if self.engine_boost_remaining > 0.0 { SkillState::Active(self.engine_boost_remaining) }
+                else if self.engine_boost_cooldown_remaining > 0.0 { SkillState::Cooling(self.engine_boost_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::SonarPulse => {
+                if self.sonar_pulse_cooldown_remaining > 0.0 { SkillState::Cooling(self.sonar_pulse_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::DepthChargeBarrage => {
+                if self.depth_charge_barrage_cooldown_remaining > 0.0 { SkillState::Cooling(self.depth_charge_barrage_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::AirSuperiority => {
+                if self.air_superiority_cooldown_remaining > 0.0 { SkillState::Cooling(self.air_superiority_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::EmergencyRepair => {
+                if self.emergency_repair_cooldown_remaining > 0.0 { SkillState::Cooling(self.emergency_repair_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::SmokeScreen => {
+                if self.smoke_screen_active_remaining > 0.0 { SkillState::Active(self.smoke_screen_active_remaining) }
+                else if self.smoke_screen_cooldown_remaining > 0.0 { SkillState::Cooling(self.smoke_screen_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::BurstLoading => {
+                if self.burst_loading_active_remaining > 0.0 { SkillState::Active(self.burst_loading_active_remaining) }
+                else if self.burst_loading_cooldown_remaining > 0.0 { SkillState::Cooling(self.burst_loading_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::NuclearStrike => {
+                if self.nuclear_strike_cooldown_remaining > 0.0 { SkillState::Cooling(self.nuclear_strike_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::EnergyShield => {
+                if self.energy_shield_active_remaining > 0.0 { SkillState::Active(self.energy_shield_active_remaining) }
+                else if self.energy_shield_cooldown_remaining > 0.0 { SkillState::Cooling(self.energy_shield_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+        }
+    }
 }
 
 #[derive(PartialEq, Clone)]

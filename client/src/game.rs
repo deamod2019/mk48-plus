@@ -553,18 +553,26 @@ impl GameClient for Mk48Game {
                             )
                             .map(|Group { entity_type, .. }| *entity_type);
                     }
-                    Key::J => {
-                        if contact.entity_type() == Some(EntityType::Minelayer49) {
-                            if self.iaigiri_cooldown_secs == 0.0 {
-                                self.iaigiri_selecting = !self.iaigiri_selecting;
+                    // Data-driven skill hotkey handling
+                    Key::Q | Key::J | Key::K | Key::L | Key::B | Key::N => {
+                        let data = entity_type.data();
+                        let pressed_char = match event.key {
+                            Key::Q => 'Q',
+                            Key::J => 'J',
+                            Key::K => 'K',
+                            Key::L => 'L',
+                            Key::B => 'B',
+                            Key::N => 'N',
+                            _ => unreachable!(),
+                        };
+                        
+                        // Find skill with matching hotkey that this entity has
+                        for skill in data.skills.iter() {
+                            if skill.hotkey() == Some(pressed_char) {
+                                self.try_skill(*skill, context);
+                                break;
                             }
                         }
-                    }
-                    Key::K => {
-                        self.try_engine_boost(context);
-                    }
-                    Key::Q => {
-                        self.try_zero_pulse(context);
                     }
                     _ => {
                         if let Some(digit) = event.key.digit_with_ten() {
@@ -1715,51 +1723,27 @@ impl GameClient for Mk48Game {
         );
 
         let status = if let Some(player_contact) = player_contact {
-            let is_star_destroyer = matches!(
-                player_contact.view.entity_type(),
-                Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite | EntityType::StellarFrigate)
-            );
-            let has_zero_pulse = matches!(
-                player_contact
-                    .model
-                    .entity_type()
-                    .or(player_contact.view.entity_type()),
-                Some(EntityType::Leviathan | EntityType::StarDestroyer)
-            );
-            self.update_warp_timers(elapsed_seconds, is_star_destroyer);
-            self.update_zero_pulse_timers(elapsed_seconds, has_zero_pulse);
-            let has_iaigiri = player_contact.view.entity_type() == Some(EntityType::Minelayer49);
-            self.update_iaigiri_timers(elapsed_seconds, has_iaigiri);
-            self.update_engine_boost_timers(elapsed_seconds, has_iaigiri);
-            let has_hunter_killer = player_contact.view.entity_type() == Some(EntityType::HunterKiller77);
-            self.update_sonar_pulse_timers(elapsed_seconds, has_hunter_killer);
-            self.update_depth_charge_barrage_timers(elapsed_seconds, has_hunter_killer);
-            let has_fortress_carrier = player_contact.view.entity_type() == Some(EntityType::FortressCarrier);
-            let has_battleship750k = player_contact.view.entity_type() == Some(EntityType::Battleship750k);
-            if has_fortress_carrier {
-                self.update_air_superiority_timers(elapsed_seconds);
-                self.update_emergency_repair_timers(elapsed_seconds);
-            }
-            if has_battleship750k {
-                self.update_emergency_repair_timers(elapsed_seconds);
-                self.update_smoke_screen_timers(elapsed_seconds);
-            }
-            let has_tianwangxing = player_contact.view.entity_type() == Some(EntityType::Tianwangxing);
-            if has_tianwangxing {
-                self.update_smoke_screen_timers(elapsed_seconds);
-            }
-            let has_richelieu = player_contact.view.entity_type() == Some(EntityType::Richelieu);
-            if has_richelieu {
-                self.update_burst_loading_timers(elapsed_seconds);
-                self.update_smoke_screen_timers(elapsed_seconds);
-            }
-            let has_unsc_infinite = player_contact.view.entity_type() == Some(EntityType::UnscInfinite);
-            if has_unsc_infinite {
-                self.update_nuclear_strike_timers(elapsed_seconds);
-            }
-            let has_stellar_frigate = player_contact.view.entity_type() == Some(EntityType::StellarFrigate);
-            if has_stellar_frigate {
-                self.update_energy_shield_timers(elapsed_seconds);
+            // Data-driven skill timer updates: iterate over skills the entity actually has
+            if let Some(entity_type) = player_contact.view.entity_type() {
+                let data = entity_type.data();
+                use common::skill::SkillType;
+                
+                for skill in data.skills.iter() {
+                    match skill {
+                        SkillType::Warp => self.update_warp_timers(elapsed_seconds, true),
+                        SkillType::ZeroPulse => self.update_zero_pulse_timers(elapsed_seconds, true),
+                        SkillType::Iaigiri => self.update_iaigiri_timers(elapsed_seconds, true),
+                        SkillType::EngineBoost => self.update_engine_boost_timers(elapsed_seconds, true),
+                        SkillType::SonarPulse => self.update_sonar_pulse_timers(elapsed_seconds, true),
+                        SkillType::DepthChargeBarrage => self.update_depth_charge_barrage_timers(elapsed_seconds, true),
+                        SkillType::AirSuperiority => self.update_air_superiority_timers(elapsed_seconds),
+                        SkillType::EmergencyRepair => self.update_emergency_repair_timers(elapsed_seconds),
+                        SkillType::SmokeScreen => self.update_smoke_screen_timers(elapsed_seconds),
+                        SkillType::BurstLoading => self.update_burst_loading_timers(elapsed_seconds),
+                        SkillType::NuclearStrike => self.update_nuclear_strike_timers(elapsed_seconds),
+                        SkillType::EnergyShield => self.update_energy_shield_timers(elapsed_seconds),
+                    }
+                }
             }
 
             let mut guidance = None;
@@ -2154,6 +2138,34 @@ impl Mk48Game {
         self.ui_state.submerge = submerge;
     }
 
+    /// Unified skill dispatcher - maps SkillType to its handler.
+    fn try_skill(&mut self, skill: common::skill::SkillType, context: &mut Context<Self>) {
+        use common::skill::SkillType;
+        match skill {
+            SkillType::Warp => {
+                // Warp is click-to-select, toggle selection state
+                if self.warp_cooldown_secs == 0.0 && self.warp_charge_secs == 0.0 {
+                    self.warp_selecting = !self.warp_selecting;
+                }
+            }
+            SkillType::ZeroPulse => self.try_zero_pulse(context),
+            SkillType::Iaigiri => {
+                if self.iaigiri_cooldown_secs == 0.0 {
+                    self.iaigiri_selecting = !self.iaigiri_selecting;
+                }
+            }
+            SkillType::EngineBoost => self.try_engine_boost(context),
+            SkillType::SonarPulse => self.try_sonar_pulse(context),
+            SkillType::DepthChargeBarrage => self.try_depth_charge_barrage(context),
+            SkillType::AirSuperiority => self.try_air_superiority(context),
+            SkillType::EmergencyRepair => self.try_emergency_repair(context),
+            SkillType::SmokeScreen => self.try_smoke_screen(context),
+            SkillType::BurstLoading => self.try_burst_loading(context),
+            SkillType::NuclearStrike => self.try_nuclear_strike(context),
+            SkillType::EnergyShield => self.try_energy_shield(context),
+        }
+    }
+
     fn try_zero_pulse(&mut self, context: &mut Context<Self>) {
         let entity_type = context
             .state
@@ -2353,11 +2365,13 @@ impl Mk48Game {
     }
 
     /// Returns true if the player's ship has an active smoke screen
+    #[allow(dead_code)]
     pub fn is_smoke_screen_active(&self) -> bool {
         self.smoke_screen_active_secs > 0.0
     }
 
     /// Returns the smoke screen remaining duration ratio (0.0-1.0)
+    #[allow(dead_code)]
     pub fn smoke_screen_ratio(&self) -> f32 {
         use common::skill::SMOKE_SCREEN_DURATION;
         if self.smoke_screen_active_secs > 0.0 {

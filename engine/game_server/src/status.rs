@@ -19,9 +19,9 @@ pub struct StatusRepo {
 }
 
 impl StatusRepo {
-    pub fn new(client_hash: u64) -> Self {
+    pub fn new(client_hash: u64, disable_health_check: bool) -> Self {
         Self {
-            health: Health::default(),
+            health: Health::new(disable_health_check),
             uptime: Instant::now(),
             client_hash,
             original_client_hash: client_hash,

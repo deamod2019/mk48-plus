@@ -94,6 +94,8 @@ impl<G: GameArenaService> Infrastructure<G> {
         allow_web_socket_json: &'static AtomicBool,
         admin_config_file: Option<String>,
         client_authenticate: RateLimiterProps,
+        disable_health_check: bool,
+        disable_leaderboard: bool,
     ) -> Self {
         // TODO: If multiple arenas, generate randomly.
         let arena_id = ArenaId(
@@ -120,9 +122,9 @@ impl<G: GameArenaService> Infrastructure<G> {
                 client_authenticate,
             ),
             invitations: InvitationRepo::new(),
-            leaderboard: LeaderboardRepo::new(),
+            leaderboard: LeaderboardRepo::new(disable_leaderboard),
             metrics: MetricRepo::new(),
-            status: StatusRepo::new(client_hash),
+            status: StatusRepo::new(client_hash, disable_health_check),
             last_update: Instant::now(),
         }
     }

@@ -351,6 +351,55 @@ impl Entity {
         t.collides_with(self.dimension_transform(), threshold, delta_seconds)
     }
 
+    /// Fast single-point terrain collision check for non-player entities.
+    /// Returns true if the entity's center point is colliding with terrain.
+    /// This is much cheaper than the full SAT-based collides_with_terrain.
+    pub fn collides_with_terrain_fast(&self, t: &Terrain) -> bool {
+        let arctic = self.transform.position.y >= common::world::ARCTIC;
+        
+        let threshold = if arctic && self.altitude.is_submerged() {
+            Altitude(2)
+        } else {
+            Altitude::ZERO
+        }
+        .max(self.altitude);
+
+        // Simple point sample - no SAT collision needed
+        if let Some(terrain_alt) = t.sample(self.transform.position) {
+            terrain_alt > threshold
+        } else {
+            false
+        }
+    }
+
+    /// Smart terrain collision that uses fast path for non-player entities.
+    /// Player-controlled boats always get full collision detection.
+    pub fn collides_with_terrain_smart(
+        &self,
+        t: &Terrain,
+        delta_seconds: f32,
+    ) -> Option<TerrainCollision> {
+        let data = self.data();
+        
+        // Player-controlled boats need full collision detection
+        // This includes all boats with players (Star Destroyers, etc.)
+        if data.kind == EntityKind::Boat && self.player.is_some() {
+            return self.collides_with_terrain(t, delta_seconds);
+        }
+        
+        // For non-boat entities or ownerless boats, use fast detection
+        if self.collides_with_terrain_fast(t) {
+            // Create a minimal TerrainCollision for terrain death
+            Some(TerrainCollision {
+                average_position: self.transform.position,
+                highest_position: self.transform.position,
+                max_altitude: Altitude::MAX,
+            })
+        } else {
+            None
+        }
+    }
+
     /// Updates the aim of all turrets, assuming delta_seconds have elapsed.
     pub fn update_turret_aim(&mut self, delta_seconds: f32) {
         let aim_target = if let Status::Alive { aim_target, .. } = &self.borrow_player().data.status

@@ -102,6 +102,12 @@ pub struct Options {
     /// Client authenticate rate limiting burst.
     #[structopt(long, default_value = "16")]
     pub client_authenticate_burst: u32,
+    /// Disable system health checking (avoids errors on systems without /proc).
+    #[structopt(long)]
+    pub disable_health_check: bool,
+    /// Disable leaderboard database operations (avoids errors without AWS credentials).
+    #[structopt(long)]
+    pub disable_leaderboard: bool,
 }
 
 impl Options {

@@ -19,6 +19,8 @@ pub struct World {
     pub terrain: Terrain,
     pub radius: f32,
     pub events: Vec<WorldEvent>,
+    /// Frame counter for temporal spreading of physics interactions
+    pub frame_counter: u32,
 }
 
 impl World {
@@ -30,12 +32,15 @@ impl World {
             terrain: Terrain::with_generator(noise_generator),
             radius: initial_radius,
             events: Vec::new(),
+            frame_counter: 0,
         }
     }
 
     /// Updates the internals of the world, spawning and updating existing entities.
     pub fn update(&mut self, delta: Ticks) {
-        // Note: events.clear() is now called in server::post_update() AFTER clients receive updates
+        // Increment frame counter for temporal spreading
+        self.frame_counter = self.frame_counter.wrapping_add(1);
+        
         self.spawn_statics(delta);
         self.physics(delta);
         self.physics_radius(delta);

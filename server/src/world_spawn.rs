@@ -129,9 +129,15 @@ impl World {
         }
 
         let t = entity.entity_type;
+        let is_boat = entity.data().kind == EntityKind::Boat;
         let spawned = self.try_spawn(entity);
         if !spawned {
-            warn!("couldn't spawn {:?}", t);
+            // Weapon/projectile spawn failures are common and expected, use debug level
+            if is_boat {
+                warn!("couldn't spawn {:?}", t);
+            } else {
+                log::debug!("couldn't spawn {:?}", t);
+            }
         }
         spawned
     }

@@ -37,6 +37,9 @@ impl World {
         let border_radius = self.radius; // Avoids double borrow.
         let border_radius_squared = self.radius.powi(2);
         let terrain = &self.terrain;
+        
+        // Frame counter for low-priority entity frequency reduction
+        let frame_counter = self.frame_counter;
 
         // Collected updates (order doesn't matter).
         let terrain_mutations = Mutex::new(Vec::new());
@@ -50,7 +53,24 @@ impl World {
             .filter_map(|(index, entity)| {
                 let index = index as EntityIndex;
                 let data = entity.data();
-                let mut frozen = entity.is_frozen();
+                
+                // === LOW-PRIORITY ENTITY OPTIMIZATION ===
+                // Collectibles and Obstacles only do full physics every 3 frames
+                // This significantly reduces CPU usage with minimal gameplay impact
+                let is_low_priority = data.kind == EntityKind::Collectible || data.kind == EntityKind::Obstacle;
+                if is_low_priority && frame_counter % 3 != 0 {
+                    // Still check lifespan to avoid immortal collectibles
+                    if data.lifespan != Ticks::ZERO {
+                        entity.ticks = entity.ticks.saturating_add(delta);
+                        if entity.ticks > data.lifespan {
+                            return Some((index, Fate::Remove(DeathReason::Unknown)));
+                        }
+                    }
+                    // Skip rest of physics for this frame
+                    return None;
+                }
+                
+                let frozen = entity.is_frozen();
 
                 if frozen {
                     entity.frozen = entity.frozen.saturating_sub(delta);
@@ -316,7 +336,7 @@ impl World {
 
                 let arctic = entity.transform.position.y >= ARCTIC;
 
-                let collision = entity.collides_with_terrain(terrain, delta_seconds);
+                let collision = entity.collides_with_terrain_smart(terrain, delta_seconds);
 
                 // kill tanks & helicopters who touch water
                 if collision.is_none()

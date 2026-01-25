@@ -89,6 +89,56 @@ impl SkillType {
             SkillType::EnergyShield,
         ])
     }
+
+    /// Whether the skill requires target selection (e.g., Warp, Iaigiri).
+    pub fn requires_targeting(&self) -> bool {
+        matches!(self, SkillType::Warp | SkillType::Iaigiri)
+    }
+
+    /// Whether the skill has a duration phase (active_remaining).
+    pub fn has_duration(&self) -> bool {
+        self.data().duration.is_some()
+    }
+
+    /// Get the UI hotkey for this skill.
+    pub fn hotkey(&self) -> Option<char> {
+        match self {
+            SkillType::Warp => None, // Click-to-select, no hotkey toggle
+            SkillType::ZeroPulse => Some('Q'),
+            SkillType::Iaigiri | SkillType::SonarPulse | SkillType::AirSuperiority => Some('J'),
+            SkillType::EngineBoost | SkillType::DepthChargeBarrage | SkillType::EmergencyRepair | SkillType::EnergyShield => Some('K'),
+            SkillType::SmokeScreen => Some('L'),
+            SkillType::BurstLoading => Some('B'),
+            SkillType::NuclearStrike => Some('N'),
+        }
+    }
+
+    /// Get the Chinese label for UI display.
+    pub fn label_cn(&self) -> &'static str {
+        match self {
+            SkillType::Warp => "空间跃迁",
+            SkillType::EngineBoost => "引擎增压",
+            SkillType::Iaigiri => "居合斩",
+            SkillType::SonarPulse => "主动声纳",
+            SkillType::DepthChargeBarrage => "深弹齐射",
+            SkillType::AirSuperiority => "制空权",
+            SkillType::EmergencyRepair => "紧急维修",
+            SkillType::SmokeScreen => "烟幕",
+            SkillType::ZeroPulse => "绝对零度",
+            SkillType::BurstLoading => "爆发装填",
+            SkillType::NuclearStrike => "核打击",
+            SkillType::EnergyShield => "能量护盾",
+        }
+    }
+
+    /// Get the UI icon prefix (emoji or symbol).
+    pub fn icon(&self) -> &'static str {
+        match self {
+            SkillType::NuclearStrike => "☢",
+            SkillType::EnergyShield => "🛡",
+            _ => "",
+        }
+    }
 }
 
 // ============================================================================

@@ -6,7 +6,7 @@ use crate::translation::Mk48Translation;
 use crate::ui::sprite::Sprite;
 use common::altitude::Altitude;
 use common::entity::{EntityData, EntityKind, EntitySubKind, EntityType};
-use common::skill::SkillType;
+
 use common::ticks::Ticks;
 use common::velocity::Velocity;
 use core_protocol::id::LanguageId;

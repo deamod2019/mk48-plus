@@ -116,7 +116,12 @@ impl GameArenaService for Server {
         _players: &PlayerRepo<Server>,
     ) -> Option<Update> {
         if let Err(e) = update.as_command().apply(&mut self.world, player) {
-            warn!("Command resulted in {}", e);
+            // Bot 的无效指令使用 debug 级别，避免刷屏
+            if player.borrow_player().is_bot() {
+                log::debug!("Bot command ignored: {}", e);
+            } else {
+                warn!("Command resulted in {}", e);
+            }
         }
         None
     }
@@ -199,7 +204,9 @@ impl GameArenaService for Server {
             }
         }
 
+
         self.world.update(Ticks::ONE);
+
 
         // Needs to be called before clients receive updates, but after World::update.
         self.world.terrain.pre_update();

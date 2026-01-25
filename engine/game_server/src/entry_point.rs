@@ -145,6 +145,8 @@ pub fn entry_point<G: GameArenaService>(game_client: MiniCdn, browser_router: bo
                     Duration::from_secs(options.client_authenticate_rate_limit),
                     options.client_authenticate_burst,
                 ),
+                options.disable_health_check,
+                options.disable_leaderboard,
             )
             .await,
         );

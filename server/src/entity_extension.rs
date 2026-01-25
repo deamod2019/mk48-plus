@@ -12,6 +12,8 @@ use glam::Vec2;
 use std::iter::FromIterator;
 use std::sync::Arc;
 
+// Allow dead_code for skill helper functions - these provide a complete API surface for skills
+
 #[derive(Debug, Clone)]
 pub struct WarpState {
     pub target: Vec2,
@@ -110,6 +112,13 @@ impl EntityExtension {
         self.emergency_repair_remaining = Ticks::ZERO;
         self.smoke_screen_cooldown = Ticks::ZERO;
         self.smoke_screen_remaining = Ticks::ZERO;
+        // Reset newly added skill timers
+        self.burst_loading_cooldown = Ticks::ZERO;
+        self.burst_loading_remaining = Ticks::ZERO;
+        self.nuclear_strike_charge = Ticks::ZERO;
+        self.nuclear_strike_cooldown = Ticks::ZERO;
+        self.energy_shield_cooldown = Ticks::ZERO;
+        self.energy_shield_remaining = Ticks::ZERO;
     }
 
     /// Returns the target altitude of the boat from submerge.
@@ -214,6 +223,7 @@ impl EntityExtension {
         self.warp_state.is_some()
     }
 
+    #[allow(dead_code)]
     pub fn warp_charge_remaining(&self) -> Ticks {
         self.warp_state
             .as_ref()
@@ -221,10 +231,12 @@ impl EntityExtension {
             .unwrap_or(Ticks::ZERO)
     }
 
+    #[allow(dead_code)]
     pub fn warp_cooldown_remaining(&self) -> Ticks {
         self.warp_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn zero_pulse_cooldown_remaining(&self) -> Ticks {
         self.zero_pulse_cooldown
     }
@@ -318,6 +330,7 @@ impl EntityExtension {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn is_engine_boosting(&self) -> bool {
         self.engine_boost_remaining != Ticks::ZERO || self.engine_boost_decel_remaining != Ticks::ZERO
     }
@@ -361,6 +374,7 @@ impl EntityExtension {
         self.sonar_pulse_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn advance_sonar_pulse(&mut self, delta: Ticks) {
         self.sonar_pulse_cooldown = self.sonar_pulse_cooldown.saturating_sub(delta);
     }
@@ -378,6 +392,7 @@ impl EntityExtension {
         self.depth_charge_barrage_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn advance_depth_charge_barrage(&mut self, delta: Ticks) {
         self.depth_charge_barrage_cooldown = self.depth_charge_barrage_cooldown.saturating_sub(delta);
     }
@@ -395,6 +410,7 @@ impl EntityExtension {
         self.air_superiority_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn advance_air_superiority(&mut self, delta: Ticks) {
         self.air_superiority_cooldown = self.air_superiority_cooldown.saturating_sub(delta);
     }
@@ -413,6 +429,7 @@ impl EntityExtension {
         self.emergency_repair_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn emergency_repair_remaining(&self) -> Ticks {
         self.emergency_repair_remaining
     }
@@ -440,6 +457,7 @@ impl EntityExtension {
         self.smoke_screen_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn smoke_screen_remaining(&self) -> Ticks {
         self.smoke_screen_remaining
     }
@@ -448,6 +466,7 @@ impl EntityExtension {
         self.smoke_screen_remaining != Ticks::ZERO
     }
 
+    #[allow(dead_code)]
     pub fn advance_smoke_screen(&mut self, delta: Ticks) {
         self.smoke_screen_remaining = self.smoke_screen_remaining.saturating_sub(delta);
         self.smoke_screen_cooldown = self.smoke_screen_cooldown.saturating_sub(delta);
@@ -468,6 +487,7 @@ impl EntityExtension {
         self.burst_loading_cooldown
     }
 
+    #[allow(dead_code)]
     pub fn burst_loading_remaining(&self) -> Ticks {
         self.burst_loading_remaining
     }
@@ -494,6 +514,7 @@ impl EntityExtension {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn nuclear_strike_charge_remaining(&self) -> Ticks {
         self.nuclear_strike_charge
     }
@@ -532,10 +553,12 @@ impl EntityExtension {
         self.energy_shield_remaining != Ticks::ZERO
     }
 
+    #[allow(dead_code)]
     pub fn energy_shield_remaining(&self) -> Ticks {
         self.energy_shield_remaining
     }
 
+    #[allow(dead_code)]
     pub fn energy_shield_cooldown_remaining(&self) -> Ticks {
         self.energy_shield_cooldown
     }
