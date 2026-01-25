@@ -35,7 +35,7 @@ impl World {
 
     /// Updates the internals of the world, spawning and updating existing entities.
     pub fn update(&mut self, delta: Ticks) {
-        self.events.clear();
+        // Note: events.clear() is now called in server::post_update() AFTER clients receive updates
         self.spawn_statics(delta);
         self.physics(delta);
         self.physics_radius(delta);

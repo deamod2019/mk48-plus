@@ -135,6 +135,8 @@ pub fn ship_controls(props: &ShipControlsProps) -> Html {
             {emergency_repair_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
             {smoke_screen_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
             {burst_loading_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {nuclear_strike_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
+            {energy_shield_button(props.status.clone(), &button_style, &disabled_style, &ui_event_callback)}
         </Section>
     }
 }
@@ -211,6 +213,7 @@ fn warp_button(
     if status.entity_type != EntityType::StarDestroyer
         && status.entity_type != EntityType::XystonStarDestroyer
         && status.entity_type != EntityType::UnscInfinite
+        && status.entity_type != EntityType::StellarFrigate
     {
         return Html::default();
     }
@@ -419,7 +422,9 @@ fn emergency_repair_button(
     disabled_style: &StyleSource,
     ui_event_callback: &Callback<UiEvent>,
 ) -> Html {
-    if status.entity_type != EntityType::FortressCarrier {
+    if status.entity_type != EntityType::FortressCarrier
+        && status.entity_type != EntityType::Battleship750k
+    {
         return Html::default();
     }
 
@@ -447,6 +452,7 @@ fn smoke_screen_button(
 ) -> Html {
     if status.entity_type != EntityType::Tianwangxing
         && status.entity_type != EntityType::Richelieu
+        && status.entity_type != EntityType::Battleship750k
     {
         return Html::default();
     }
@@ -499,6 +505,65 @@ fn burst_loading_button(
     html! {
         <div class={classes!(button_style.clone(), disabled.then(|| disabled_style.clone()))} {onclick} title={"B 触发，30秒内武器装填速度提升200倍"}>
             <span>{"爆发装填 · "}{label}</span>
+        </div>
+    }
+}
+
+fn nuclear_strike_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::UnscInfinite {
+        return Html::default();
+    }
+
+    let cooling = status.nuclear_strike_cooldown_remaining > 0.0;
+    
+    let label = if cooling {
+        format!("冷却 {:.1}s", status.nuclear_strike_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let disabled = cooling;
+    let onclick = (!disabled).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::NuclearStrike));
+
+    html! {
+        <div class={classes!(button_style.clone(), disabled.then(|| disabled_style.clone()))} {onclick} title={"核打击 - 1000米范围内敌人全灭，120秒冷却"}>
+            <span>{"☢ 核打击 · "}{label}</span>
+        </div>
+    }
+}
+
+fn energy_shield_button(
+    status: UiStatusPlaying,
+    button_style: &StyleSource,
+    disabled_style: &StyleSource,
+    ui_event_callback: &Callback<UiEvent>,
+) -> Html {
+    if status.entity_type != EntityType::StellarFrigate {
+        return Html::default();
+    }
+
+    let active = status.energy_shield_active_remaining > 0.0;
+    let cooling = status.energy_shield_cooldown_remaining > 0.0 && !active;
+    
+    let label = if active {
+        format!("生效中 {:.1}s", status.energy_shield_active_remaining)
+    } else if cooling {
+        format!("冷却 {:.1}s", status.energy_shield_cooldown_remaining)
+    } else {
+        "就绪".to_string()
+    };
+
+    let disabled = active || cooling;
+    let onclick = (!disabled).then(|| ui_event_callback.reform(|_: MouseEvent| UiEvent::EnergyShield));
+
+    html! {
+        <div class={classes!(button_style.clone(), disabled.then(|| disabled_style.clone()))} {onclick} title={"能量护盾 - 8秒内吸收90%伤害，45秒冷却"}>
+            <span>{"🛡 能量护盾 · "}{label}</span>
         </div>
     }
 }

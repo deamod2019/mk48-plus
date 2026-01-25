@@ -395,6 +395,7 @@ pub struct Mk48OverlayLayer {
     u_visual: f32,
     u_smoke_position: Vec2,
     u_smoke_radius: f32,
+    u_nuclear_flash: f32,
 }
 
 impl DefaultRender for Mk48OverlayLayer {
@@ -415,6 +416,7 @@ impl DefaultRender for Mk48OverlayLayer {
             u_visual: 0.0,
             u_smoke_position: Vec2::ZERO,
             u_smoke_radius: 0.0,
+            u_nuclear_flash: 0.0,
         }
     }
 }
@@ -446,6 +448,10 @@ impl Mk48OverlayLayer {
             self.u_smoke_radius = 0.0;
         }
     }
+
+    pub fn set_nuclear_flash(&mut self, intensity: f32) {
+        self.u_nuclear_flash = intensity;
+    }
 }
 
 impl RenderLayer<&Camera2d> for Mk48OverlayLayer {
@@ -460,6 +466,7 @@ impl RenderLayer<&Camera2d> for Mk48OverlayLayer {
             shader.uniform("uRestrict_uVisual", vec2(self.u_restrict, self.u_visual));
             shader.uniform("uSmokePosition", self.u_smoke_position);
             shader.uniform("uSmokeRadius", self.u_smoke_radius);
+            shader.uniform("uNuclearFlash", self.u_nuclear_flash);
 
             self.inner.render(renderer, (shader, camera, None));
         }

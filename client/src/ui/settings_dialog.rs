@@ -134,6 +134,15 @@ pub fn settings_dialog() -> Html {
         )
     });
 
+    let advanced_display_mode = gctw.settings_cache.advanced_display_mode;
+    let on_toggle_advanced_display = gctw.change_settings_callback.reform(move |_| {
+        Box::new(
+            move |settings: &mut Mk48Settings, browser_storages: &mut BrowserStorages| {
+                settings.set_advanced_display_mode(!advanced_display_mode, browser_storages);
+            },
+        )
+    });
+
     let high_contrast = ctw.setting_cache.high_contrast;
     let on_toggle_high_contrast = ctw.change_common_settings_callback.reform(move |_| {
         Box::new(
@@ -177,6 +186,11 @@ pub fn settings_dialog() -> Html {
             <label class={label_style.clone()}>
                 <input type="checkbox" checked={circle_hud} disabled={cinematic} oninput={on_toggle_circle_hud}/>
                 {"Circle HUD"}
+            </label>
+
+            <label class={label_style.clone()}>
+                <input type="checkbox" checked={advanced_display_mode} oninput={on_toggle_advanced_display}/>
+                {"Advanced Display Mode"}
             </label>
 
             <label class={label_style.clone()}>

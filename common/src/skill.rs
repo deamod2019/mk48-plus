@@ -31,6 +31,10 @@ pub enum SkillType {
     ZeroPulse,
     /// Burst reload for faster firing (used by Richelieu)
     BurstLoading,
+    /// Nuclear strike - destroy all enemies in range (used by UnscInfinite)
+    NuclearStrike,
+    /// Energy shield - absorbs damage for duration (used by StellarFrigate)
+    EnergyShield,
 }
 
 /// Skill metadata and parameters.
@@ -63,6 +67,8 @@ impl SkillType {
             SkillType::SmokeScreen => &SMOKE_SCREEN_DATA,
             SkillType::ZeroPulse => &ZERO_PULSE_DATA,
             SkillType::BurstLoading => &BURST_LOADING_DATA,
+            SkillType::NuclearStrike => &NUCLEAR_STRIKE_DATA,
+            SkillType::EnergyShield => &ENERGY_SHIELD_DATA,
         }
     }
 
@@ -79,6 +85,8 @@ impl SkillType {
             SkillType::SmokeScreen,
             SkillType::ZeroPulse,
             SkillType::BurstLoading,
+            SkillType::NuclearStrike,
+            SkillType::EnergyShield,
         ])
     }
 }
@@ -260,3 +268,36 @@ pub const BURST_LOADING_COOLDOWN: Ticks = Ticks::from_whole_secs(45);
 pub const BURST_LOADING_DURATION: Ticks = Ticks::from_whole_secs(30);
 /// Burst loading modified reload time in seconds
 pub const BURST_LOADING_RELOAD_SECS: f32 = 0.05;
+
+pub static NUCLEAR_STRIKE_DATA: SkillData = SkillData {
+    skill_type: SkillType::NuclearStrike,
+    label: "Nuclear Strike",
+    description: "Destroy all enemies within 1000m radius",
+    cooldown: Ticks::from_whole_secs(120),
+    duration: None,
+    charge_time: Some(Ticks::from_whole_secs(5)),
+};
+
+/// Nuclear strike charge time
+pub const NUCLEAR_STRIKE_CHARGE: Ticks = Ticks::from_whole_secs(5);
+/// Nuclear strike cooldown
+pub const NUCLEAR_STRIKE_COOLDOWN: Ticks = Ticks::from_whole_secs(2);
+/// Nuclear strike effect radius in meters
+pub const NUCLEAR_STRIKE_RADIUS: f32 = 1000.0;
+
+// ============ Energy Shield skill constants ============
+pub static ENERGY_SHIELD_DATA: SkillData = SkillData {
+    skill_type: SkillType::EnergyShield,
+    label: "Energy Shield",
+    description: "Absorb 90% damage for 8 seconds",
+    cooldown: Ticks::from_whole_secs(45),
+    duration: Some(Ticks::from_whole_secs(8)),
+    charge_time: None,
+};
+
+/// Energy shield duration
+pub const ENERGY_SHIELD_DURATION: Ticks = Ticks::from_whole_secs(8);
+/// Energy shield cooldown
+pub const ENERGY_SHIELD_COOLDOWN: Ticks = Ticks::from_whole_secs(45);
+/// Energy shield damage absorption rate (0.9 = 90% absorbed)
+pub const ENERGY_SHIELD_ABSORPTION: f32 = 0.9;

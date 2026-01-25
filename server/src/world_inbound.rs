@@ -9,11 +9,12 @@ use crate::world::World;
 use common::altitude::Altitude;
 use common::angle::Angle;
 use common::entity::*;
+use common::death_reason::DeathReason;
 use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
 use common::velocity::Velocity;
-use common::skill::{SkillType, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS};
+use common::skill::{SkillType, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS, NUCLEAR_STRIKE_CHARGE, NUCLEAR_STRIKE_COOLDOWN, NUCLEAR_STRIKE_RADIUS, ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN};
 use common::util::{level_to_score, score_to_level};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
@@ -1052,6 +1053,111 @@ impl CommandTrait for BurstLoading {
         // Start burst loading effect (duration-based reload speed buff)
         let entity = &mut world.entities[entity_index];
         entity.extension_mut().start_burst_loading(BURST_LOADING_DURATION, BURST_LOADING_COOLDOWN)?;
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for NuclearStrike {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        log::warn!("NuclearStrike command received!");
+        let player = player_tuple.borrow_player();
+
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot use nuclear strike while not alive"),
+        };
+
+        let entity = &world.entities[entity_index];
+        
+        // Check if entity has NuclearStrike skill
+        if !entity.data().has_skill(SkillType::NuclearStrike) {
+            return Err("entity does not have nuclear strike skill");
+        }
+
+        // Check cooldown
+        if entity.extension().nuclear_strike_cooldown_remaining() != Ticks::ZERO {
+            return Err("nuclear strike is on cooldown");
+        }
+
+        let center = entity.transform.position;
+        let radius = NUCLEAR_STRIKE_RADIUS;
+
+        // Start cooldown
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_nuclear_strike(Ticks::ZERO, NUCLEAR_STRIKE_COOLDOWN)?;
+
+        // Find all non-friendly combat entities in radius (boats, aircraft, weapons - NOT collectibles)
+        let mut targets: Vec<_> = world
+            .entities
+            .iter_radius(center, radius)
+            .filter_map(|(target_index, target)| {
+                if target_index == entity_index { return None; }
+                let data = target.data();
+                // Only affect boats, aircraft, and weapons (skip collectibles, obstacles, etc.)
+                if !matches!(data.kind, EntityKind::Boat | EntityKind::Aircraft | EntityKind::Weapon) {
+                    return None;
+                }
+                // Skip friendly entities
+                if target.is_friendly_to_player(Some(player_tuple)) { return None; }
+                Some(target_index)
+            })
+            .collect();
+
+        // Sort in reverse order to avoid index invalidation when removing
+        targets.sort_by(|a, b| b.cmp(a));
+
+        log::warn!("NuclearStrike: Found {} combat targets in radius {}", targets.len(), radius);
+
+        // Instant kill all targets by removing them from the world
+        for target_index in targets {
+            let target_data = world.entities[target_index].data();
+            log::warn!("  Killing target: {:?}, kind={:?}", target_data.label, target_data.kind);
+            // Use world.remove() to properly kill and trigger death effects
+            world.remove(target_index, DeathReason::Unknown);
+        }
+
+        log::warn!("NuclearStrike: Pushing WorldEvent::NuclearStrike");
+        // Push event for visual effects on client
+        world
+            .events
+            .push(WorldEvent::NuclearStrike { center, radius });
+        log::warn!("NuclearStrike: events Vec now has {} events", world.events.len());
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for EnergyShield {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        let player = player_tuple.borrow_player();
+        
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("cannot use energy shield while not alive"),
+        };
+        drop(player);
+
+        let entity = &world.entities[entity_index];
+        
+        // Check if entity has EnergyShield skill
+        if !entity.data().has_skill(SkillType::EnergyShield) {
+            return Err("ship does not have energy shield skill");
+        }
+
+        // Start shield
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_energy_shield(ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN)?;
+
+        log::warn!("EnergyShield activated for {:?}", entity.data().label);
 
         Ok(())
     }

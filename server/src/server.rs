@@ -275,6 +275,8 @@ impl GameArenaService for Server {
     }
 
     fn post_update(&mut self, _context: &mut Context<Self>) {
+        // Clear events after clients have received updates
+        self.world.events.clear();
         // Needs to be after clients receive updates.
         self.world.terrain.post_update();
     }

@@ -279,6 +279,8 @@ pub enum UiEvent {
     EmergencyRepair,
     SmokeScreen,
     BurstLoading,
+    NuclearStrike,
+    EnergyShield,
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -327,6 +329,9 @@ pub struct UiStatusPlaying {
     pub smoke_screen_active_remaining: f32,
     pub burst_loading_cooldown_remaining: f32,
     pub burst_loading_active_remaining: f32,
+    pub nuclear_strike_cooldown_remaining: f32,
+    pub energy_shield_cooldown_remaining: f32,
+    pub energy_shield_active_remaining: f32,
     /// Whether bot alliance mode is enabled.
     pub bot_alliance_enabled: bool,
 }

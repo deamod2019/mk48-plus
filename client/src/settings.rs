@@ -13,6 +13,7 @@ pub struct Mk48Settings {
     #[setting(no_store)]
     pub cinematic: bool,
     pub circle_hud: bool,
+    pub advanced_display_mode: bool,
     pub dynamic_waves: bool,
     pub fps_shown: bool,
     pub shadows: ShadowSetting,

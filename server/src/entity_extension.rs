@@ -66,6 +66,10 @@ pub struct EntityExtension {
     smoke_screen_remaining: Ticks,
     burst_loading_cooldown: Ticks,
     burst_loading_remaining: Ticks,
+    nuclear_strike_charge: Ticks,
+    nuclear_strike_cooldown: Ticks,
+    energy_shield_cooldown: Ticks,
+    energy_shield_remaining: Ticks,
 }
 
 impl EntityExtension {
@@ -281,6 +285,10 @@ impl Default for EntityExtension {
             smoke_screen_remaining: Ticks::ZERO,
             burst_loading_cooldown: Ticks::ZERO,
             burst_loading_remaining: Ticks::ZERO,
+            nuclear_strike_charge: Ticks::ZERO,
+            nuclear_strike_cooldown: Ticks::ZERO,
+            energy_shield_cooldown: Ticks::ZERO,
+            energy_shield_remaining: Ticks::ZERO,
         }
     }
 }
@@ -471,5 +479,70 @@ impl EntityExtension {
     pub fn advance_burst_loading(&mut self, delta: Ticks) {
         self.burst_loading_remaining = self.burst_loading_remaining.saturating_sub(delta);
         self.burst_loading_cooldown = self.burst_loading_cooldown.saturating_sub(delta);
+    }
+
+    // Nuclear Strike methods
+    pub fn start_nuclear_strike(&mut self, charge: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.nuclear_strike_cooldown != Ticks::ZERO {
+            return Err("nuclear strike is on cooldown");
+        }
+        if self.nuclear_strike_charge != Ticks::ZERO {
+            return Err("nuclear strike already charging");
+        }
+        self.nuclear_strike_charge = charge;
+        self.nuclear_strike_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn nuclear_strike_charge_remaining(&self) -> Ticks {
+        self.nuclear_strike_charge
+    }
+
+    pub fn nuclear_strike_cooldown_remaining(&self) -> Ticks {
+        self.nuclear_strike_cooldown
+    }
+
+    /// Advances nuclear strike timers. Returns true when strike should execute.
+    pub fn advance_nuclear_strike(&mut self, delta: Ticks) -> bool {
+        if self.nuclear_strike_charge != Ticks::ZERO {
+            self.nuclear_strike_charge = self.nuclear_strike_charge.saturating_sub(delta);
+            if self.nuclear_strike_charge == Ticks::ZERO {
+                // Charge complete, strike should execute
+                return true;
+            }
+        }
+        self.nuclear_strike_cooldown = self.nuclear_strike_cooldown.saturating_sub(delta);
+        false
+    }
+
+    // Energy Shield methods
+    pub fn start_energy_shield(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.energy_shield_cooldown != Ticks::ZERO {
+            return Err("energy shield is on cooldown");
+        }
+        if self.energy_shield_remaining != Ticks::ZERO {
+            return Err("energy shield already active");
+        }
+        self.energy_shield_remaining = duration;
+        self.energy_shield_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn is_energy_shield_active(&self) -> bool {
+        self.energy_shield_remaining != Ticks::ZERO
+    }
+
+    pub fn energy_shield_remaining(&self) -> Ticks {
+        self.energy_shield_remaining
+    }
+
+    pub fn energy_shield_cooldown_remaining(&self) -> Ticks {
+        self.energy_shield_cooldown
+    }
+
+    /// Advances energy shield timers.
+    pub fn advance_energy_shield(&mut self, delta: Ticks) {
+        self.energy_shield_remaining = self.energy_shield_remaining.saturating_sub(delta);
+        self.energy_shield_cooldown = self.energy_shield_cooldown.saturating_sub(delta);
     }
 }

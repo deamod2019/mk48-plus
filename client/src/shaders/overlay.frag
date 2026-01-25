@@ -6,6 +6,7 @@ uniform vec3 uAbove_uArea_uBorder;
 uniform vec2 uRestrict_uVisual;
 uniform vec2 uSmokePosition;
 uniform float uSmokeRadius;
+uniform float uNuclearFlash;
 
 float preciseLength(vec2 vec) {
     #define LENGTH_SCALE 64.0
@@ -43,5 +44,10 @@ void main() {
         float ringDist = abs(smokeDist - uSmokeRadius);
         float ring = 1.0 - smoothstep(0.0, 3.0, ringDist);
         gl_FragColor = mix(gl_FragColor, vec4(1.0, 1.0, 1.0, 0.6), ring * 0.5);
+    }
+    
+    // Nuclear strike flash effect - white screen flash
+    if (uNuclearFlash > 0.0) {
+        gl_FragColor = mix(gl_FragColor, vec4(1.0, 1.0, 1.0, 1.0), uNuclearFlash);
     }
 }

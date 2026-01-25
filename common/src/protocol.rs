@@ -33,6 +33,7 @@ pub struct Update {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum WorldEvent {
     ZeroPulse { center: Vec2, radius: f32 },
+    NuclearStrike { center: Vec2, radius: f32 },
 }
 
 /// Updates for terrain chunks.
@@ -56,6 +57,8 @@ pub enum Command {
     EmergencyRepair(EmergencyRepair),
     SmokeScreen(SmokeScreen),
     BurstLoading(BurstLoading),
+    NuclearStrike(NuclearStrike),
+    EnergyShield(EnergyShield),
 }
 
 /// Generic command to control one's ship.
@@ -151,6 +154,12 @@ pub struct SmokeScreen;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct BurstLoading;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct NuclearStrike;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct EnergyShield;
 
 #[cfg(test)]
 mod tests {

@@ -443,7 +443,17 @@ impl Entity {
         // Ticks is lifespan, not damage, for non-boats.
         assert_eq!(data.kind, EntityKind::Boat);
 
-        self.ticks = self.ticks.saturating_add(amount).min(data.max_health());
+        // Apply energy shield damage reduction (90% absorbed when active)
+        let actual_damage = if self.extension().is_energy_shield_active() {
+            // Shield absorbs 90% of damage
+            let absorbed = amount.to_secs() * 0.9;
+            let remaining = amount.to_secs() - absorbed;
+            Ticks::from_secs(remaining.max(0.0))
+        } else {
+            amount
+        };
+
+        self.ticks = self.ticks.saturating_add(actual_damage).min(data.max_health());
         self.ticks == data.max_health()
     }
 

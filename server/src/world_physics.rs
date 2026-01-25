@@ -495,6 +495,24 @@ impl World {
                     } else {
                         entity.extension_mut().advance_burst_loading(delta);
                     }
+                    // Advance nuclear strike cooldown timer
+                    entity.extension_mut().advance_nuclear_strike(delta);
+                    // Advance energy shield timers
+                    entity.extension_mut().advance_energy_shield(delta);
+                    // Advance emergency repair and apply HP restoration
+                    {
+                        let is_repairing = entity.extension().is_repairing();
+                        entity.extension_mut().advance_emergency_repair(delta);
+                        if is_repairing {
+                            // Restore 20% HP over 15 seconds
+                            // Calculate repair per second: max_health_secs * 0.20 / 15 seconds
+                            use common::skill::{REPAIR_AMOUNT, REPAIR_DURATION};
+                            let max_health_secs = data.max_health().to_secs();
+                            let repair_per_second = max_health_secs * REPAIR_AMOUNT / REPAIR_DURATION.to_secs();
+                            let repair_this_tick = Ticks::from_secs(delta.to_secs() * repair_per_second);
+                            entity.repair(repair_this_tick);
+                        }
+                    }
 
                     if repair_eligible {
                         let repair_amount = if data.length > 200.0 {

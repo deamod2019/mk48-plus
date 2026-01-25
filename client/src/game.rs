@@ -98,10 +98,15 @@ pub struct Mk48Game {
     depth_charge_barrage_cooldown_secs: f32,
     air_superiority_cooldown_secs: f32,
     emergency_repair_cooldown_secs: f32,
+    emergency_repair_active_secs: f32,
     smoke_screen_cooldown_secs: f32,
     smoke_screen_active_secs: f32,
     burst_loading_cooldown_secs: f32,
     burst_loading_active_secs: f32,
+    nuclear_strike_cooldown_secs: f32,
+    nuclear_flash_secs: f32,
+    energy_shield_cooldown_secs: f32,
+    energy_shield_active_secs: f32,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -239,15 +244,25 @@ impl GameClient for Mk48Game {
             depth_charge_barrage_cooldown_secs: 0.0,
             air_superiority_cooldown_secs: 0.0,
             emergency_repair_cooldown_secs: 0.0,
+            emergency_repair_active_secs: 0.0,
             smoke_screen_cooldown_secs: 0.0,
             smoke_screen_active_secs: 0.0,
             burst_loading_cooldown_secs: 0.0,
             burst_loading_active_secs: 0.0,
+            nuclear_strike_cooldown_secs: 0.0,
+            nuclear_flash_secs: 0.0,
+            energy_shield_cooldown_secs: 0.0,
+            energy_shield_active_secs: 0.0,
         })
     }
 
     /// This violates the normal "peek" contract by doing the work of apply, when it comes to contacts.
     fn peek_game(&mut self, update: &Update, context: &mut Context<Self>) {
+        // Debug: Log events received from server
+        if !update.events.is_empty() {
+            web_sys::console::log_1(&format!("peek_game: received {} events: {:?}", update.events.len(), update.events).into());
+        }
+        
         self.peek_update_sound_counter = self.peek_update_sound_counter.saturating_add(1);
         // Only play sounds for 10 peeked updates between frames.
         let play_sounds = self.peek_update_sound_counter < 10;
@@ -367,6 +382,28 @@ impl GameClient for Mk48Game {
                                 .play_with_volume(Audio::Impact, Self::volume_at(distance));
                         }
                     }
+                    WorldEvent::NuclearStrike { center, radius } => {
+                        let distance = player_position.distance(*center);
+                        if distance <= *radius * 2.0 {
+                            // Louder explosion for nuclear strike
+                            context
+                                .audio
+                                .play_with_volume(Audio::Impact, Self::volume_at(distance) * 2.0);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Visual effects always trigger (not dependent on play_sounds)
+        for event in &update.events {
+            if let WorldEvent::NuclearStrike { center, radius } = event {
+                let distance = player_position.distance(*center);
+                web_sys::console::log_1(&format!("NuclearStrike event: center={:?}, radius={}, distance={}", center, radius, distance).into());
+                if distance <= *radius * 2.0 {                    
+                    // Trigger visual flash (1.0 = full white, decays over time)
+                    self.nuclear_flash_secs = 0.8;
+                    web_sys::console::log_1(&"Nuclear flash triggered!".into());
                 }
             }
         }
@@ -698,6 +735,12 @@ impl GameClient for Mk48Game {
             smoke_screen,
         );
 
+        // Update and apply nuclear flash effect
+        if self.nuclear_flash_secs > 0.0 {
+            self.nuclear_flash_secs = (self.nuclear_flash_secs - elapsed_seconds * 2.0).max(0.0);
+        }
+        layer.overlay.set_nuclear_flash(self.nuclear_flash_secs);
+
         let mut anti_aircraft_volume = 0.0;
 
         // Update animations.
@@ -932,6 +975,54 @@ impl GameClient for Mk48Game {
                                         } else {
                                             hud_color
                                         },
+                                    );
+                                }
+
+                                // Energy Shield visual effect - pulsing blue aura
+                                if self.energy_shield_active_secs > 0.0 {
+                                    let shield_radius = data.radius * 1.5;
+                                    // Pulsing effect: oscillate between 0.3 and 0.7 alpha
+                                    let pulse = (context.client.time_seconds * 4.0).sin() * 0.2 + 0.5;
+                                    let shield_color = rgba(50, 150, 255, (pulse * 200.0) as u8);
+                                    let shield_thickness = 0.01 * zoom;
+                                    
+                                    // Draw outer shield ring
+                                    layer.graphics.draw_circle(
+                                        contact.transform().position,
+                                        shield_radius,
+                                        shield_thickness,
+                                        shield_color,
+                                    );
+                                    // Draw inner glow ring
+                                    layer.graphics.draw_circle(
+                                        contact.transform().position,
+                                        shield_radius * 0.9,
+                                        shield_thickness * 0.5,
+                                        rgba(100, 200, 255, (pulse * 100.0) as u8),
+                                    );
+                                }
+
+                                // Emergency Repair visual effect - pulsing green aura
+                                if self.emergency_repair_active_secs > 0.0 {
+                                    let repair_radius = data.radius * 1.3;
+                                    // Pulsing effect: oscillate between 0.3 and 0.7 alpha
+                                    let pulse = (context.client.time_seconds * 3.0).sin() * 0.2 + 0.5;
+                                    let repair_color = rgba(50, 255, 100, (pulse * 180.0) as u8);
+                                    let repair_thickness = 0.008 * zoom;
+                                    
+                                    // Draw outer repair ring
+                                    layer.graphics.draw_circle(
+                                        contact.transform().position,
+                                        repair_radius,
+                                        repair_thickness,
+                                        repair_color,
+                                    );
+                                    // Draw inner glow ring
+                                    layer.graphics.draw_circle(
+                                        contact.transform().position,
+                                        repair_radius * 0.85,
+                                        repair_thickness * 0.5,
+                                        rgba(100, 255, 150, (pulse * 80.0) as u8),
                                     );
                                 }
 
@@ -1214,36 +1305,55 @@ impl GameClient for Mk48Game {
                                 }
                             }
 
-                            // Health bar
+                            // Health bar / Health text
                             if contact.damage() > Ticks::ZERO {
-                                let length = 0.12 * zoom;
-                                let health =
-                                    1.0 - contact.damage().to_secs() / data.max_health().to_secs();
+                                let max_health = data.max_health().to_secs();
+                                let current_health = max_health - contact.damage().to_secs();
+                                let health = current_health / max_health;
                                 let center = contact.transform().position
                                     + Vec2::new(0.0, overlay_vertical_position);
-                                let offset_x = |v, x| v + Vec2::new(x, 0.0);
 
-                                let bg_color = rgba(85, 85, 85, 127);
-                                let health_color = color.extend(1.0);
-                                let thickness = 0.0075 * zoom;
+                                if context.settings.advanced_display_mode {
+                                    // Numerical display mode: current/max
+                                    let text = format!(
+                                        "{:.0}/{:.0}",
+                                        current_health.max(0.0),
+                                        max_health
+                                    );
+                                    let c = color_bytes;
+                                    layer.text.draw(
+                                        &text,
+                                        center,
+                                        0.025 * zoom,
+                                        [c[0], c[1], c[2], 255],
+                                    );
+                                } else {
+                                    // Traditional health bar mode
+                                    let length = 0.12 * zoom;
+                                    let offset_x = |v, x| v + Vec2::new(x, 0.0);
 
-                                // Background of health bar.
-                                layer.graphics.draw_rounded_line(
-                                    offset_x(center, length * -0.5),
-                                    offset_x(center, length * 0.5),
-                                    thickness,
-                                    bg_color,
-                                    true,
-                                );
+                                    let bg_color = rgba(85, 85, 85, 127);
+                                    let health_color = color.extend(1.0);
+                                    let thickness = 0.0075 * zoom;
 
-                                // Health indicator.
-                                layer.graphics.draw_rounded_line(
-                                    offset_x(center, length * -0.5),
-                                    offset_x(center, length * (health - 0.5)),
-                                    thickness,
-                                    health_color,
-                                    true,
-                                );
+                                    // Background of health bar.
+                                    layer.graphics.draw_rounded_line(
+                                        offset_x(center, length * -0.5),
+                                        offset_x(center, length * 0.5),
+                                        thickness,
+                                        bg_color,
+                                        true,
+                                    );
+
+                                    // Health indicator.
+                                    layer.graphics.draw_rounded_line(
+                                        offset_x(center, length * -0.5),
+                                        offset_x(center, length * (health - 0.5)),
+                                        thickness,
+                                        health_color,
+                                        true,
+                                    );
+                                }
                             }
 
                             // Name
@@ -1607,7 +1717,7 @@ impl GameClient for Mk48Game {
         let status = if let Some(player_contact) = player_contact {
             let is_star_destroyer = matches!(
                 player_contact.view.entity_type(),
-                Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite)
+                Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite | EntityType::StellarFrigate)
             );
             let has_zero_pulse = matches!(
                 player_contact
@@ -1625,9 +1735,14 @@ impl GameClient for Mk48Game {
             self.update_sonar_pulse_timers(elapsed_seconds, has_hunter_killer);
             self.update_depth_charge_barrage_timers(elapsed_seconds, has_hunter_killer);
             let has_fortress_carrier = player_contact.view.entity_type() == Some(EntityType::FortressCarrier);
+            let has_battleship750k = player_contact.view.entity_type() == Some(EntityType::Battleship750k);
             if has_fortress_carrier {
                 self.update_air_superiority_timers(elapsed_seconds);
                 self.update_emergency_repair_timers(elapsed_seconds);
+            }
+            if has_battleship750k {
+                self.update_emergency_repair_timers(elapsed_seconds);
+                self.update_smoke_screen_timers(elapsed_seconds);
             }
             let has_tianwangxing = player_contact.view.entity_type() == Some(EntityType::Tianwangxing);
             if has_tianwangxing {
@@ -1637,6 +1752,14 @@ impl GameClient for Mk48Game {
             if has_richelieu {
                 self.update_burst_loading_timers(elapsed_seconds);
                 self.update_smoke_screen_timers(elapsed_seconds);
+            }
+            let has_unsc_infinite = player_contact.view.entity_type() == Some(EntityType::UnscInfinite);
+            if has_unsc_infinite {
+                self.update_nuclear_strike_timers(elapsed_seconds);
+            }
+            let has_stellar_frigate = player_contact.view.entity_type() == Some(EntityType::StellarFrigate);
+            if has_stellar_frigate {
+                self.update_energy_shield_timers(elapsed_seconds);
             }
 
             let mut guidance = None;
@@ -1768,6 +1891,9 @@ impl GameClient for Mk48Game {
                 smoke_screen_active_remaining: self.smoke_screen_active_secs.max(0.0),
                 burst_loading_cooldown_remaining: self.burst_loading_cooldown_secs.max(0.0),
                 burst_loading_active_remaining: self.burst_loading_active_secs.max(0.0),
+                nuclear_strike_cooldown_remaining: self.nuclear_strike_cooldown_secs.max(0.0),
+                energy_shield_cooldown_remaining: self.energy_shield_cooldown_secs.max(0.0),
+                energy_shield_active_remaining: self.energy_shield_active_secs.max(0.0),
                 bot_alliance_enabled: context.state.game.bot_alliance_enabled,
             });
 
@@ -1952,7 +2078,7 @@ impl GameClient for Mk48Game {
                 if let Some(contact) = context.state.game.player_contact() {
                     if matches!(
                         contact.entity_type(),
-                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite)
+                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite | EntityType::StellarFrigate)
                     )
                         && self.warp_charge_secs == 0.0
                         && self.warp_cooldown_secs == 0.0
@@ -1993,6 +2119,12 @@ impl GameClient for Mk48Game {
             }
             UiEvent::BurstLoading => {
                 self.try_burst_loading(context);
+            }
+            UiEvent::NuclearStrike => {
+                self.try_nuclear_strike(context);
+            }
+            UiEvent::EnergyShield => {
+                self.try_energy_shield(context);
             }
         }
     }
@@ -2164,14 +2296,16 @@ impl Mk48Game {
     }
 
     fn try_emergency_repair(&mut self, context: &mut Context<Self>) {
-        use common::skill::EMERGENCY_REPAIR_COOLDOWN;
+        use common::skill::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
         use common::protocol::EmergencyRepair;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::FortressCarrier)
+            if (contact.entity_type() == Some(EntityType::FortressCarrier)
+                || contact.entity_type() == Some(EntityType::Battleship750k))
                 && self.emergency_repair_cooldown_secs == 0.0
             {
                 self.emergency_repair_cooldown_secs = EMERGENCY_REPAIR_COOLDOWN.to_secs();
+                self.emergency_repair_active_secs = REPAIR_DURATION.to_secs();
                 context.send_to_game(Command::EmergencyRepair(EmergencyRepair));
             }
         }
@@ -2187,6 +2321,9 @@ impl Mk48Game {
         if self.emergency_repair_cooldown_secs > 0.0 {
             self.emergency_repair_cooldown_secs = (self.emergency_repair_cooldown_secs - elapsed_seconds).max(0.0);
         }
+        if self.emergency_repair_active_secs > 0.0 {
+            self.emergency_repair_active_secs = (self.emergency_repair_active_secs - elapsed_seconds).max(0.0);
+        }
     }
 
     fn try_smoke_screen(&mut self, context: &mut Context<Self>) {
@@ -2196,7 +2333,8 @@ impl Mk48Game {
         if let Some(contact) = context.state.game.player_contact() {
             let entity_type = contact.entity_type();
             let has_smoke_screen = entity_type == Some(EntityType::Tianwangxing)
-                || entity_type == Some(EntityType::Richelieu);
+                || entity_type == Some(EntityType::Richelieu)
+                || entity_type == Some(EntityType::Battleship750k);
             if has_smoke_screen && self.smoke_screen_cooldown_secs == 0.0 {
                 self.smoke_screen_cooldown_secs = SMOKE_SCREEN_COOLDOWN.to_secs();
                 self.smoke_screen_active_secs = SMOKE_SCREEN_DURATION.to_secs();
@@ -2250,6 +2388,52 @@ impl Mk48Game {
         }
         if self.burst_loading_cooldown_secs > 0.0 {
             self.burst_loading_cooldown_secs = (self.burst_loading_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn try_nuclear_strike(&mut self, context: &mut Context<Self>) {
+        use common::skill::NUCLEAR_STRIKE_COOLDOWN;
+        use common::protocol::NuclearStrike;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::UnscInfinite)
+                && self.nuclear_strike_cooldown_secs == 0.0
+            {
+                self.nuclear_strike_cooldown_secs = NUCLEAR_STRIKE_COOLDOWN.to_secs();
+                context.send_to_game(Command::NuclearStrike(NuclearStrike));
+                context.audio.play(Audio::Impact);
+            }
+        }
+    }
+
+    fn update_nuclear_strike_timers(&mut self, elapsed_seconds: f32) {
+        if self.nuclear_strike_cooldown_secs > 0.0 {
+            self.nuclear_strike_cooldown_secs = (self.nuclear_strike_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn try_energy_shield(&mut self, context: &mut Context<Self>) {
+        use common::skill::ENERGY_SHIELD_COOLDOWN;
+        use common::skill::ENERGY_SHIELD_DURATION;
+        use common::protocol::EnergyShield;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if contact.entity_type() == Some(EntityType::StellarFrigate)
+                && self.energy_shield_cooldown_secs == 0.0
+            {
+                self.energy_shield_cooldown_secs = ENERGY_SHIELD_COOLDOWN.to_secs();
+                self.energy_shield_active_secs = ENERGY_SHIELD_DURATION.to_secs();
+                context.send_to_game(Command::EnergyShield(EnergyShield));
+            }
+        }
+    }
+
+    fn update_energy_shield_timers(&mut self, elapsed_seconds: f32) {
+        if self.energy_shield_cooldown_secs > 0.0 {
+            self.energy_shield_cooldown_secs = (self.energy_shield_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+        if self.energy_shield_active_secs > 0.0 {
+            self.energy_shield_active_secs = (self.energy_shield_active_secs - elapsed_seconds).max(0.0);
         }
     }
 }
