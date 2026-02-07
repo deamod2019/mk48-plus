@@ -3507,4 +3507,69 @@ pub enum EntityType {
     #[exhaust(forward = -100.0)]
     #[skills(Warp, BurstLoading)]
     Hunter,
+    // ============ Tu-160 白天鹅 战略轰炸机 ============
+    #[info(label = "图-160 白天鹅", link = "https://en.wikipedia.org/wiki/Tupolev_Tu-160")]
+    #[entity(Boat, Aeroplane, level = 9)]
+    #[size(length = 54.0, width = 36.0, draft = 1.0)]
+    #[props(speed = 300.0)]
+    #[sensors(visual = 800, radar = 1200)]
+    // 内置弹舱: 8x Kh-101 重型巡航导弹 (Su57MissileHeavy)
+    #[armament(Su57MissileHeavy, forward = 2.0, side = 0.0, count = 8, hidden)]
+    // 内置弹舱: 8x Kh-55 中型巡航导弹 (Su57MissileMid)
+    #[armament(Su57MissileMid, forward = 2.0, side = 0.0, count = 8, hidden)]
+    // 内置弹舱: 8x 短程导弹 (Su57MissileLight)
+    #[armament(Su57MissileLight, forward = 2.0, side = 0.0, count = 8, hidden)]
+    // 总计: 24枚内置导弹 ✅
+    #[skills(EngineBoost)]
+    Tu160,
+    // ============ 基洛夫空艇 (Kirov Airship) ============
+    #[info(label = "基洛夫空艇")]
+    #[entity(Boat, Aeroplane, level = 11)]
+    #[size(length = 120.0, width = 50.0, draft = 1.0)]
+    #[props(speed = 80.0, damage = 5.0)]
+    #[sensors(visual = 800, radar = 1000)]
+    // Mk82 航弹 x24 (炸弹舱)
+    #[armament(Mk82, forward = 10.0, side = 5.0, count = 6, symmetrical)]
+    #[armament(Mk82, forward = -5.0, side = 5.0, count = 6, symmetrical)]
+    // P700 重型导弹 x8
+    #[armament(P700, forward = 20.0, side = 8.0, count = 4, symmetrical, hidden)]
+    // 总计: 24 Mk82 + 8 P700 = 32 武器槽 ✅
+    #[skills(EngineBoost)]
+    KirovAirship,
+    // ============ H-44 超级战列舰 ============
+    #[info(label = "H-44 超级战列舰", link = "https://en.wikipedia.org/wiki/H-class_battleship_proposals")]
+    #[entity(Boat, Battleship, level = 11)]
+    #[size(length = 345.0, width = 70.0, draft = 12.0, mast = 50.0)]
+    #[props(speed = 16.0, damage = 30.0, torpedo_resistance = 0.3)]
+    #[sensors(visual = 1000, radar = 1000)]
+    // 508mm主炮塔 x12 — 前6后6
+    #[turret(_458X1980MmR, forward = 140.0, slow, azimuth_b = 20)]
+    #[turret(_458X1980MmR, forward = 115.0, slow, azimuth_b = 25)]
+    #[turret(_458X1980MmR, forward = 90.0, slow, azimuth_b = 30)]
+    #[turret(_458X1980MmR, forward = 65.0, slow, azimuth_b = 35)]
+    #[turret(_458X1980MmR, forward = 40.0, slow, azimuth_b = 40)]
+    #[turret(_458X1980MmR, forward = 15.0, slow, azimuth_b = 45)]
+    #[turret(_458X1980MmR, forward = -15.0, angle = 180, slow, azimuth_b = 45)]
+    #[turret(_458X1980MmR, forward = -40.0, angle = 180, slow, azimuth_b = 40)]
+    #[turret(_458X1980MmR, forward = -65.0, angle = 180, slow, azimuth_b = 35)]
+    #[turret(_458X1980MmR, forward = -90.0, angle = 180, slow, azimuth_b = 30)]
+    #[turret(_458X1980MmR, forward = -115.0, angle = 180, slow, azimuth_b = 25)]
+    #[turret(_458X1980MmR, forward = -140.0, angle = 180, slow, azimuth_b = 20)]
+    // 127mm副炮 x8 (两侧各4)
+    #[turret(_127X680MmR, forward = 100.0, side = 25.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = 50.0, side = 30.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = -50.0, side = 30.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = -100.0, side = 25.0, fast, symmetrical)]
+    // Tomahawk 巡航导弹 x12
+    #[armament(Tomahawk, forward = 10.0, side = 15.0, count = 3, symmetrical, vertical)]
+    #[armament(Tomahawk, forward = -20.0, side = 15.0, count = 3, symmetrical, vertical)]
+    // Seahawk 直升机 x5
+    #[armament(Seahawk, forward = -150.0, external)]
+    #[armament(Seahawk, forward = -140.0, side = 10.0, symmetrical, external)]
+    #[armament(Seahawk, forward = -155.0, side = 10.0, symmetrical, external)]
+    // 总计: 12主炮 + 8副炮 + 12 Tomahawk + 5 Seahawk = 37 武器槽 ✅
+    #[exhaust(forward = -10.0)]
+    #[exhaust(forward = -35.0)]
+    #[skills(BurstLoading, EmergencyRepair)]
+    H44,
 }
