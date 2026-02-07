@@ -853,14 +853,14 @@ pub(crate) fn derive_entity_type(input: TokenStream) -> TokenStream {
         .map(|s| EntityTypeFromStr::new(s.to_string()))
         .collect();
 
-    let entity_type_from_u8s: Vec<EntityTypeFromU8> = ordered_entity_names
+    let entity_type_from_u16s: Vec<EntityTypeFromU16> = ordered_entity_names
         .iter()
         .enumerate()
         .map(|(i, s)| {
-            EntityTypeFromU8::new(
+            EntityTypeFromU16::new(
                 s.to_string(),
                 i.try_into()
-                    .expect("u8 cannot fit more than 256 entity types"),
+                    .expect("u16 cannot fit more than 65536 entity types"),
             )
         })
         .collect();
@@ -880,9 +880,9 @@ pub(crate) fn derive_entity_type(input: TokenStream) -> TokenStream {
                 })
             }
 
-            pub fn from_u8(i: u8) -> Option<Self> {
+            pub fn from_u16(i: u16) -> Option<Self> {
                 Some(match i {
-                    #(#entity_type_from_u8s),*,
+                    #(#entity_type_from_u16s),*,
                     _ => return None
                 })
             }
@@ -1067,15 +1067,15 @@ impl quote::ToTokens for EntityTypeFromStr {
     }
 }
 
-struct EntityTypeFromU8(String, u8);
+struct EntityTypeFromU16(String, u16);
 
-impl EntityTypeFromU8 {
-    pub fn new(name: String, index: u8) -> Self {
+impl EntityTypeFromU16 {
+    pub fn new(name: String, index: u16) -> Self {
         Self(name, index)
     }
 }
 
-impl quote::ToTokens for EntityTypeFromU8 {
+impl quote::ToTokens for EntityTypeFromU16 {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let ident = string_to_ident(&self.0);
         let index = self.1;

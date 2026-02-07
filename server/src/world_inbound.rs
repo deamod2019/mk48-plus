@@ -899,6 +899,7 @@ impl CommandTrait for AirSuperiority {
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
         use common::skill::AIR_SUPERIORITY_COOLDOWN;
+        use common::entity::EntityKind;
         
         // Get entity_index from player status
         let entity_index = {
@@ -909,8 +910,8 @@ impl CommandTrait for AirSuperiority {
             }
         }; // player borrow dropped here
 
-        // Check entity type and cooldown
-        {
+        // Check entity type, get aircraft type, and check cooldown
+        let aircraft_type = {
             let entity = &world.entities[entity_index];
             
             // Check if entity has AirSuperiority skill
@@ -921,7 +922,19 @@ impl CommandTrait for AirSuperiority {
             if entity.extension().air_superiority_cooldown_remaining() != Ticks::ZERO {
                 return Err("air superiority on cooldown");
             }
-        }
+            
+            // Find the first aircraft type from armaments
+            entity.data().armaments.iter()
+                .find_map(|arm| {
+                    let arm_type = arm.entity_type;
+                    if arm_type.data().kind == EntityKind::Aircraft {
+                        Some(arm_type)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or("no aircraft armaments")?
+        };
 
         // Get position and direction
         let (center, direction) = {
@@ -943,8 +956,8 @@ impl CommandTrait for AirSuperiority {
             let offset = spawn_direction.to_vec() * 100.0;
             let spawn_pos = center + offset;
 
-            // Create Aircraft WITH player ownership - this enables proper physics interactions
-            let mut drone = Entity::new(EntityType::Avenger, Some(Arc::clone(player_tuple)));
+            // Create Aircraft WITH player ownership using detected aircraft type
+            let mut drone = Entity::new(aircraft_type, Some(Arc::clone(player_tuple)));
             drone.transform.position = spawn_pos;
             drone.transform.direction = spawn_direction;
             drone.transform.velocity = Velocity::from_mps(50.0);
@@ -958,6 +971,7 @@ impl CommandTrait for AirSuperiority {
         Ok(())
     }
 }
+
 
 
 impl CommandTrait for EmergencyRepair {

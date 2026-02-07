@@ -8,7 +8,7 @@ use crate::util::{level_to_score, natural_death_coins};
 use crate::velocity::Velocity;
 use arrayvec::ArrayVec;
 use common_util::angle::Angle;
-use core_protocol::serde_util::{StrVisitor, U8Visitor};
+use core_protocol::serde_util::{StrVisitor, U8Visitor, U16Visitor};
 use macros::EntityTypeData;
 use rand::prelude::IteratorRandom;
 use rand::{thread_rng, Rng};
@@ -167,8 +167,8 @@ impl Serialize for EntityType {
         if serializer.is_human_readable() {
             serializer.serialize_str(self.as_str())
         } else {
-            debug_assert_eq!(Self::from_u8(*self as u8).unwrap(), *self);
-            serializer.serialize_u8(*self as u8)
+            debug_assert_eq!(Self::from_u16(*self as u16).unwrap(), *self);
+            serializer.serialize_u16(*self as u16)
         }
     }
 }
@@ -185,8 +185,8 @@ impl<'de> Deserialize<'de> for EntityType {
                 })
             })
         } else {
-            deserializer.deserialize_u8(U8Visitor).and_then(|i| {
-                Self::from_u8(i).ok_or_else(|| {
+            deserializer.deserialize_u16(U16Visitor).and_then(|i| {
+                Self::from_u16(i).ok_or_else(|| {
                     serde::de::Error::custom(format!("invalid entity type integer {}", i))
                 })
             })
@@ -194,7 +194,7 @@ impl<'de> Deserialize<'de> for EntityType {
     }
 }
 
-#[repr(u8)]
+#[repr(u16)]
 #[derive(
     Copy,
     Clone,
@@ -2131,6 +2131,7 @@ pub enum EntityType {
     #[offset(forward = 5)]
     #[armament(_380X1700MmR, forward = 12, side = 4.5, angle = 0, symmetrical, hidden)]
     _38CmSkc34,
+
     #[info(
         label = "45 cm/45 Type 94",
         link = "https://en.wikipedia.org/wiki/46_cm/45_Type_94_naval_gun"
@@ -2480,6 +2481,7 @@ pub enum EntityType {
     #[offset(forward = 1)]
     #[props(speed = 915, range = 16000)]
     _76X636MmR,
+
     #[info(label = "82R")]
     #[entity(Weapon, Torpedo, level = 4)]
     #[size(length = 3.275, width = 0.4605)]
@@ -2848,14 +2850,14 @@ pub enum EntityType {
     #[info(label = "MAC Cannon", link = "https://halo.fandom.com/wiki/Magnetic_Accelerator_Cannon")]
     #[entity(Weapon, Shell)]
     #[size(length = 3.0, width = 0.6)]
-    #[props(speed = 2000.0, range = 50000, damage = 35.0)]
+    #[props(speed = 2000.0, range = 50000, damage = 350.0)]
     Mac,
     #[info(label = "High Explosive Shell")]
     #[entity(Weapon, Shell)]
     #[size(length = 1.5, width = 0.4)]
-    #[props(speed = 1200.0, range = 30000, damage = 4.0)]
+    #[props(speed = 1200.0, range = 30000, damage = 3.90)]
     HighExplosive,
-    #[info(label = "MAC Turret")]
+    #[info(label = "MAC Turret (Forward Only)")]
     #[entity(Turret, Gun)]
     #[size(length = 25.0, width = 10.0)]
     #[offset(forward = 12.0)]
@@ -2874,38 +2876,37 @@ pub enum EntityType {
     )]
     #[entity(Boat, Starship, level = 15)]
     #[size(length = 950.0, width = 200.0, draft = 0.0)]
-    #[props(speed = 270.8, damage = 15.0)]
+    #[props(speed = 270.8, damage = 376.0)]
     #[sensors(visual = 1500, radar = 1500)]
-    // 主炮 MAC x4 (turret 0-3)
-    #[turret(MacTurret, forward = 350.0, slow, azimuth_b = 15)]
-    #[turret(MacTurret, forward = 200.0, slow, azimuth_b = 30)]
-    #[turret(MacTurret, forward = -150.0, angle = 180, slow, azimuth_b = 30)]
-    #[turret(MacTurret, forward = -300.0, angle = 180, slow, azimuth_b = 15)]
+    // 主炮 MAC x4 (turret 0-3) - 仅向前发射
+    #[turret(MacTurret, forward = 350.0, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    #[turret(MacTurret, forward = 200.0, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    #[turret(MacTurret, forward = -150.0, angle = 180, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    #[turret(MacTurret, forward = -300.0, angle = 180, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
     // 高爆弹炮塔 x8 (turret 4-11)
     #[turret(HeTurret, forward = 250.0, side = 50.0, fast, symmetrical)]
     #[turret(HeTurret, forward = 100.0, side = 60.0, fast, symmetrical)]
     #[turret(HeTurret, forward = -50.0, side = 60.0, fast, symmetrical)]
     #[turret(HeTurret, forward = -200.0, side = 50.0, fast, symmetrical)]
-    // P270 导弹 x36 (symmetrical = 2 slots each, 18 declarations = 36 slots)
-    #[armament(P270, forward = 300.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 280.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 260.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 240.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 220.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 200.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 180.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 160.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = 140.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -140.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -160.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -180.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -200.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -220.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -240.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -260.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -280.0, side = 30.0, symmetrical, vertical)]
-    #[armament(P270, forward = -300.0, side = 30.0, symmetrical, vertical)]
-    // P700 Granit 导弹 x32 (symmetrical = 2 slots each, 16 declarations = 32 slots)
+    // P700 Granit 导弹 x70 (symmetrical = 2 slots each, 35 declarations = 70 slots)
+    #[armament(P700, forward = 300.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 280.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 260.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 240.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 220.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 200.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 180.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 160.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = 140.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -140.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -160.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -180.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -200.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -220.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -240.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -260.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -280.0, side = 30.0, symmetrical, vertical)]
+    #[armament(P700, forward = -300.0, side = 30.0, symmetrical, vertical)]
     #[armament(P700, forward = 290.0, side = 45.0, symmetrical, vertical)]
     #[armament(P700, forward = 260.0, side = 45.0, symmetrical, vertical)]
     #[armament(P700, forward = 230.0, side = 45.0, symmetrical, vertical)]
@@ -2922,6 +2923,7 @@ pub enum EntityType {
     #[armament(P700, forward = -230.0, side = 45.0, symmetrical, vertical)]
     #[armament(P700, forward = -260.0, side = 45.0, symmetrical, vertical)]
     #[armament(P700, forward = -290.0, side = 45.0, symmetrical, vertical)]
+    #[armament(P700, forward = 50.0, side = 45.0, symmetrical, vertical)]
     // 防空导弹 Hq9 x24 (symmetrical = 2 slots each, 12 declarations = 24 slots)
     #[armament(Hq9, forward = 320.0, side = 25.0, symmetrical, vertical)]
     #[armament(Hq9, forward = 300.0, side = 25.0, symmetrical, vertical)]
@@ -2939,7 +2941,7 @@ pub enum EntityType {
     #[armament(F35B, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
     // 反潜直升机 x12 (Seahawk 海鹰)
     #[armament(Seahawk, forward = -100.0, side = 0.0, angle = 0.0, count = 12, hidden)]
-    // 总计: 4主炮 + 8高爆炮塔 + 36 P270 + 32 P700 + 24 Hq9 + 12 F35B + 12 Seahawk = 128 武器槽 ✅
+    // 总计: 4主炮 + 8高爆炮塔 + 70 P700 + 24 Hq9 + 12 F35B + 12 Seahawk = 130 武器槽 ✅
     #[exhaust(forward = -350.0)]
     #[skills(Warp, NuclearStrike)]
     UnscInfinite,
@@ -3133,6 +3135,24 @@ pub enum EntityType {
     // 总计: 4炮塔 + 8导弹 + 4鱼雷 = 16武器槽 ✅
     #[exhaust(forward = -30.0)]
     IronWarrior,
+    // ============ Level 12 X-Wing Starfighter ============
+    #[info(
+        label = "X-Wing Starfighter",
+        link = "https://starwars.fandom.com/wiki/T-65B_X-wing_starfighter"
+    )]
+    #[entity(Boat, Starship, level = 12)]
+    #[size(length = 12.5, width = 11.8, draft = 0.0)]
+    #[props(speed = 300.0, stealth = 0.3)]
+    #[sensors(visual = 600, radar = 500)]
+    // 4门 PlasmaGun 激光炮 (翼尖)
+    #[armament(PlasmaGun, forward = 5.9, side = 5.9, external, symmetrical)]
+    #[armament(PlasmaGun, forward = 5.9, side = -5.9, external, symmetrical)]
+    // 4枚 Su57MissileLight 导弹
+    #[armament(Su57MissileLight, forward = 2.0, side = 3.0, symmetrical)]
+    #[armament(Su57MissileLight, forward = 2.0, side = -3.0, symmetrical)]
+    #[skills(EngineBoost)]
+    XWing,
+
     // ============ Level 14 Stellar Frigate ============
     #[info(label = "星际护卫舰")]
     #[entity(Boat, Starship, level = 14)]
@@ -3274,4 +3294,217 @@ pub enum EntityType {
     #[exhaust(forward = -95.0)]
     #[skills(EngineBoost, SmokeScreen)]
     SwiftWingCruiser,
+    // ============ Valiant Class Weapons ============
+    #[info(label = "Valiant MAC Cannon")]
+    #[entity(Weapon, Shell)]
+    #[size(length = 2.5, width = 0.5)]
+    #[props(speed = 1800.0, range = 45000, damage = 89.0)]
+    ValiantMac,
+    #[info(label = "Valiant HE Shell")]
+    #[entity(Weapon, Shell)]
+    #[size(length = 1.2, width = 0.35)]
+    #[props(speed = 1100.0, range = 28000, damage = 3.90)]
+    ValiantHe,
+    #[info(label = "Valiant MAC Turret")]
+    #[entity(Turret, Gun)]
+    #[size(length = 20.0, width = 8.0)]
+    #[offset(forward = 10.0)]
+    #[armament(ValiantMac, angle = 0)]
+    ValiantMacTurret,
+    #[info(label = "Valiant HE Turret")]
+    #[entity(Turret, Gun)]
+    #[size(length = 6.0, width = 3.0)]
+    #[offset(forward = 3.0)]
+    #[armament(ValiantHe, angle = 0)]
+    ValiantHeTurret,
+    // ============ Valiant Class Super Heavy Cruiser ============
+    #[info(label = "英勇级超重巡洋舰")]
+    #[entity(Boat, Starship, level = 14)]
+    #[size(length = 280.0, width = 45.0, draft = 0.0, mast = 40.0)]
+    #[props(speed = 35.0, damage = 80.0)]
+    #[sensors(visual = 1200, radar = 1800, sonar = 600)]
+    // 主炮 Valiant MAC x2 (仅向前发射)
+    #[turret(ValiantMacTurret, forward = 100.0, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    #[turret(ValiantMacTurret, forward = -80.0, angle = 180, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    // 高爆弹炮塔 x16 (每侧8个)
+    #[turret(ValiantHeTurret, forward = 80.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 60.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 40.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 20.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -20.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -40.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -60.0, side = 18.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -100.0, side = 18.0, fast, symmetrical)]
+    // P700 Granit 导弹 x50 (symmetrical = 2 slots each, 25 declarations = 50 slots)
+    #[armament(P700, forward = 90.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 80.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 70.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 60.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 50.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 40.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 30.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 20.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 10.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 0.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -10.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -20.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -30.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -40.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -50.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -60.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -70.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -80.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = -90.0, side = 15.0, symmetrical, vertical)]
+    #[armament(P700, forward = 85.0, side = 20.0, symmetrical, vertical)]
+    #[armament(P700, forward = 55.0, side = 20.0, symmetrical, vertical)]
+    #[armament(P700, forward = 25.0, side = 20.0, symmetrical, vertical)]
+    #[armament(P700, forward = -25.0, side = 20.0, symmetrical, vertical)]
+    #[armament(P700, forward = -55.0, side = 20.0, symmetrical, vertical)]
+    #[armament(P700, forward = -85.0, side = 20.0, symmetrical, vertical)]
+    // 总计: 2 MAC + 16 HE + 50 P700 = 68 武器槽 ✅
+    #[exhaust(forward = -110.0)]
+    #[skills(Warp)]
+    Valiant,
+    // ============ Marathon Class Heavy Cruiser ============
+    #[info(label = "马拉松级重巡洋舰")]
+    #[entity(Boat, Starship, level = 11)]
+    #[size(length = 180.0, width = 35.0, draft = 0.0, mast = 30.0)]
+    #[props(speed = 40.0, damage = 45.0)]
+    #[sensors(visual = 1000, radar = 1400, sonar = 400)]
+    // 主炮 MAC x2 (仅向前发射) - 使用ValiantMacTurret
+    #[turret(ValiantMacTurret, forward = 60.0, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    #[turret(ValiantMacTurret, forward = -50.0, angle = 180, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    // 高爆弹炮塔 x20 (每侧10个) - 使用ValiantHeTurret
+    #[turret(ValiantHeTurret, forward = 50.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 40.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 30.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 20.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 10.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -10.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -20.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -30.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -40.0, side = 14.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -60.0, side = 14.0, fast, symmetrical)]
+    // P700 导弹 x30 (symmetrical = 2 slots each, 15 declarations = 30 slots)
+    #[armament(P700, forward = 55.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = 45.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = 35.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = 25.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = 15.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = 5.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -5.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -15.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -25.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -35.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -45.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -55.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = 0.0, side = 10.0, symmetrical, vertical)]
+    #[armament(P700, forward = -65.0, side = 12.0, symmetrical, vertical)]
+    #[armament(P700, forward = -70.0, side = 12.0, symmetrical, vertical)]
+    // 总计: 2 MAC + 20 HE + 30 P700 = 52 武器槽 ✅
+    #[exhaust(forward = -70.0)]
+    #[skills(Warp)]
+    Marathon,
+    // ============ Marauder Class Corvette ============
+    #[info(label = "掠夺者级护卫舰")]
+    #[entity(Boat, Starship, level = 9)]
+    #[size(length = 80.0, width = 25.0, draft = 0.0, mast = 20.0)]
+    #[props(speed = 55.0, damage = 25.0)]
+    #[sensors(visual = 800, radar = 1000)]
+    // Blaster x16 (每侧8个) - 使用现有Blaster
+    #[armament(Blaster, forward = 30.0, side = 10.0, count = 2, symmetrical, external)]
+    #[armament(Blaster, forward = 20.0, side = 10.0, count = 2, symmetrical, external)]
+    #[armament(Blaster, forward = 10.0, side = 10.0, count = 2, symmetrical, external)]
+    #[armament(Blaster, forward = -10.0, side = 10.0, count = 2, symmetrical, external)]
+    // TIE Bomber x4
+    #[armament(TieBomber, forward = 0.0, side = 0.0, count = 4, hidden)]
+    // 总计: 16 Blaster + 4 TieBomber = 20 武器槽 ✅
+    #[exhaust(forward = -30.0)]
+    #[skills(Warp)]
+    Marauder,
+    // ============ Paris Class Super Heavy Cruiser ============
+    #[info(label = "巴黎级超重巡洋舰")]
+    #[entity(Boat, Starship, level = 10)]
+    #[size(length = 160.0, width = 40.0, draft = 0.0, mast = 28.0)]
+    #[props(speed = 99.0, damage = 40.0)]
+    #[sensors(visual = 1000, radar = 1300, sonar = 400)]
+    // MAC主炮 x1 (仅向前发射)
+    #[turret(ValiantMacTurret, forward = 60.0, slow, azimuth_fl = 0, azimuth_fr = 0, azimuth_b = 0)]
+    // HE高爆弹炮塔 x8 (每侧4个)
+    #[turret(ValiantHeTurret, forward = 45.0, side = 16.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = 15.0, side = 16.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -20.0, side = 16.0, fast, symmetrical)]
+    #[turret(ValiantHeTurret, forward = -50.0, side = 16.0, fast, symmetrical)]
+    // P700导弹 x20 (每侧10发)
+    #[armament(P700, forward = 40.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = 30.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = 20.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = 10.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = 0.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = -10.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = -20.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = -30.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = -40.0, side = 14.0, symmetrical, vertical)]
+    #[armament(P700, forward = -50.0, side = 14.0, symmetrical, vertical)]
+    // 总计: 1 MAC + 8 HE + 20 P700 = 29 武器槽 ✅
+    #[exhaust(forward = -60.0)]
+    #[skills(Warp, BurstLoading)]
+    Paris,
+    // ============ Imperial I Class Star Destroyer ============
+    #[info(label = "帝国I级歼星舰")]
+    #[entity(Boat, Starship, level = 13)]
+    #[size(length = 600.0, width = 200.0, draft = 0.0)]
+    #[props(speed = 200.0, damage = 6.0)]
+    #[sensors(visual = 900, radar = 1200, sonar = 500)]
+    // TurboLaser II x8 (每侧4个)
+    #[turret(TurboLaserIITurret, forward = 80.0, side = 30.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = 40.0, side = 30.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -20.0, side = 30.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -60.0, side = 30.0, fast, symmetrical)]
+    // Turbolaser 重炮 x4 (每侧2个)
+    #[turret(Turbolaser, forward = 100.0, side = 40.0, symmetrical)]
+    #[turret(Turbolaser, forward = -40.0, side = 40.0, symmetrical)]
+    // TIE Bomber x10
+    #[armament(TieBomber, forward = 0.0, side = 0.0, count = 10, hidden)]
+    // 总计: 8 TurboLaserII + 4 Turbolaser + 10 TieBomber = 22 武器槽 ✅
+    #[exhaust(forward = -100.0)]
+    #[skills(Warp)]
+    ImperialStarDestroyer,
+    // ============ Type 054A 江凯II级护卫舰 ============
+    #[info(label = "054A型护卫舰", link = "https://en.wikipedia.org/wiki/Type_054A_frigate")]
+    #[entity(Boat, Destroyer, level = 5)]
+    #[size(length = 134.0, width = 16.0, draft = 5.0, mast = 18.0)]
+    #[props(speed = 27.0)]
+    #[sensors(visual = 600, radar = 800)]
+    // 舰艏76mm主炮
+    #[turret(OtoMelara76Mm, forward = 55.0, fast)]
+    // YJ-18反舰导弹 x8 (两侧各4发)
+    #[armament(Yj18, forward = 10.0, side = 6.0, symmetrical, vertical, count = 4)]
+    // HQ-9防空导弹 x8 (垂发)
+    #[armament(Hq9, forward = 30.0, side = 3.0, symmetrical, vertical, count = 4)]
+    // 鱼-7鱼雷 x4 (两侧各2管)
+    #[armament(Yu7, forward = -15.0, side = 6.0, symmetrical, count = 2)]
+    // 直-9直升机 x1
+    #[armament(Harbin, forward = -50.0, hidden)]
+    #[exhaust(forward = -20.0)]
+    Type054A,
+    // ============ Hunter Class Star Destroyer ============
+    #[info(label = "猎人级歼星舰")]
+    #[entity(Boat, Starship, level = 12)]
+    #[size(length = 250.0, width = 100.0, draft = 0.0, mast = 35.0)]
+    #[props(speed = 38.0, damage = 60.0)]
+    #[sensors(visual = 1100, radar = 1500, sonar = 500)]
+    // TurboLaser II x12 (每侧6个)
+    #[turret(TurboLaserIITurret, forward = 80.0, side = 35.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = 50.0, side = 35.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = 20.0, side = 35.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -20.0, side = 35.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -50.0, side = 35.0, fast, symmetrical)]
+    #[turret(TurboLaserIITurret, forward = -80.0, side = 35.0, fast, symmetrical)]
+    // TIE Bomber x8
+    #[armament(TieBomber, forward = 0.0, side = 0.0, count = 8, hidden)]
+    // 总计: 12 TurboLaser + 8 TieBomber = 20 武器槽 ✅
+    #[exhaust(forward = -100.0)]
+    #[skills(Warp, BurstLoading)]
+    Hunter,
 }

@@ -1923,8 +1923,14 @@ impl GameClient for Mk48Game {
                                 };
                             pending_warp = Some(Warp { target: final_target });
                             self.warp_selecting = false;
-                            self.warp_charge_secs = WARP_CHARGE.to_secs();
-                            self.warp_cooldown_secs = 0.0;
+                            // If charge time is 0, set cooldown directly; otherwise set charge time
+                            if WARP_CHARGE.to_secs() > 0.0 {
+                                self.warp_charge_secs = WARP_CHARGE.to_secs();
+                                self.warp_cooldown_secs = 0.0;
+                            } else {
+                                self.warp_charge_secs = 0.0;
+                                self.warp_cooldown_secs = WARP_COOLDOWN.to_secs();
+                            }
                         }
                         // 吞掉点击，避免同时开火。
                         left_click = false;
@@ -2062,7 +2068,7 @@ impl GameClient for Mk48Game {
                 if let Some(contact) = context.state.game.player_contact() {
                     if matches!(
                         contact.entity_type(),
-                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite | EntityType::StellarFrigate)
+                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite | EntityType::StellarFrigate | EntityType::Valiant | EntityType::Marathon | EntityType::Marauder | EntityType::Hunter | EntityType::Paris | EntityType::ImperialStarDestroyer)
                     )
                         && self.warp_charge_secs == 0.0
                         && self.warp_cooldown_secs == 0.0
@@ -2072,14 +2078,18 @@ impl GameClient for Mk48Game {
                 }
             }
             UiEvent::IaigiriToggle => {
+                use common::skill::SkillType;
                 if let Some(contact) = context.state.game.player_contact() {
-                    if contact.entity_type() == Some(EntityType::Minelayer49)
-                        && self.iaigiri_cooldown_secs == 0.0
-                    {
-                        self.iaigiri_selecting = !self.iaigiri_selecting;
+                    if let Some(entity_type) = contact.entity_type() {
+                        if entity_type.data().has_skill(SkillType::Iaigiri)
+                            && self.iaigiri_cooldown_secs == 0.0
+                        {
+                            self.iaigiri_selecting = !self.iaigiri_selecting;
+                        }
                     }
                 }
             }
+
             UiEvent::EngineBoostToggle => {
                 self.try_engine_boost(context);
             }
@@ -2234,17 +2244,20 @@ impl Mk48Game {
     }
 
     fn try_engine_boost(&mut self, context: &mut Context<Self>) {
-        use common::skill::{ENGINE_BOOST_COOLDOWN, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_MAX_DURATION};
+        use common::skill::{ENGINE_BOOST_COOLDOWN, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_MAX_DURATION, SkillType};
         use common::protocol::EngineBoost;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::Minelayer49)
-                && self.engine_boost_cooldown_secs == 0.0
-                && self.engine_boost_remaining_secs == 0.0
-            {
-                self.engine_boost_remaining_secs = ENGINE_BOOST_MAX_DURATION.to_secs() + ENGINE_BOOST_DECEL_DURATION.to_secs();
-                self.engine_boost_cooldown_secs = ENGINE_BOOST_COOLDOWN.to_secs();
-                context.send_to_game(Command::EngineBoost(EngineBoost));
+            if let Some(entity_type) = contact.entity_type() {
+                let has_skill = entity_type.data().has_skill(SkillType::EngineBoost);
+                if has_skill
+                    && self.engine_boost_cooldown_secs == 0.0
+                    && self.engine_boost_remaining_secs == 0.0
+                {
+                    self.engine_boost_remaining_secs = ENGINE_BOOST_MAX_DURATION.to_secs() + ENGINE_BOOST_DECEL_DURATION.to_secs();
+                    self.engine_boost_cooldown_secs = ENGINE_BOOST_COOLDOWN.to_secs();
+                    context.send_to_game(Command::EngineBoost(EngineBoost));
+                }
             }
         }
     }
@@ -2295,17 +2308,21 @@ impl Mk48Game {
 
     fn try_air_superiority(&mut self, context: &mut Context<Self>) {
         use common::skill::AIR_SUPERIORITY_COOLDOWN;
+        use common::skill::SkillType;
         use common::protocol::AirSuperiority;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::FortressCarrier)
-                && self.air_superiority_cooldown_secs == 0.0
-            {
-                self.air_superiority_cooldown_secs = AIR_SUPERIORITY_COOLDOWN.to_secs();
-                context.send_to_game(Command::AirSuperiority(AirSuperiority));
+            if let Some(entity_type) = contact.entity_type() {
+                if entity_type.data().has_skill(SkillType::AirSuperiority)
+                    && self.air_superiority_cooldown_secs == 0.0
+                {
+                    self.air_superiority_cooldown_secs = AIR_SUPERIORITY_COOLDOWN.to_secs();
+                    context.send_to_game(Command::AirSuperiority(AirSuperiority));
+                }
             }
         }
     }
+
 
     fn try_emergency_repair(&mut self, context: &mut Context<Self>) {
         use common::skill::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
@@ -2339,18 +2356,17 @@ impl Mk48Game {
     }
 
     fn try_smoke_screen(&mut self, context: &mut Context<Self>) {
-        use common::skill::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
+        use common::skill::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION, SkillType};
         use common::protocol::SmokeScreen;
         
         if let Some(contact) = context.state.game.player_contact() {
-            let entity_type = contact.entity_type();
-            let has_smoke_screen = entity_type == Some(EntityType::Tianwangxing)
-                || entity_type == Some(EntityType::Richelieu)
-                || entity_type == Some(EntityType::Battleship750k);
-            if has_smoke_screen && self.smoke_screen_cooldown_secs == 0.0 {
-                self.smoke_screen_cooldown_secs = SMOKE_SCREEN_COOLDOWN.to_secs();
-                self.smoke_screen_active_secs = SMOKE_SCREEN_DURATION.to_secs();
-                context.send_to_game(Command::SmokeScreen(SmokeScreen));
+            if let Some(entity_type) = contact.entity_type() {
+                let has_skill = entity_type.data().has_skill(SkillType::SmokeScreen);
+                if has_skill && self.smoke_screen_cooldown_secs == 0.0 {
+                    self.smoke_screen_cooldown_secs = SMOKE_SCREEN_COOLDOWN.to_secs();
+                    self.smoke_screen_active_secs = SMOKE_SCREEN_DURATION.to_secs();
+                    context.send_to_game(Command::SmokeScreen(SmokeScreen));
+                }
             }
         }
     }
@@ -2382,19 +2398,22 @@ impl Mk48Game {
     }
 
     fn try_burst_loading(&mut self, context: &mut Context<Self>) {
-        use common::skill::{BURST_LOADING_COOLDOWN, BURST_LOADING_DURATION};
+        use common::skill::{BURST_LOADING_COOLDOWN, BURST_LOADING_DURATION, SkillType};
         use common::protocol::BurstLoading;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::Richelieu)
-                && self.burst_loading_cooldown_secs == 0.0
-            {
-                self.burst_loading_cooldown_secs = BURST_LOADING_COOLDOWN.to_secs();
-                self.burst_loading_active_secs = BURST_LOADING_DURATION.to_secs();
-                context.send_to_game(Command::BurstLoading(BurstLoading));
+            if let Some(entity_type) = contact.entity_type() {
+                if entity_type.data().has_skill(SkillType::BurstLoading)
+                    && self.burst_loading_cooldown_secs == 0.0
+                {
+                    self.burst_loading_cooldown_secs = BURST_LOADING_COOLDOWN.to_secs();
+                    self.burst_loading_active_secs = BURST_LOADING_DURATION.to_secs();
+                    context.send_to_game(Command::BurstLoading(BurstLoading));
+                }
             }
         }
     }
+
 
     fn update_burst_loading_timers(&mut self, elapsed_seconds: f32) {
         if self.burst_loading_active_secs > 0.0 {

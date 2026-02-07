@@ -110,8 +110,8 @@ impl World {
                 }
 
                 let mut max_speed = data.speed.to_mps();
-                // Apply engine boost speed multiplier
-                if entity.entity_type == EntityType::Minelayer49 {
+                // Apply engine boost speed multiplier for ships with EngineBoost skill
+                if data.has_skill(common::skill::SkillType::EngineBoost) {
                     let boost_mult = entity.extension().engine_boost_speed_multiplier();
                     if boost_mult > 1.0 {
                         max_speed = data.speed.to_mps() * boost_mult;

@@ -151,11 +151,11 @@ pub static WARP_DATA: SkillData = SkillData {
     description: "Teleport to target location",
     cooldown: Ticks::from_whole_secs(20),
     duration: None,
-    charge_time: Some(Ticks::from_whole_secs(3)),
+    charge_time: None,
 };
 
 /// Warp charge time
-pub const WARP_CHARGE: Ticks = Ticks::from_whole_secs(3);
+pub const WARP_CHARGE: Ticks = Ticks::from_whole_secs(0);
 /// Warp cooldown
 pub const WARP_COOLDOWN: Ticks = Ticks::from_whole_secs(20);
 /// Maximum warp range as fraction of visual range
