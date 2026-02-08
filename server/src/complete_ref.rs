@@ -1,6 +1,3 @@
-// SPDX-FileCopyrightText: 2021 Softbear, Inc.
-// SPDX-License-Identifier: AGPL-3.0-or-later
-
 use crate::contact_ref::ContactRef;
 use crate::player::Status;
 use crate::server::Server;
@@ -9,7 +6,7 @@ use atomic_refcell::AtomicRef;
 use common::complete::CompleteTrait;
 use common::contact::ContactTrait;
 use common::death_reason::DeathReason;
-use common::protocol::Update;
+use common::protocol::{FactionUpdate, Update};
 use common::terrain;
 use common::terrain::{ChunkSet, Terrain};
 use common::ticks::{Ticks, TicksRepr};
@@ -45,7 +42,7 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
         }
     }
 
-    pub fn into_update(self, counter: Ticks, loaded_chunks: &mut ChunkSet) -> Update {
+    pub fn into_update(self, counter: Ticks, loaded_chunks: &mut ChunkSet, faction_update: Option<FactionUpdate>) -> Update {
         let death_reason = if let Status::Dead { reason, .. } = &self.player.data.status {
             Some(reason.clone())
         } else {
@@ -85,17 +82,8 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
 
         *loaded_chunks = new_loaded_chunks;
 
-        // Read bot alliance setting (cached using Once pattern like server/entity.rs)
-        use std::sync::{Once, atomic::{AtomicBool, Ordering}};
-        static BOT_ALLIANCE_INIT: Once = Once::new();
-        static BOT_ALLIANCE_ENABLED: AtomicBool = AtomicBool::new(false);
-        BOT_ALLIANCE_INIT.call_once(|| {
-            let enabled = std::env::var("MK48_BOT_ALLIANCE")
-                .map(|v| v == "1" || v.to_lowercase() == "true")
-                .unwrap_or(false);
-            BOT_ALLIANCE_ENABLED.store(enabled, Ordering::Relaxed);
-        });
-        let bot_alliance_enabled = BOT_ALLIANCE_ENABLED.load(Ordering::Relaxed);
+        // Read bot alliance setting from hot-reloadable config.
+        let bot_alliance_enabled = crate::runtime_config::hot_bot_alliance_enabled();
 
         Update {
             contacts: self
@@ -128,6 +116,8 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
             world_radius: self.world.radius,
             terrain,
             bot_alliance_enabled,
+            faction_data: faction_update,
+            my_faction: self.player.data.faction,
         }
     }
 }

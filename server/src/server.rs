@@ -7,7 +7,7 @@ use crate::player::*;
 use crate::protocol::*;
 use crate::world::World;
 use common::entity::EntityType;
-use common::protocol::{Command, Update};
+use common::protocol::{Command, FactionId, FactionStats, FactionUpdate, Update};
 use common::terrain::ChunkSet;
 use common::ticks::Ticks;
 use common::util::level_to_score;
@@ -24,6 +24,10 @@ use std::time::Duration;
 pub struct Server {
     pub world: World,
     pub counter: Ticks,
+    /// Current faction war statistics (updated each tick when faction_mode is on).
+    pub faction_update: Option<FactionUpdate>,
+    /// Round-robin counter for init-time faction assignment.
+    faction_counter: u8,
 }
 
 /// Stores a player, and metadata related to it. Data stored here may only be accessed when processing,
@@ -65,6 +69,8 @@ impl GameArenaService for Server {
         Self {
             world: World::new(6500.0),
             counter: Ticks::ZERO,
+            faction_update: None,
+            faction_counter: 0,
         }
     }
 
@@ -79,17 +85,49 @@ impl GameArenaService for Server {
     ) {
         let mut player = player_tuple.borrow_player_mut();
         player.data.flags.left_game = false;
+
+        // Assign faction when faction_mode is enabled.
+        if crate::runtime_config::hot_faction_mode() && player.data.faction.is_none() {
+            // Pick the weakest faction (lowest total score), or round-robin if no stats yet.
+            let idx = if let Some(ref fu) = self.faction_update {
+                let f = &fu.factions;
+                (0..FactionId::COUNT)
+                    .min_by_key(|&i| f[i].total_score)
+                    .unwrap_or(0) as u8
+            } else {
+                // No stats yet (server init) — round-robin for even distribution.
+                let idx = self.faction_counter % FactionId::COUNT as u8;
+                self.faction_counter = self.faction_counter.wrapping_add(1);
+                idx
+            };
+            player.data.faction = Some(FactionId::from_index(idx));
+        }
+
+        // Boss bots: first 2*FACTION_COUNT bots get max score and is_boss flag.
+        const BOSSES_PER_FACTION: usize = 2;
+        if player.is_bot() && crate::runtime_config::hot_faction_mode() {
+            use common::entity::EntityData;
+            // Bot IDs are sequential starting from 1; use faction_counter as proxy for bot index.
+            let boss_total = BOSSES_PER_FACTION * FactionId::COUNT;
+            if (self.faction_counter as usize) <= boss_total {
+                player.data.is_boss = true;
+                player.score = level_to_score(EntityData::MAX_BOAT_LEVEL);
+            }
+        }
+
         #[cfg(debug_assertions)]
         {
             use common::entity::EntityData;
             //use common::util::level_to_score;
             use rand::{thread_rng, Rng};
             let highest_level_score = level_to_score(EntityData::MAX_BOAT_LEVEL);
-            player.score = if player.is_bot() {
-                thread_rng().gen_range(0..=highest_level_score)
-            } else {
-                highest_level_score
-            };
+            if !player.data.is_boss {
+                player.score = if player.is_bot() {
+                    thread_rng().gen_range(0..=highest_level_score)
+                } else {
+                    highest_level_score
+                };
+            }
         }
         #[cfg(not(debug_assertions))]
         {
@@ -172,7 +210,7 @@ impl GameArenaService for Server {
         Some(
             self.world
                 .get_player_complete(player)
-                .into_update(self.counter, &mut client_data.loaded_chunks),
+                .into_update(self.counter, &mut client_data.loaded_chunks, self.faction_update.clone()),
         )
     }
 
@@ -184,6 +222,17 @@ impl GameArenaService for Server {
     /// update runs server ticks.
     fn tick(&mut self, context: &mut Context<Self>) {
         self.counter = self.counter.next();
+
+        // Hot-reload bot limits from config file (if configured).
+        if let Some(v) = crate::runtime_config::hot_min_bots() {
+            context.bots.min_bots = v;
+        }
+        if let Some(v) = crate::runtime_config::hot_max_bots() {
+            context.bots.max_bots = v;
+        }
+        if let Some(v) = crate::runtime_config::hot_bot_percent() {
+            context.bots.bot_percent = v;
+        }
 
         #[cfg(not(debug_assertions))]
         {
@@ -207,6 +256,30 @@ impl GameArenaService for Server {
 
         self.world.update(Ticks::ONE);
 
+        // Calculate faction statistics each tick (cheap: just iterates players).
+        if crate::runtime_config::hot_faction_mode() {
+            let mut factions: [FactionStats; FactionId::COUNT] = core::array::from_fn(|_| FactionStats::default());
+            let mut player_factions = Vec::new();
+            for player in context.players.iter_borrow() {
+                if let Some(faction) = player.data.faction {
+                    // Only count alive players for stats and faction markers.
+                    if !player.data.status.is_alive() {
+                        continue;
+                    }
+                    let idx = faction.index();
+                    factions[idx].total_score += player.score as u64;
+                    factions[idx].player_count += 1;
+                    if player.score > factions[idx].top_score {
+                        factions[idx].top_score = player.score;
+                        factions[idx].top_player = Some(player.alias().to_string());
+                    }
+                    player_factions.push((player.player_id, faction));
+                }
+            }
+            self.faction_update = Some(FactionUpdate { factions, player_factions });
+        } else {
+            self.faction_update = None;
+        }
 
         // Needs to be called before clients receive updates, but after World::update.
         self.world.terrain.pre_update();

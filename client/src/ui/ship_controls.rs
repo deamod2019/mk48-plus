@@ -186,6 +186,8 @@ fn skill_to_ui_event(skill: SkillType) -> UiEvent {
         SkillType::BurstLoading => UiEvent::BurstLoading,
         SkillType::NuclearStrike => UiEvent::NuclearStrike,
         SkillType::EnergyShield => UiEvent::EnergyShield,
+        SkillType::DredgerSacrifice => UiEvent::DredgerSacrifice,
+        SkillType::Stealth => UiEvent::Stealth,
     }
 }
 

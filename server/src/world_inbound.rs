@@ -899,7 +899,6 @@ impl CommandTrait for AirSuperiority {
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
         use common::skill::AIR_SUPERIORITY_COOLDOWN;
-        use common::entity::EntityKind;
         
         // Get entity_index from player status
         let entity_index = {
@@ -1175,6 +1174,104 @@ impl CommandTrait for EnergyShield {
         entity.extension_mut().start_energy_shield(ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN)?;
 
         log::warn!("EnergyShield activated for {:?}", entity.data().label);
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for DredgerSacrifice {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        let player = player_tuple.borrow_player();
+        
+        let (entity_index, player_alias) = match player.data.status {
+            Status::Alive { entity_index, .. } => (entity_index, player.alias()),
+            _ => return Err("not alive"),
+        };
+        drop(player);
+
+        let entity = &world.entities[entity_index];
+        
+        // Check if entity has DredgerSacrifice skill
+        if !entity.data().has_skill(SkillType::DredgerSacrifice) {
+            return Err("ship does not have dredger sacrifice skill");
+        }
+
+        // Get position and type before removing
+        let position = entity.transform.position;
+        let direction = entity.transform.direction;
+        let entity_type = entity.entity_type;
+
+        log::warn!("DredgerSacrifice: {:?} sacrificing at {:?}", player_alias, position);
+
+        // Kill the player FIRST (clears the position so OilPlatform can spawn)
+        world.remove(entity_index, DeathReason::Weapon(player_alias, entity_type));
+
+        // Spawn OilPlatform at the sacrifice position using world.add() directly
+        // (bypass can_spawn checks which might reject due to terrain/collision)
+        use crate::entity::unset_entity_id;
+        use common::transform::Transform;
+        use common::guidance::Guidance;
+
+        let oil_platform = Entity {
+            player: None,
+            transform: Transform {
+                position,
+                direction,
+                velocity: Velocity::ZERO,
+            },
+            guidance: Guidance {
+                velocity_target: Velocity::ZERO,
+                direction_target: direction,
+            },
+            entity_type: EntityType::OilPlatform,
+            ticks: Ticks::ZERO,
+            id: unset_entity_id(),
+            altitude: Altitude::ZERO,
+            frozen: Ticks::ZERO,
+        };
+        world.add(oil_platform);
+
+        log::warn!("DredgerSacrifice: OilPlatform spawned at {:?}", position);
+
+        Ok(())
+    }
+}
+
+impl CommandTrait for Stealth {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        use common::skill::{STEALTH_DURATION, STEALTH_COOLDOWN};
+
+        let player = player_tuple.borrow_player();
+        let entity_index = match player.data.status {
+            Status::Alive { entity_index, .. } => entity_index,
+            _ => return Err("not alive"),
+        };
+        drop(player);
+
+        let entity = &world.entities[entity_index];
+
+        // Check if entity has Stealth skill
+        if !entity.data().has_skill(SkillType::Stealth) {
+            return Err("ship does not have stealth skill");
+        }
+
+        if entity.extension().stealth_cooldown_remaining() != Ticks::ZERO {
+            return Err("stealth on cooldown");
+        }
+
+        // Activate stealth
+        let entity = &mut world.entities[entity_index];
+        entity.extension_mut().start_stealth(STEALTH_DURATION, STEALTH_COOLDOWN)?;
+
+        log::info!("Stealth activated for {:?}", player_tuple.borrow_player().alias());
 
         Ok(())
     }

@@ -168,12 +168,17 @@ impl Entities {
         let i = index.1 as usize;
         let sector = self.mut_sector(sector_id);
 
+        // Guard against stale index (entity already removed/moved).
+        if i >= sector.entities.len() {
+            return;
+        }
+
         let last = sector.entities.len() - 1;
         if i != last && sector.entities[last].is_boat() {
             sector.entities[last].set_index(index)
         }
 
-        let mut entity = sector.entities.swap_remove(i as usize);
+        let mut entity = sector.entities.swap_remove(i);
         sector.shrink();
 
         let new_sector_id = entity.transform.position.try_into().unwrap();
@@ -191,12 +196,20 @@ impl Entities {
         let i = index.1 as usize;
         let sector = self.mut_sector(sector_id);
 
+        // Guard against stale index.
+        assert!(
+            i < sector.entities.len(),
+            "remove_internal: index {} out of bounds (len {})",
+            i,
+            sector.entities.len()
+        );
+
         let last = sector.entities.len() - 1;
         if i != last && sector.entities[last].is_boat() {
             sector.entities[last].set_index(index)
         }
 
-        let mut entity = sector.entities.swap_remove(i as usize);
+        let mut entity = sector.entities.swap_remove(i);
         sector.shrink();
 
         if entity.is_boat() {

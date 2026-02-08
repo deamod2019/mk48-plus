@@ -3,7 +3,7 @@
 
 use crate::entities::*;
 use common::death_reason::DeathReason;
-use common::protocol::Hint;
+use common::protocol::{FactionId, Hint};
 use glam::Vec2;
 use std::fmt::Debug;
 use std::time::Instant;
@@ -99,6 +99,10 @@ pub struct Player {
     pub hint: Hint,
     /// Current status e.g. Alive, Dead, or Spawning.
     pub status: Status,
+    /// Faction assignment (when faction_mode is enabled).
+    pub faction: Option<FactionId>,
+    /// Boss bots always upgrade to max level.
+    pub is_boss: bool,
 }
 
 impl Default for Player {
@@ -108,6 +112,8 @@ impl Default for Player {
             flags: Flags::default(),
             hint: Hint::default(),
             status: Status::Spawning,
+            faction: None,
+            is_boss: false,
         }
     }
 }

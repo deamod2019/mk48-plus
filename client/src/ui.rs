@@ -48,6 +48,7 @@ use yew_router::{Routable, Switch};
 
 mod about_dialog;
 mod changelog_dialog;
+mod faction_board;
 mod help_dialog;
 mod hint;
 mod instructions;
@@ -170,6 +171,14 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                         style="max-width:25%;"
                         bot_alliance_enabled={playing.bot_alliance_enabled}
                     />
+                    if let Some(ref fd) = playing.faction_data {
+                        <div style="position: fixed; bottom: 260px; right: 1em; z-index: 5; pointer-events: auto;">
+                            <faction_board::FactionBoard
+                                faction_data={fd.clone()}
+                                my_faction={playing.my_faction}
+                            />
+                        </div>
+                    }
                     <ChatOverlay
                         position={Position::BottomRight{margin}}
                         style="max-width:25%;"
@@ -282,6 +291,8 @@ pub enum UiEvent {
     BurstLoading,
     NuclearStrike,
     EnergyShield,
+    DredgerSacrifice,
+    Stealth,
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -333,8 +344,15 @@ pub struct UiStatusPlaying {
     pub nuclear_strike_cooldown_remaining: f32,
     pub energy_shield_cooldown_remaining: f32,
     pub energy_shield_active_remaining: f32,
+    pub dredger_sacrifice_cooldown_remaining: f32,
+    pub stealth_cooldown_remaining: f32,
+    pub stealth_active_remaining: f32,
     /// Whether bot alliance mode is enabled.
     pub bot_alliance_enabled: bool,
+    /// Faction war data.
+    pub faction_data: Option<common::protocol::FactionUpdate>,
+    /// Current player's faction.
+    pub my_faction: Option<common::protocol::FactionId>,
 }
 
 /// Skill runtime state for UI rendering.
@@ -405,6 +423,15 @@ impl UiStatusPlaying {
             SkillType::EnergyShield => {
                 if self.energy_shield_active_remaining > 0.0 { SkillState::Active(self.energy_shield_active_remaining) }
                 else if self.energy_shield_cooldown_remaining > 0.0 { SkillState::Cooling(self.energy_shield_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::DredgerSacrifice => {
+                if self.dredger_sacrifice_cooldown_remaining > 0.0 { SkillState::Cooling(self.dredger_sacrifice_cooldown_remaining) }
+                else { SkillState::Ready }
+            }
+            SkillType::Stealth => {
+                if self.stealth_active_remaining > 0.0 { SkillState::Active(self.stealth_active_remaining) }
+                else if self.stealth_cooldown_remaining > 0.0 { SkillState::Cooling(self.stealth_cooldown_remaining) }
                 else { SkillState::Ready }
             }
         }

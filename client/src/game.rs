@@ -107,6 +107,9 @@ pub struct Mk48Game {
     nuclear_flash_secs: f32,
     energy_shield_cooldown_secs: f32,
     energy_shield_active_secs: f32,
+    dredger_sacrifice_cooldown_secs: f32,
+    stealth_cooldown_secs: f32,
+    stealth_active_secs: f32,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -253,6 +256,9 @@ impl GameClient for Mk48Game {
             nuclear_flash_secs: 0.0,
             energy_shield_cooldown_secs: 0.0,
             energy_shield_active_secs: 0.0,
+            dredger_sacrifice_cooldown_secs: 0.0,
+            stealth_cooldown_secs: 0.0,
+            stealth_active_secs: 0.0,
         })
     }
 
@@ -799,7 +805,7 @@ impl GameClient for Mk48Game {
                 let altitude = contact.altitude().to_meters();
                 // Only boats have non linear altitude to alpha (because they have more depth).
                 // TODO give entities depth dimension.
-                let alpha = if !contact.is_boat() || contact.altitude().is_submerged() {
+                let mut alpha = if !contact.is_boat() || contact.altitude().is_submerged() {
                     let max_alpha = if contact.is_boat() { 0.7 } else { 1.0 };
                     map_ranges(
                         contact.altitude().to_norm(),
@@ -810,6 +816,11 @@ impl GameClient for Mk48Game {
                 } else {
                     1.0
                 };
+
+                // Stealth visual effect: make own ship semi-transparent when stealth is active.
+                if friendly && self.stealth_active_secs > 0.0 {
+                    alpha *= 0.3;
+                }
                 let entity_id = contact.id();
                 let data: &'static EntityData = entity_type.data();
 
@@ -1365,22 +1376,27 @@ impl GameClient for Mk48Game {
                             }
 
                             // Name
+                            let player_id = contact.player_id().unwrap();
+                            let faction_prefix = context.state.game.faction_data.as_ref()
+                                .and_then(|fd| fd.player_factions.iter().find(|(pid, _)| *pid == player_id))
+                                .map(|(_, fid)| fid.emoji())
+                                .unwrap_or("");
                             let text = if let Some(player) = context
                                 .state
                                 .core
-                                .player_or_bot(contact.player_id().unwrap())
+                                .player_or_bot(player_id)
                             {
                                 if let Some(team) = player
                                     .team_id
                                     .and_then(|team_id| context.state.core.teams.get(&team_id))
                                 {
-                                    format!("[{}] {}", team.name, player.alias)
+                                    format!("{}[{}] {}", faction_prefix, team.name, player.alias)
                                 } else {
-                                    player.alias.as_str().to_owned()
+                                    format!("{}{}", faction_prefix, player.alias)
                                 }
                             } else {
                                 // This is not meant to happen in production. It is for debugging.
-                                format!("{}", contact.player_id().unwrap().0.get())
+                                format!("{}", player_id.0.get())
                             };
 
                             let c = color_bytes;
@@ -1742,6 +1758,8 @@ impl GameClient for Mk48Game {
                         SkillType::BurstLoading => self.update_burst_loading_timers(elapsed_seconds),
                         SkillType::NuclearStrike => self.update_nuclear_strike_timers(elapsed_seconds),
                         SkillType::EnergyShield => self.update_energy_shield_timers(elapsed_seconds),
+                        SkillType::DredgerSacrifice => self.update_dredger_sacrifice_timers(elapsed_seconds),
+                        SkillType::Stealth => self.update_stealth_timers(elapsed_seconds),
                     }
                 }
             }
@@ -1839,6 +1857,7 @@ impl GameClient for Mk48Game {
             // Re-borrow as immutable.
             let player_contact = context.state.game.player_contact().unwrap();
 
+
             let status = UiStatus::Playing(UiStatusPlaying {
                 entity_type: player_contact.entity_type().unwrap(),
                 position: player_contact.transform().position.into(),
@@ -1878,7 +1897,12 @@ impl GameClient for Mk48Game {
                 nuclear_strike_cooldown_remaining: self.nuclear_strike_cooldown_secs.max(0.0),
                 energy_shield_cooldown_remaining: self.energy_shield_cooldown_secs.max(0.0),
                 energy_shield_active_remaining: self.energy_shield_active_secs.max(0.0),
+                dredger_sacrifice_cooldown_remaining: self.dredger_sacrifice_cooldown_secs.max(0.0),
+                stealth_cooldown_remaining: self.stealth_cooldown_secs.max(0.0),
+                stealth_active_remaining: self.stealth_active_secs.max(0.0),
                 bot_alliance_enabled: context.state.game.bot_alliance_enabled,
+                faction_data: context.state.game.faction_data.clone(),
+                my_faction: context.state.game.my_faction,
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
@@ -2120,6 +2144,12 @@ impl GameClient for Mk48Game {
             UiEvent::EnergyShield => {
                 self.try_energy_shield(context);
             }
+            UiEvent::DredgerSacrifice => {
+                self.try_dredger_sacrifice(context);
+            }
+            UiEvent::Stealth => {
+                self.try_stealth(context);
+            }
         }
     }
 }
@@ -2173,6 +2203,8 @@ impl Mk48Game {
             SkillType::BurstLoading => self.try_burst_loading(context),
             SkillType::NuclearStrike => self.try_nuclear_strike(context),
             SkillType::EnergyShield => self.try_energy_shield(context),
+            SkillType::DredgerSacrifice => self.try_dredger_sacrifice(context),
+            SkillType::Stealth => self.try_stealth(context),
         }
     }
 
@@ -2325,17 +2357,18 @@ impl Mk48Game {
 
 
     fn try_emergency_repair(&mut self, context: &mut Context<Self>) {
-        use common::skill::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
+        use common::skill::{SkillType, EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
         use common::protocol::EmergencyRepair;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if (contact.entity_type() == Some(EntityType::FortressCarrier)
-                || contact.entity_type() == Some(EntityType::Battleship750k))
+            if let Some(entity_type) = contact.entity_type() {
+            if entity_type.data().has_skill(SkillType::EmergencyRepair)
                 && self.emergency_repair_cooldown_secs == 0.0
             {
                 self.emergency_repair_cooldown_secs = EMERGENCY_REPAIR_COOLDOWN.to_secs();
                 self.emergency_repair_active_secs = REPAIR_DURATION.to_secs();
                 context.send_to_game(Command::EmergencyRepair(EmergencyRepair));
+            }
             }
         }
     }
@@ -2446,17 +2479,19 @@ impl Mk48Game {
     }
 
     fn try_energy_shield(&mut self, context: &mut Context<Self>) {
-        use common::skill::ENERGY_SHIELD_COOLDOWN;
+        use common::skill::{SkillType, ENERGY_SHIELD_COOLDOWN};
         use common::skill::ENERGY_SHIELD_DURATION;
         use common::protocol::EnergyShield;
         
         if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::StellarFrigate)
+            if let Some(entity_type) = contact.entity_type() {
+            if entity_type.data().has_skill(SkillType::EnergyShield)
                 && self.energy_shield_cooldown_secs == 0.0
             {
                 self.energy_shield_cooldown_secs = ENERGY_SHIELD_COOLDOWN.to_secs();
                 self.energy_shield_active_secs = ENERGY_SHIELD_DURATION.to_secs();
                 context.send_to_game(Command::EnergyShield(EnergyShield));
+            }
             }
         }
     }
@@ -2467,6 +2502,54 @@ impl Mk48Game {
         }
         if self.energy_shield_active_secs > 0.0 {
             self.energy_shield_active_secs = (self.energy_shield_active_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn try_dredger_sacrifice(&mut self, context: &mut Context<Self>) {
+        use common::skill::{SkillType, DREDGER_SACRIFICE_COOLDOWN};
+        use common::protocol::DredgerSacrifice;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if let Some(entity_type) = contact.entity_type() {
+                if entity_type.data().has_skill(SkillType::DredgerSacrifice)
+                    && self.dredger_sacrifice_cooldown_secs == 0.0
+                {
+                    self.dredger_sacrifice_cooldown_secs = DREDGER_SACRIFICE_COOLDOWN.to_secs();
+                    context.send_to_game(Command::DredgerSacrifice(DredgerSacrifice));
+                }
+            }
+        }
+    }
+
+    fn update_dredger_sacrifice_timers(&mut self, elapsed_seconds: f32) {
+        if self.dredger_sacrifice_cooldown_secs > 0.0 {
+            self.dredger_sacrifice_cooldown_secs = (self.dredger_sacrifice_cooldown_secs - elapsed_seconds).max(0.0);
+        }
+    }
+
+    fn try_stealth(&mut self, context: &mut Context<Self>) {
+        use common::skill::{SkillType, STEALTH_COOLDOWN, STEALTH_DURATION};
+        use common::protocol::Stealth;
+        
+        if let Some(contact) = context.state.game.player_contact() {
+            if let Some(entity_type) = contact.entity_type() {
+                if entity_type.data().has_skill(SkillType::Stealth)
+                    && self.stealth_cooldown_secs == 0.0
+                {
+                    self.stealth_active_secs = STEALTH_DURATION.to_secs();
+                    self.stealth_cooldown_secs = STEALTH_COOLDOWN.to_secs();
+                    context.send_to_game(Command::Stealth(Stealth));
+                }
+            }
+        }
+    }
+
+    fn update_stealth_timers(&mut self, elapsed_seconds: f32) {
+        if self.stealth_active_secs > 0.0 {
+            self.stealth_active_secs = (self.stealth_active_secs - elapsed_seconds).max(0.0);
+        }
+        if self.stealth_cooldown_secs > 0.0 {
+            self.stealth_cooldown_secs = (self.stealth_cooldown_secs - elapsed_seconds).max(0.0);
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::util::{level_to_score, natural_death_coins};
 use crate::velocity::Velocity;
 use arrayvec::ArrayVec;
 use common_util::angle::Angle;
-use core_protocol::serde_util::{StrVisitor, U8Visitor, U16Visitor};
+use core_protocol::serde_util::{StrVisitor, U16Visitor};
 use macros::EntityTypeData;
 use rand::prelude::IteratorRandom;
 use rand::{thread_rng, Rng};
@@ -571,6 +571,37 @@ pub enum EntityType {
     #[turret(Crotale, forward = -82.5578, side = 18.0462, fast)]
     #[exhaust(forward = 4.03893, side = -15.8169)]
     Clemenceau,
+    // ============ Level 10 Charles de Gaulle ============
+    #[info(
+        label = "Charles de Gaulle",
+        link = "https://en.wikipedia.org/wiki/French_aircraft_carrier_Charles_de_Gaulle"
+    )]
+    #[entity(Boat, Carrier, level = 10)]
+    #[size(length = 261.5, width = 68.5, draft = 8.5, mast = 65)]
+    #[props(speed = 15.43)]
+    #[sensors(radar, visual)]
+    // Flight deck: 10x Super Étendard (5 groups of 2)
+    #[armament(SuperEtendard, forward = 80, side = 5, angle = -8, count = 2, external)]
+    #[armament(SuperEtendard, forward = 50, side = 10, angle = -8, count = 2, external)]
+    #[armament(SuperEtendard, forward = 20, side = 8, angle = 0, count = 2, external)]
+    #[armament(SuperEtendard, forward = -20, side = 12, angle = 8, count = 2, external)]
+    #[armament(SuperEtendard, forward = -60, side = 5, angle = 0, count = 2, external)]
+    // 3x Super Frelon helicopters
+    #[armament(SuperFrelon, forward = -80, side = 20, angle = 0, external)]
+    #[armament(SuperFrelon, forward = -100, side = -15, angle = 0, external)]
+    #[armament(SuperFrelon, forward = -95, side = 18, angle = 0, external)]
+    // 4x Crotale SAM turrets
+    #[turret(Crotale, forward = 95, side = 25, fast)]
+    #[turret(Crotale, forward = 90, side = -28, fast)]
+    #[turret(Crotale, forward = -110, side = 22, fast)]
+    #[turret(Crotale, forward = -115, side = -25, fast)]
+    // 2x OtoMelara 76mm CIWS
+    #[turret(OtoMelara76Mm, forward = 100, side = -22, fast)]
+    #[turret(OtoMelara76Mm, forward = -120, side = -20, fast)]
+    #[exhaust(forward = -30, side = -25)]
+    #[exhaust(forward = -35, side = -25)]
+    #[skills(EmergencyRepair, EnergyShield)]
+    CharlesDeGaulle,
     #[info(
         label = "Kaga",
         link = "https://en.wikipedia.org/wiki/Clemenceau-class_aircraft_carrier"
@@ -764,6 +795,16 @@ pub enum EntityType {
     #[turret(forward = 43.75, medium)]
     #[exhaust(forward = -39, side = -0.8)]
     Dredger,
+    #[info(label = "Dredger Mk.II")]
+    #[entity(Boat, Dredger, level = 5)]
+    #[size(length = 99, width = 16.5, draft = 6.4)]
+    #[props(speed = 8)]
+    #[sensors(visual)]
+    #[armament(Depositor, forward = 7, turret = 0, external)]
+    #[turret(forward = 43.75, medium)]
+    #[exhaust(forward = -39, side = -0.8)]
+    #[skills(DredgerSacrifice)]
+    Dredger2,
     #[info(label = "Drone", link = "https://en.wikipedia.org/wiki/Drone")]
     #[entity(Boat, Drone, level = 1)]
     #[size(length = 1.11333, width = 1.40667, draft = 0.0)]
@@ -1048,6 +1089,33 @@ pub enum EntityType {
     #[turret(Ak130, forward = -79.1108, angle = 180, medium, azimuth_b = 20)]
     #[exhaust(forward = -19)]
     Kirov,
+    // ============ Level 9 Assimilator2 ============
+    #[info(label = "同化者 Mk.II")]
+    #[entity(Boat, Cruiser, level = 9)]
+    #[size(length = 200, width = 22, draft = 7.0)]
+    #[props(speed = 18.0)]
+    #[sensors(radar = 1000, visual = 800)]
+    #[turret(forward = 85, medium)]
+    #[turret(forward = 65, medium)]
+    #[turret(forward = 45, medium)]
+    #[turret(forward = 25, medium)]
+    #[turret(forward = 5, medium)]
+    #[turret(forward = -20, medium)]
+    #[turret(forward = -40, medium)]
+    #[turret(forward = -60, medium)]
+    #[turret(forward = -80, angle = 180, medium)]
+    #[armament(_127X680MmR, forward = 85, turret = 0)]
+    #[armament(_127X680MmR, forward = 65, turret = 1)]
+    #[armament(_127X680MmR, forward = 45, turret = 2)]
+    #[armament(_127X680MmR, forward = 25, turret = 3)]
+    #[armament(_127X680MmR, forward = 5, turret = 4)]
+    #[armament(_127X680MmR, forward = -20, turret = 5)]
+    #[armament(_127X680MmR, forward = -40, turret = 6)]
+    #[armament(_127X680MmR, forward = -60, turret = 7)]
+    #[armament(_127X680MmR, forward = -80, turret = 8)]
+    #[exhaust(forward = -10)]
+    #[skills(Stealth)]
+    Assimilator2,
     #[info(
         label = "Kolkata",
         link = "https://en.wikipedia.org/wiki/Kolkata-class_destroyer"
@@ -1417,6 +1485,13 @@ pub enum EntityType {
     #[sensors(visual = 600, radar = 600)]
     #[turret(ShermanTurret, forward = -0.028703, fast)]
     Sherman,
+    #[info(label = "DF-41 TEL", link = "https://en.wikipedia.org/wiki/DF-41")]
+    #[entity(Boat, Tank, level = 8)]
+    #[size(length = 22.0, width = 5.7, draft = 1.0)]
+    #[props(speed = 16.67, ram_damage = 3)]
+    #[sensors(visual = 800, radar = 800)]
+    #[armament(Df41Missile, forward = -5.0, side = 0.0, angle = 0.0, vertical)]
+    Df41,
     #[info(
         label = "Imperial II-Class Star Destroyer",
         link = "https://starwars.fandom.com/wiki/Imperial_II-class_Star_Destroyer"
@@ -2840,6 +2915,12 @@ pub enum EntityType {
     #[props(speed = 150.0, range = 200000.0, reload = 60.0, damage = 15.0)]
     #[sensors(radar)]
     Jl3,
+    #[info(label = "DF-41 ICBM")]
+    #[entity(Weapon, Missile, level = 8)]
+    #[size(length = 16.5, width = 2.7)]
+    #[props(speed = 300.0, range = 300000.0, reload = 60.0, damage = 15.0)]
+    #[sensors(radar)]
+    Df41Missile,
     // ============ UNSC Infinite Weapons ============
     #[info(label = "P-270 Moskit", link = "https://en.wikipedia.org/wiki/P-270_Moskit")]
     #[entity(Weapon, Missile, level = 6)]

@@ -152,7 +152,8 @@ impl World {
                     uncertainty = 1.0;
                     let entity_abs_vel = entity.transform.velocity.abs().to_mps();
 
-                    if radar_range_inv.is_finite() && !altitude.is_submerged() {
+                    if radar_range_inv.is_finite() && !altitude.is_submerged()
+                        && !(entity.is_boat() && entity.extension().is_stealth_active()) {
                         let radar_ratio = default_ratio * radar_range_inv;
 
                         if camera.active {

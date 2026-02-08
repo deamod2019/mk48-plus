@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 /// Returns the new limit.
-pub fn set_open_file_limit(limit: u64) -> Result<u64, String> {
+pub fn set_open_file_limit(_limit: u64) -> Result<u64, String> {
     #[cfg(unix)]
     return {
         use nix::sys::resource::{getrlimit, setrlimit, Resource};

@@ -14,6 +14,7 @@ use common::protocol::*;
 use common::terrain;
 use common::terrain::Terrain;
 use common_util::range::gen_radius;
+use common::protocol::FactionId;
 use core_protocol::id::PlayerId;
 use game_server::game_service::{BotAction, GameArenaService};
 use game_server::player::{PlayerRepo, PlayerTuple};
@@ -116,8 +117,23 @@ impl Bot {
         &mut self,
         mut update: U,
         player_id: PlayerId,
+        players: &PlayerRepo<Server>,
     ) -> BotAction<Command> {
         let mut rng = thread_rng();
+
+        // Faction-aware friendly detection: look up bot's own faction once.
+        let faction_mode = crate::runtime_config::hot_faction_mode();
+        let my_faction: Option<FactionId> = if faction_mode {
+            players.borrow_player(player_id).and_then(|p| p.data.faction)
+        } else {
+            None
+        };
+
+        // Boss bots always aim for max level.
+        let is_boss = players.borrow_player(player_id).map_or(false, |p| p.data.is_boss);
+        if is_boss {
+            self.level_ambition = EntityData::MAX_BOAT_LEVEL;
+        }
 
         let mut contacts = update.contacts();
         let terrain = update.terrain();
@@ -149,12 +165,16 @@ impl Bot {
                 *weighted_sum = target_delta * displacement / (displacement.powi(2) + 1.0);
             };
 
-            // Terrain.
-            const SAMPLES: u32 = 10;
-            for i in 0..SAMPLES {
+            // Terrain avoidance — boss bots scan further and repel harder.
+            let (scan_radius_mult, num_samples, repel_denom_mult) = if is_boss {
+                (3.0_f32, 20u32, 0.1_f32)
+            } else {
+                (1.0, 10, 0.5)
+            };
+            for i in 0..num_samples {
                 let angle =
-                    Angle::from_radians(i as f32 * (2.0 * std::f32::consts::PI / SAMPLES as f32));
-                let delta_position = angle.to_vec() * data.length;
+                    Angle::from_radians(i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32));
+                let delta_position = angle.to_vec() * data.length * scan_radius_mult;
                 if boat_type != EntityType::Sherman
                     && boat_type != EntityType::Abrams
                     && Self::is_land_or_border(
@@ -163,13 +183,13 @@ impl Bot {
                         update.world_radius(),
                     )
                 {
-                    repel(&mut movement, delta_position, 0.5 * data.length.powi(2));
+                    repel(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
                 } else if Self::is_land_or_border(
                     boat.transform().position + delta_position,
                     terrain,
                     update.world_radius(),
                 ) {
-                    attract(&mut movement, delta_position, 0.5 * data.length.powi(2));
+                    attract(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
                 }
             }
 
@@ -186,7 +206,12 @@ impl Bot {
                     let delta_position = contact.transform().position - boat.transform().position;
                     let distance_squared = delta_position.length_squared();
 
-                    let friendly = contact.player_id() == Some(player_id);
+                    let friendly = contact.player_id() == Some(player_id)
+                        || (my_faction.is_some()
+                            && contact.player_id()
+                                .and_then(|cid| players.borrow_player(cid))
+                                .and_then(|p| p.data.faction)
+                                == my_faction);
 
                     if contact_data.kind == EntityKind::Collectible {
                         attract(&mut movement, delta_position, distance_squared);
@@ -248,7 +273,7 @@ impl Bot {
 
             let mut best_firing_solution = None;
 
-            if let Some((enemy, _)) = closest_enemy {
+            if let Some((ref enemy, _)) = closest_enemy {
                 let reloads = boat.reloads();
                 let enemy_data = enemy.data();
                 for (i, armament) in data.armaments.iter().enumerate() {
@@ -401,6 +426,59 @@ impl Bot {
                 }
             }
 
+            // --- Boss skill AI ---
+            // Priority-ordered skill activation. Server rejects if on cooldown,
+            // so we can attempt every tick without tracking CDs.
+            if is_boss {
+                use common::skill::SkillType;
+
+                let closest_dist_sq = closest_enemy.as_ref().map(|(_, d)| *d);
+                let has_enemy = closest_enemy.is_some();
+
+                // 1. Emergency Repair — critical HP
+                if health_percent < 0.4 && data.has_skill(SkillType::EmergencyRepair) {
+                    ret = Command::EmergencyRepair(EmergencyRepair);
+                }
+                // 2. Energy Shield — moderate HP or under fire
+                else if health_percent < 0.6 && data.has_skill(SkillType::EnergyShield) {
+                    ret = Command::EnergyShield(EnergyShield);
+                }
+                // 3. Zero Pulse — enemy within 1000m (dist_sq < 1_000_000)
+                else if closest_dist_sq.map_or(false, |d| d < 1_000_000.0)
+                    && data.has_skill(SkillType::ZeroPulse)
+                {
+                    ret = Command::ZeroPulse(ZeroPulse);
+                }
+                // 4. Air Superiority — enemy detected
+                else if has_enemy && data.has_skill(SkillType::AirSuperiority) {
+                    ret = Command::AirSuperiority(AirSuperiority);
+                }
+                // 5. Burst Loading — enemy in weapon range
+                else if closest_dist_sq.map_or(false, |d| d < data.range * data.range)
+                    && data.has_skill(SkillType::BurstLoading)
+                {
+                    ret = Command::BurstLoading(BurstLoading);
+                }
+                // 6. Smoke Screen — retreating under fire
+                else if health_percent < 0.5 && data.has_skill(SkillType::SmokeScreen) {
+                    ret = Command::SmokeScreen(SmokeScreen);
+                }
+                // 7. Stealth — enemy detected
+                else if has_enemy && data.has_skill(SkillType::Stealth) {
+                    ret = Command::Stealth(Stealth);
+                }
+                // 8. Warp — escape death
+                else if health_percent < 0.25 && data.has_skill(SkillType::Warp) {
+                    let escape_dir = Angle::from_radians(
+                        rng.gen_range(0.0..std::f32::consts::TAU),
+                    );
+                    let target = boat.transform().position
+                        + escape_dir.to_vec() * data.sensors.visual.range * 0.8;
+                    ret = Command::Warp(Warp { target });
+                }
+                // NuclearStrike intentionally excluded — too destructive for AI.
+            }
+
             BotAction::Some(ret)
         } else if self.spawned_at_least_once && (rng.gen_bool(1.0 / 3.0)) {
             // Rage quit.
@@ -433,8 +511,8 @@ impl game_server::game_service::Bot<Server> for Bot {
         &mut self,
         update: Self::Input<'_>,
         player_id: PlayerId,
-        _players: &PlayerRepo<Server>,
+        players: &PlayerRepo<Server>,
     ) -> BotAction<<Server as GameArenaService>::GameRequest> {
-        self.update(update, player_id)
+        self.update(update, player_id, players)
     }
 }

@@ -19,6 +19,42 @@
       "range": 0.0
     },
     {
+      "id": "ObsidianCruiseMissile",
+      "label": "Obsidian Hypersonic Cruise Missile",
+      "kind": "Missile",
+      "damage": 7.9917283,
+      "reload": 10.0,
+      "speed": 1200.0,
+      "range": 200000.0
+    },
+    {
+      "id": "Su57MissileHeavy",
+      "label": "SU-57 Heavy Missile",
+      "kind": "Missile",
+      "damage": 2.25,
+      "reload": 6.0,
+      "speed": 1000.0,
+      "range": 8000.0
+    },
+    {
+      "id": "Su57MissileMid",
+      "label": "SU-57 Medium Missile",
+      "kind": "Missile",
+      "damage": 1.5,
+      "reload": 6.0,
+      "speed": 1000.0,
+      "range": 8000.0
+    },
+    {
+      "id": "Su57MissileLight",
+      "label": "SU-57 Light Missile",
+      "kind": "Missile",
+      "damage": 0.75,
+      "reload": 6.0,
+      "speed": 1000.0,
+      "range": 8000.0
+    },
+    {
       "id": "Blaster",
       "label": "Blaster",
       "kind": "Laser",
@@ -26,6 +62,42 @@
       "reload": 2.0,
       "speed": 1184.0,
       "range": 0.0
+    },
+    {
+      "id": "AxialSuperlaserBeam",
+      "label": "Axial Superlaser Beam",
+      "kind": "Laser",
+      "damage": 133.3275,
+      "reload": 60.0,
+      "speed": 1000.0,
+      "range": 30000.0
+    },
+    {
+      "id": "TurboLaserII",
+      "label": "Turbo Laser II",
+      "kind": "Laser",
+      "damage": 3.9,
+      "reload": 5.0,
+      "speed": 1000.0,
+      "range": 30000.0
+    },
+    {
+      "id": "PlasmaGun",
+      "label": "Plasma Gun",
+      "kind": "Laser",
+      "damage": 0.5,
+      "reload": 0.5,
+      "speed": 1000.0,
+      "range": 8000.0
+    },
+    {
+      "id": "QuadBlasterCannon",
+      "label": "Quad Blaster Cannon",
+      "kind": "Laser",
+      "damage": 0.5,
+      "reload": 0.5,
+      "speed": 1000.0,
+      "range": 8000.0
     },
     {
       "id": "GreenBlaster",
@@ -53,6 +125,15 @@
       "reload": 0.5,
       "speed": 2000.0,
       "range": 200000.0
+    },
+    {
+      "id": "LightShieldBeam",
+      "label": "Light Shield Beam",
+      "kind": "Laser",
+      "damage": 0.15,
+      "reload": 0.2,
+      "speed": 2000.0,
+      "range": 8000.0
     },
     {
       "id": "VProjector",
@@ -163,10 +244,19 @@
       "range": 0.0
     },
     {
+      "id": "508X2200MmR",
+      "label": "508 x 2200 mmR",
+      "kind": "Shell",
+      "damage": 37.268005,
+      "reload": 4.0,
+      "speed": 1000.0,
+      "range": 0.0
+    },
+    {
       "id": "380X1700MmR",
       "label": "380 x 1700 mmR",
       "kind": "Shell",
-      "damage": 0.68782,
+      "damage": 0.6878201,
       "reload": 13.8,
       "speed": 615.0,
       "range": 0.0
@@ -175,7 +265,7 @@
       "id": "458X1980MmR",
       "label": "458 x 1980 mmR",
       "kind": "Shell",
-      "damage": 1.086735,
+      "damage": 1.0867349,
       "reload": 14.900001,
       "speed": 585.0,
       "range": 0.0
@@ -212,7 +302,7 @@
       "label": "ASROC",
       "kind": "RocketTorpedo",
       "damage": 0.0,
-      "reload": 20.0,
+      "reload": 4.0,
       "speed": 200.0,
       "range": 9700.0
     },
@@ -368,6 +458,24 @@
       "reload": 12.0,
       "speed": 28.2944,
       "range": 38000.0
+    },
+    {
+      "id": "Yu10",
+      "label": "Yu-10",
+      "kind": "Torpedo",
+      "damage": 2.9050875,
+      "reload": 12.0,
+      "speed": 28.3,
+      "range": 30000.0
+    },
+    {
+      "id": "PoseidonTorpedo",
+      "label": "Poseidon Supercavitating Torpedo",
+      "kind": "Torpedo",
+      "damage": 36.8978,
+      "reload": 12.0,
+      "speed": 30.0,
+      "range": 40000.0
     },
     {
       "id": "Mark54",
@@ -595,6 +703,15 @@
       "range": 0.0
     },
     {
+      "id": "IaigiriMine",
+      "label": "居合斩水雷",
+      "kind": "Mine",
+      "damage": 2.0,
+      "reload": 15.0,
+      "speed": 0.0,
+      "range": 0.0
+    },
+    {
       "id": "Type96Bomb",
       "label": "Type 96 Bomb",
       "kind": "Mine",
@@ -620,6 +737,69 @@
       "reload": 12.0,
       "speed": 265.04,
       "range": 0.0
+    },
+    {
+      "id": "Jl3",
+      "label": "JL-3 (Nuke)",
+      "kind": "Missile",
+      "damage": 16.228252,
+      "reload": 60.0,
+      "speed": 150.0,
+      "range": 200000.0
+    },
+    {
+      "id": "Df41Missile",
+      "label": "DF-41 ICBM",
+      "kind": "Missile",
+      "damage": 20.280731,
+      "reload": 60.0,
+      "speed": 300.0,
+      "range": 300000.0
+    },
+    {
+      "id": "P270",
+      "label": "P-270 Moskit",
+      "kind": "Missile",
+      "damage": 0.9351922,
+      "reload": 12.0,
+      "speed": 850.0,
+      "range": 0.0
+    },
+    {
+      "id": "Mac",
+      "label": "MAC Cannon",
+      "kind": "Shell",
+      "damage": 1323.0,
+      "reload": 15.0,
+      "speed": 2000.0,
+      "range": 50000.0
+    },
+    {
+      "id": "HighExplosive",
+      "label": "High Explosive Shell",
+      "kind": "Shell",
+      "damage": 2.2473283,
+      "reload": 13.0,
+      "speed": 1200.0,
+      "range": 30000.0
+    },
+    {
+      "id": "ValiantMac",
+      "label": "Valiant MAC Cannon",
+      "kind": "Shell",
+      "damage": 194.6875,
+      "reload": 15.0,
+      "speed": 1800.0,
+      "range": 45000.0
+    },
+    {
+      "id": "ValiantHe",
+      "label": "Valiant HE Shell",
+      "kind": "Shell",
+      "damage": 2.0784905,
+      "reload": 11.8,
+      "speed": 1100.0,
+      "range": 28000.0
     }
   ],
   "ships": [
@@ -656,6 +836,86 @@
       ]
     },
     {
+      "id": "ShieldHelicarrier",
+      "label": "S.H.I.E.L.D. Helicarrier",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 15.5,
+      "health": 7514.594,
+      "length": 396.2,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.3,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark48",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "F35C",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "QuinjetA",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "F35B",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Jagm",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "QuinjetB",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rim116",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Essm",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
       "id": "Akula",
       "label": "Akula",
       "level": 6,
@@ -674,6 +934,12 @@
       "npc": false,
       "armaments": [
         {
+          "weapon_id": "Igla",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "Set65",
           "count": 8,
           "range": 0.0,
@@ -681,12 +947,6 @@
         },
         {
           "weapon_id": "Brosok",
-          "count": 2,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Igla",
           "count": 2,
           "range": 0.0,
           "notes": null
@@ -712,14 +972,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "30X130MmR",
-          "count": 12,
+          "weapon_id": "Hellfire",
+          "count": 4,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Hellfire",
-          "count": 4,
+          "weapon_id": "30X130MmR",
+          "count": 12,
           "range": 0.0,
           "notes": null
         },
@@ -756,19 +1016,13 @@
           "notes": null
         },
         {
-          "weapon_id": "Seahawk",
-          "count": 1,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "Mark54",
           "count": 6,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "127X680MmR",
+          "weapon_id": "Seahawk",
           "count": 1,
           "range": 0.0,
           "notes": null
@@ -776,6 +1030,12 @@
         {
           "weapon_id": "Essm",
           "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
@@ -806,20 +1066,64 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "380X1700MmR",
-          "count": 8,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "Kingfisher",
           "count": 2,
           "range": 0.0,
           "notes": null
         },
         {
+          "weapon_id": "380X1700MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "38CmSkc34",
           "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "HunterKiller77",
+      "label": "HunterKiller-77",
+      "level": 7,
+      "kind": "Boat",
+      "sub_kind": "Corvette",
+      "speed": 10.28125,
+      "health": 2.6000001,
+      "length": 78.0,
+      "draft": 4.0,
+      "range": 634.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1711111,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.25,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark54",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark9",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 1,
           "range": 0.0,
           "notes": null
         }
@@ -850,14 +1154,14 @@
           "notes": null
         },
         {
-          "weapon_id": "130X720MmR",
-          "count": 1,
+          "weapon_id": "Igla",
+          "count": 4,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Igla",
-          "count": 4,
+          "weapon_id": "130X720MmR",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
@@ -894,6 +1198,12 @@
       "npc": false,
       "armaments": [
         {
+          "weapon_id": "FlareB2",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "Mk82",
           "count": 12,
           "range": 0.0,
@@ -926,12 +1236,6 @@
           "notes": null
         },
         {
-          "weapon_id": "SuperEtendard",
-          "count": 6,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "SuperFrelon",
           "count": 2,
           "range": 0.0,
@@ -944,6 +1248,12 @@
           "notes": null
         },
         {
+          "weapon_id": "SuperEtendard",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "Crotale",
           "count": 2,
           "range": 0.0,
@@ -951,6 +1261,62 @@
         },
         {
           "weapon_id": "100Mm",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "CharlesDeGaulle",
+      "label": "Charles de Gaulle",
+      "level": 10,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 15.40625,
+      "health": 8.716667,
+      "length": 261.5,
+      "draft": 8.0,
+      "range": 1184.5,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.44296294,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "SuperFrelon",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Vt1",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "SuperEtendard",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Crotale",
           "count": 4,
           "range": 0.0,
           "notes": null
@@ -990,6 +1356,56 @@
         {
           "weapon_id": "200Mm",
           "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "FortressCarrier",
+      "label": "FortressCarrier",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 17.125,
+      "health": 11.333334,
+      "length": 340.0,
+      "draft": 10.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "J15",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "30X165MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Type730",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Essm",
+          "count": 4,
           "range": 0.0,
           "notes": null
         }
@@ -1038,14 +1454,14 @@
           "notes": null
         },
         {
-          "weapon_id": "Hq10",
-          "count": 4,
+          "weapon_id": "Type730",
+          "count": 2,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Type730",
-          "count": 2,
+          "weapon_id": "Hq10",
+          "count": 4,
           "range": 0.0,
           "notes": null
         }
@@ -1089,14 +1505,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "762X54MmR",
-          "count": 5,
+          "weapon_id": "Wz0839",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Wz0839",
-          "count": 1,
+          "weapon_id": "762X54MmR",
+          "count": 5,
           "range": 0.0,
           "notes": null
         },
@@ -1127,14 +1543,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "RP3",
-          "count": 2,
+          "weapon_id": "762X54MmR",
+          "count": 3,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "762X54MmR",
-          "count": 3,
+          "weapon_id": "RP3",
+          "count": 2,
           "range": 0.0,
           "notes": null
         },
@@ -1175,6 +1591,12 @@
           "count": 8,
           "range": 0.0,
           "notes": null
+        },
+        {
+          "weapon_id": "FlareJ20",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
         }
       ]
     },
@@ -1199,6 +1621,56 @@
         {
           "weapon_id": "Jagm",
           "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "FlareF35",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Su57",
+      "label": "SU-57",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 380.0,
+      "health": 0.75000006,
+      "length": 22.5,
+      "draft": 0.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Su57MissileMid",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Su57MissileLight",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "FlareSu57",
+          "count": 16,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Su57MissileHeavy",
+          "count": 4,
           "range": 0.0,
           "notes": null
         }
@@ -1338,14 +1810,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Moskit",
-          "count": 6,
+          "weapon_id": "25X129MmR",
+          "count": 2,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "25X129MmR",
-          "count": 2,
+          "weapon_id": "Moskit",
+          "count": 6,
           "range": 0.0,
           "notes": null
         },
@@ -1376,14 +1848,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Avenger",
-          "count": 6,
+          "weapon_id": "127X680MmR",
+          "count": 8,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "127X680MmR",
-          "count": 8,
+          "weapon_id": "Avenger",
+          "count": 6,
           "range": 0.0,
           "notes": null
         },
@@ -1440,6 +1912,44 @@
       ]
     },
     {
+      "id": "JianRen",
+      "label": "坚韧号",
+      "level": 1,
+      "kind": "Boat",
+      "sub_kind": "Mtb",
+      "speed": 15.9375,
+      "health": 1.1666667,
+      "length": 35.0,
+      "draft": 0.0,
+      "range": 505.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.107407406,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P15",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "57X441MmR",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
       "id": "Fletcher",
       "label": "Fletcher",
       "level": 4,
@@ -1464,14 +1974,14 @@
           "notes": null
         },
         {
-          "weapon_id": "Mark18",
-          "count": 10,
+          "weapon_id": "Mark9",
+          "count": 4,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Mark9",
-          "count": 4,
+          "weapon_id": "Mark18",
+          "count": 10,
           "range": 0.0,
           "notes": null
         },
@@ -1546,20 +2056,8 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "57X441MmR",
-          "count": 1,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "Seahawk",
           "count": 1,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Nsm",
-          "count": 8,
           "range": 0.0,
           "notes": null
         },
@@ -1570,13 +2068,25 @@
           "notes": null
         },
         {
-          "weapon_id": "Bofors57MmMk3",
+          "weapon_id": "Nsm",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "57X441MmR",
           "count": 1,
           "range": 0.0,
           "notes": null
         },
         {
           "weapon_id": "Mark49",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Bofors57MmMk3",
           "count": 1,
           "range": 0.0,
           "notes": null
@@ -1724,8 +2234,8 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "S300",
-          "count": 6,
+          "weapon_id": "P700",
+          "count": 8,
           "range": 0.0,
           "notes": null
         },
@@ -1742,14 +2252,14 @@
           "notes": null
         },
         {
-          "weapon_id": "Ka25",
-          "count": 1,
+          "weapon_id": "S300",
+          "count": 6,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "P700",
-          "count": 8,
+          "weapon_id": "Ka25",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
@@ -1786,12 +2296,6 @@
           "notes": null
         },
         {
-          "weapon_id": "76X636MmR",
-          "count": 1,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "Set65",
           "count": 4,
           "range": 0.0,
@@ -1800,6 +2304,12 @@
         {
           "weapon_id": "BrahMos",
           "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
@@ -1880,13 +2390,13 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "127X680MmR",
+          "weapon_id": "Mark18",
           "count": 8,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Mark18",
+          "weapon_id": "127X680MmR",
           "count": 8,
           "range": 0.0,
           "notes": null
@@ -1926,6 +2436,38 @@
       ]
     },
     {
+      "id": "Minelayer49",
+      "label": "布雷艇49型",
+      "level": 6,
+      "kind": "Boat",
+      "sub_kind": "Minelayer",
+      "speed": 18.5,
+      "health": 10.186734,
+      "length": 95.8,
+      "draft": 2.0,
+      "range": 687.4,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.19748148,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Wz0839",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "IaigiriMine",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
       "id": "Momi",
       "label": "Momi",
       "level": 2,
@@ -1944,6 +2486,12 @@
       "npc": false,
       "armaments": [
         {
+          "weapon_id": "Mark9",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "127X680MmR",
           "count": 3,
           "range": 0.0,
@@ -1951,12 +2499,6 @@
         },
         {
           "weapon_id": "Mark18",
-          "count": 4,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Mark9",
           "count": 4,
           "range": 0.0,
           "notes": null
@@ -2008,6 +2550,50 @@
       ]
     },
     {
+      "id": "Richelieu",
+      "label": "Richelieu",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 23.09375,
+      "health": 68.2276,
+      "length": 247.8,
+      "draft": 10.0,
+      "range": 1143.4,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.42266667,
+      "torpedo_resistance": 0.3,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "127X680MmR",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "380X1700MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "38CmSkc34",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "100Mm",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
       "id": "Moskva",
       "label": "Moskva",
       "level": 7,
@@ -2026,8 +2612,8 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Ka25",
-          "count": 4,
+          "weapon_id": "Set65",
+          "count": 10,
           "range": 0.0,
           "notes": null
         },
@@ -2038,8 +2624,8 @@
           "notes": null
         },
         {
-          "weapon_id": "Set65",
-          "count": 10,
+          "weapon_id": "Ka25",
+          "count": 4,
           "range": 0.0,
           "notes": null
         },
@@ -2096,14 +2682,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Tomahawk",
-          "count": 10,
+          "weapon_id": "Mark48",
+          "count": 4,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Mark48",
-          "count": 4,
+          "weapon_id": "Tomahawk",
+          "count": 10,
           "range": 0.0,
           "notes": null
         },
@@ -2287,7 +2873,7 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Yj82",
+          "weapon_id": "Yu6",
           "count": 4,
           "range": 0.0,
           "notes": null
@@ -2299,7 +2885,57 @@
           "notes": null
         },
         {
-          "weapon_id": "Yu6",
+          "weapon_id": "Yj82",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Sub096",
+      "label": "096 Type",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 20.0,
+      "health": 108.000015,
+      "length": 150.0,
+      "draft": 10.0,
+      "range": 450.0,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Hq9",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yu10",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Jl3",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Brosok",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yj18",
           "count": 4,
           "range": 0.0,
           "notes": null
@@ -2325,6 +2961,12 @@
       "npc": false,
       "armaments": [
         {
+          "weapon_id": "Mistral",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "76X636MmR",
           "count": 1,
           "range": 0.0,
@@ -2333,12 +2975,6 @@
         {
           "weapon_id": "Nsm",
           "count": 8,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Mistral",
-          "count": 6,
           "range": 0.0,
           "notes": null
         },
@@ -2383,9 +3019,35 @@
       ]
     },
     {
+      "id": "Df41",
+      "label": "DF-41 TEL",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Tank",
+      "speed": 16.65625,
+      "health": 0.73333335,
+      "length": 22.0,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.1,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Df41Missile",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
       "id": "StarDestroyer",
       "label": "Imperial II-Class Star Destroyer",
-      "level": 12,
+      "level": 14,
       "kind": "Boat",
       "sub_kind": "Starship",
       "speed": 400.0,
@@ -2407,14 +3069,14 @@
           "notes": null
         },
         {
-          "weapon_id": "TieFighter",
-          "count": 12,
+          "weapon_id": "TurbolaserBeam",
+          "count": 8,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "TurbolaserBeam",
-          "count": 8,
+          "weapon_id": "TieFighterMk48",
+          "count": 12,
           "range": 0.0,
           "notes": null
         },
@@ -2483,8 +3145,8 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Mark18",
-          "count": 6,
+          "weapon_id": "Kingfisher",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
@@ -2495,8 +3157,8 @@
           "notes": null
         },
         {
-          "weapon_id": "Kingfisher",
-          "count": 1,
+          "weapon_id": "Mark18",
+          "count": 6,
           "range": 0.0,
           "notes": null
         },
@@ -2527,19 +3189,19 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "82R",
-          "count": 6,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "Yj18",
           "count": 8,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "130X720MmR",
+          "weapon_id": "82R",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Harbin",
           "count": 1,
           "range": 0.0,
           "notes": null
@@ -2551,7 +3213,7 @@
           "notes": null
         },
         {
-          "weapon_id": "Harbin",
+          "weapon_id": "130X720MmR",
           "count": 1,
           "range": 0.0,
           "notes": null
@@ -2633,6 +3295,12 @@
           "notes": null
         },
         {
+          "weapon_id": "Asroc",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "Tomahawk",
           "count": 12,
           "range": 0.0,
@@ -2643,10 +3311,54 @@
           "count": 2,
           "range": 0.0,
           "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Tianwangxing",
+      "label": "天王星",
+      "level": 8,
+      "kind": "Boat",
+      "sub_kind": "Cruiser",
+      "speed": 20.1875,
+      "health": 5.533334,
+      "length": 166.0,
+      "draft": 4.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.3014815,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Hq9",
+          "count": 22,
+          "range": 0.0,
+          "notes": null
         },
         {
-          "weapon_id": "Asroc",
-          "count": 2,
+          "weapon_id": "Mark9",
+          "count": 16,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yj18",
+          "count": 34,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yu6",
+          "count": 24,
           "range": 0.0,
           "notes": null
         }
@@ -2715,13 +3427,19 @@
           "notes": null
         },
         {
-          "weapon_id": "VMissiles",
+          "weapon_id": "VBlaster",
           "count": 8,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "VBlaster",
+          "weapon_id": "FlareVindicator",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "VMissiles",
           "count": 8,
           "range": 0.0,
           "notes": null
@@ -2747,8 +3465,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "57X441MmR",
-          "count": 1,
+          "weapon_id": "Torped45",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rbs15",
+          "count": 8,
           "range": 0.0,
           "notes": null
         },
@@ -2759,14 +3483,8 @@
           "notes": null
         },
         {
-          "weapon_id": "Torped45",
-          "count": 4,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Rbs15",
-          "count": 8,
+          "weapon_id": "57X441MmR",
+          "count": 1,
           "range": 0.0,
           "notes": null
         },
@@ -2797,8 +3515,8 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Mark48",
-          "count": 8,
+          "weapon_id": "Tomahawk",
+          "count": 6,
           "range": 0.0,
           "notes": null
         },
@@ -2809,8 +3527,8 @@
           "notes": null
         },
         {
-          "weapon_id": "Tomahawk",
-          "count": 6,
+          "weapon_id": "Mark48",
+          "count": 8,
           "range": 0.0,
           "notes": null
         }
@@ -2837,6 +3555,32 @@
         {
           "weapon_id": "Blaster",
           "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "MillenniumFalcon",
+      "label": "Millennium Falcon",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 600.0,
+      "health": 5.783334,
+      "length": 34.7,
+      "draft": 6.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "QuadBlasterCannon",
+          "count": 32,
           "range": 0.0,
           "notes": null
         }
@@ -2881,6 +3625,230 @@
       ]
     },
     {
+      "id": "SpaceYamato",
+      "label": "Space Battleship Yamato",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 150.0,
+      "health": 22.2,
+      "length": 333.0,
+      "draft": 0.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark18",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "458X1980MmR",
+          "count": 9,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurbolaserBeam",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TieFighter",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yj18",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "45Type94",
+          "count": 3,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Turbolaser",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Leviathan",
+      "label": "Leviathan-Class Integrated Platform",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Carrier",
+      "speed": 16.5,
+      "health": 2800.0002,
+      "length": 420.0,
+      "draft": 12.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.5,
+      "stealth": 0.1,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "TieFighter",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurbolaserBeam",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "458X1980MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Turbolaser",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "XystonStarDestroyer",
+      "label": "Xyston-class Star Destroyer",
+      "level": 15,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 270.78125,
+      "health": 35.644444,
+      "length": 802.0,
+      "draft": 0.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "AxialSuperlaserBeam",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurboLaserII",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TieBomber",
+          "count": 15,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "PlasmaGun",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurboLaserIITurret",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "PlasmaGunTurret",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Pangu",
+      "label": "UNS Pangu (BBGN-X)",
+      "level": 15,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 12.0,
+      "health": 2880.0,
+      "length": 480.0,
+      "draft": 12.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.5,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "PoseidonTorpedo",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "LightShieldBeam",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "508X2200MmR",
+          "count": 9,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ObsidianCruiseMissile",
+          "count": 14,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "LightShieldLaser",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ThorRailgun",
+          "count": 9,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
       "id": "Yasen",
       "label": "Yasen",
       "level": 9,
@@ -2905,7 +3873,7 @@
           "notes": null
         },
         {
-          "weapon_id": "Rpk6",
+          "weapon_id": "Igla",
           "count": 4,
           "range": 0.0,
           "notes": null
@@ -2917,14 +3885,64 @@
           "notes": null
         },
         {
-          "weapon_id": "Igla",
+          "weapon_id": "Set65",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rpk6",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Typhoon",
+      "label": "Typhoon",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Submarine",
+      "speed": 12.5,
+      "health": 43.75,
+      "length": 175.0,
+      "draft": 10.0,
+      "range": 600.0,
+      "depth": 254.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.5,
+      "stealth": 0.15,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Brosok",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rpk6",
           "count": 4,
           "range": 0.0,
           "notes": null
         },
         {
           "weapon_id": "Set65",
-          "count": 6,
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "BrahMos",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Igla",
+          "count": 4,
           "range": 0.0,
           "notes": null
         }
@@ -2949,14 +3967,14 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "25X129MmR",
-          "count": 2,
+          "weapon_id": "Of45",
+          "count": 9,
           "range": 0.0,
           "notes": null
         },
         {
-          "weapon_id": "Of45",
-          "count": 9,
+          "weapon_id": "25X129MmR",
+          "count": 2,
           "range": 0.0,
           "notes": null
         },
@@ -3057,26 +4075,8 @@
       "npc": false,
       "armaments": [
         {
-          "weapon_id": "Seahawk",
-          "count": 1,
-          "range": 0.0,
-          "notes": null
-        },
-        {
           "weapon_id": "Essm",
           "count": 8,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Tomahawk",
-          "count": 8,
-          "range": 0.0,
-          "notes": null
-        },
-        {
-          "weapon_id": "Asroc",
-          "count": 4,
           "range": 0.0,
           "notes": null
         },
@@ -3087,8 +4087,846 @@
           "notes": null
         },
         {
+          "weapon_id": "Asroc",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
           "weapon_id": "Mark51",
           "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "UnscInfinite",
+      "label": "UNSC Infinite",
+      "level": 15,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 270.78125,
+      "health": 3968.889,
+      "length": 950.0,
+      "draft": 0.0,
+      "range": 50000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "HighExplosive",
+          "count": 8,
+          "range": 30000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mac",
+          "count": 4,
+          "range": 50000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P700",
+          "count": 70,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "F35B",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hq9",
+          "count": 24,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "HeTurret",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "MacTurret",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Battleship500k",
+      "label": "五十万吨战列舰",
+      "level": 12,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 21.59375,
+      "health": 1200.0001,
+      "length": 600.0,
+      "draft": 14.0,
+      "range": 38000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Seahawk",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Essm",
+          "count": 24,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 32,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark48",
+          "count": 16,
+          "range": 38000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "458X1980MmR",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rim116",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Battleship750k",
+      "label": "七十五万吨战列舰",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 55.0,
+      "health": 1375.0,
+      "length": 550.0,
+      "draft": 18.0,
+      "range": 38000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Tomahawk",
+          "count": 48,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Essm",
+          "count": 36,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mark48",
+          "count": 24,
+          "range": 38000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rim116",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 16,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "458X1980MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "IronWarrior",
+      "label": "铁甲战神",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 28.0,
+      "health": 4.0,
+      "length": 120.0,
+      "draft": 6.0,
+      "range": 600.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.23333333,
+      "torpedo_resistance": 0.4,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Mark54",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Tomahawk",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "XWing",
+      "label": "X-Wing Starfighter",
+      "level": 12,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 300.0,
+      "health": 0.1388889,
+      "length": 12.5,
+      "draft": 0.0,
+      "range": 8000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.3,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "PlasmaGun",
+          "count": 4,
+          "range": 8000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Su57MissileLight",
+          "count": 4,
+          "range": 8000.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "StellarFrigate",
+      "label": "星际护卫舰",
+      "level": 14,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 200.0,
+      "health": 2.0555556,
+      "length": 185.0,
+      "draft": 0.0,
+      "range": 1200.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.7,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Harbin",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yu7",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hq9",
+          "count": 24,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yj18",
+          "count": 48,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 6,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "SwiftWingCruiser",
+      "label": "迅捷之翼",
+      "level": 14,
+      "kind": "Boat",
+      "sub_kind": "Cruiser",
+      "speed": 40.0,
+      "health": 8.0,
+      "length": 240.0,
+      "draft": 8.0,
+      "range": 1500.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.41111112,
+      "torpedo_resistance": 0.2,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Harpoon",
+          "count": 30,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P270",
+          "count": 50,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Rim116",
+          "count": 24,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Valiant",
+      "label": "英勇级超重巡洋舰",
+      "level": 14,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 35.0,
+      "health": 248.88889,
+      "length": 280.0,
+      "draft": 0.0,
+      "range": 45000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "ValiantMac",
+          "count": 2,
+          "range": 45000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P700",
+          "count": 50,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantHe",
+          "count": 16,
+          "range": 28000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantHeTurret",
+          "count": 16,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantMacTurret",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Marathon",
+      "label": "马拉松级重巡洋舰",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 40.0,
+      "health": 90.0,
+      "length": 180.0,
+      "draft": 0.0,
+      "range": 45000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "ValiantMac",
+          "count": 2,
+          "range": 45000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P700",
+          "count": 30,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantHe",
+          "count": 20,
+          "range": 28000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantMacTurret",
+          "count": 2,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantHeTurret",
+          "count": 20,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Marauder",
+      "label": "掠夺者级护卫舰",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 55.0,
+      "health": 22.222223,
+      "length": 80.0,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Blaster",
+          "count": 16,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TieBomber",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Paris",
+      "label": "巴黎级超重巡洋舰",
+      "level": 10,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 99.0,
+      "health": 71.111115,
+      "length": 160.0,
+      "draft": 0.0,
+      "range": 45000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "ValiantHe",
+          "count": 8,
+          "range": 28000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "P700",
+          "count": 20,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantMac",
+          "count": 1,
+          "range": 45000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantMacTurret",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "ValiantHeTurret",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "ImperialStarDestroyer",
+      "label": "帝国I级歼星舰",
+      "level": 13,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 200.0,
+      "health": 40.0,
+      "length": 600.0,
+      "draft": 0.0,
+      "range": 200000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "TieBomber",
+          "count": 10,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurboLaserII",
+          "count": 8,
+          "range": 30000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurbolaserBeam",
+          "count": 4,
+          "range": 200000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurboLaserIITurret",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Turbolaser",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Type054A",
+      "label": "054A型护卫舰",
+      "level": 5,
+      "kind": "Boat",
+      "sub_kind": "Destroyer",
+      "speed": 27.0,
+      "health": 4.4666667,
+      "length": 134.0,
+      "draft": 4.0,
+      "range": 600.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.25407407,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Yj18",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "76X636MmR",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Yu7",
+          "count": 4,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Hq9",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Harbin",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "OtoMelara76Mm",
+          "count": 1,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Hunter",
+      "label": "猎人级歼星舰",
+      "level": 12,
+      "kind": "Boat",
+      "sub_kind": "Starship",
+      "speed": 38.0,
+      "health": 166.66667,
+      "length": 250.0,
+      "draft": 0.0,
+      "range": 30000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "TurboLaserII",
+          "count": 12,
+          "range": 30000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TieBomber",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "TurboLaserIITurret",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "Tu160",
+      "label": "图-160 白天鹅",
+      "level": 9,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 300.0,
+      "health": 1.8000001,
+      "length": 54.0,
+      "draft": 0.0,
+      "range": 8000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Su57MissileHeavy",
+          "count": 8,
+          "range": 8000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Su57MissileMid",
+          "count": 8,
+          "range": 8000.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Su57MissileLight",
+          "count": 8,
+          "range": 8000.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "KirovAirship",
+      "label": "基洛夫空艇",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Aeroplane",
+      "speed": 80.0,
+      "health": 20.0,
+      "length": 120.0,
+      "draft": 0.0,
+      "range": 800.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.0,
+      "torpedo_resistance": 0.0,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "P700",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Mk82",
+          "count": 24,
+          "range": 0.0,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "H44",
+      "label": "H-44 超级战列舰",
+      "level": 11,
+      "kind": "Boat",
+      "sub_kind": "Battleship",
+      "speed": 16.0,
+      "health": 345.00003,
+      "length": 345.0,
+      "draft": 12.0,
+      "range": 1000.0,
+      "depth": 0.0,
+      "reload": 0.0,
+      "anti_aircraft": 0.5,
+      "torpedo_resistance": 0.3,
+      "stealth": 0.0,
+      "npc": false,
+      "armaments": [
+        {
+          "weapon_id": "Tomahawk",
+          "count": 12,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "Seahawk",
+          "count": 5,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "127X680MmR",
+          "count": 8,
+          "range": 0.0,
+          "notes": null
+        },
+        {
+          "weapon_id": "458X1980MmR",
+          "count": 12,
           "range": 0.0,
           "notes": null
         }

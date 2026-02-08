@@ -11,6 +11,8 @@ use common::altitude::Altitude;
 use common::angle::Angle;
 use common::death_reason::DeathReason;
 use common::entity::*;
+use common::protocol::WorldEvent;
+use common::skill::NUCLEAR_STRIKE_RADIUS;
 use common::guidance::Guidance;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
@@ -327,6 +329,14 @@ impl Mutation {
                 Self::maybe_damage_terrain(world, index);
             }
 
+            // Nuclear missile detonation: trigger AoE kill on impact
+            // Detonate on any removal except flying off map border
+            if entity_type == EntityType::Df41Missile
+                && !matches!(reason, DeathReason::Border)
+            {
+                Self::nuclear_detonation(world, index);
+            }
+
             if data.limited {
                 let boat_index = {
                     let entity = &world.entities[index];
@@ -432,6 +442,65 @@ impl Mutation {
                 _ => (),
             }
         }
+    }
+
+    /// Trigger nuclear detonation at entity's position.
+    /// Kills all non-friendly combat entities within NUCLEAR_STRIKE_RADIUS.
+    fn nuclear_detonation(world: &mut World, entity_index: EntityIndex) {
+        let center = world.entities[entity_index].transform.position;
+        let player_tuple = world.entities[entity_index].player.clone();
+        let radius = NUCLEAR_STRIKE_RADIUS;
+
+        // Get the alias of the player who launched the missile
+        let launcher_alias = player_tuple
+            .as_ref()
+            .map(|pt| pt.borrow_player().alias())
+            .unwrap_or_default();
+
+        // Find all non-friendly combat entities in radius
+        let mut targets: Vec<EntityIndex> = world
+            .entities
+            .iter_radius(center, radius)
+            .filter_map(|(target_index, target)| {
+                if target_index == entity_index {
+                    return None;
+                }
+                let data = target.data();
+                // Only affect boats, aircraft, and weapons
+                if !matches!(
+                    data.kind,
+                    EntityKind::Boat | EntityKind::Aircraft | EntityKind::Weapon
+                ) {
+                    return None;
+                }
+                // Skip friendly entities
+                if let Some(ref pt) = player_tuple {
+                    if target.is_friendly_to_player(Some(pt)) {
+                        return None;
+                    }
+                }
+                Some(target_index)
+            })
+            .collect();
+
+        // Sort in reverse order to avoid index invalidation when removing
+        targets.sort_by(|a, b| b.cmp(a));
+
+        log::info!(
+            "Nuclear detonation at {:?}: {} targets in {}m radius",
+            center,
+            targets.len(),
+            radius
+        );
+
+        for target_index in targets {
+            world.remove(target_index, DeathReason::Weapon(launcher_alias.clone(), EntityType::Df41Missile));
+        }
+
+        // Push visual effect event
+        world
+            .events
+            .push(WorldEvent::NuclearStrike { center, radius });
     }
 
     /// Called by on_world_remove when a limited armament (weapon, decoy, or aircraft) dies with a

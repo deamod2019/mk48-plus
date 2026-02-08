@@ -519,6 +519,8 @@ impl World {
                     entity.extension_mut().advance_nuclear_strike(delta);
                     // Advance energy shield timers
                     entity.extension_mut().advance_energy_shield(delta);
+                    // Advance stealth timers
+                    entity.extension_mut().advance_stealth(delta);
                     // Advance emergency repair and apply HP restoration
                     {
                         let is_repairing = entity.extension().is_repairing();

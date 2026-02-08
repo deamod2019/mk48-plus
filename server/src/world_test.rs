@@ -118,8 +118,8 @@ mod tests {
     fn test_render_with(player_count: usize, resolution: u32) {
         crate::noise::init();
 
-        let world_radius =
-            World::target_radius(player_count as f32 * 1500f32.powi(2) * std::f32::consts::PI);
+        // World::target_radius was removed; use the fixed radius from update_radius
+        let world_radius: f32 = 9750.0_f32.max((player_count as f32 * 1500f32.powi(2) * std::f32::consts::PI).sqrt());
 
         println!("rad: {}", world_radius);
 
@@ -150,7 +150,7 @@ mod tests {
             let score = level_to_score(level);
             player.borrow_player_mut().score = score;
             let entity_type = EntityType::iter()
-                .filter(|t| t.can_spawn_as(score, bot) && t.data().level == level)
+                .filter(|t| t.can_spawn_as(score, bot, false) && t.data().level == level)
                 .choose(&mut rng)
                 .unwrap();
             let spawn = Command::Spawn(Spawn { entity_type });

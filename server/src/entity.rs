@@ -490,7 +490,9 @@ impl Entity {
         let data = self.data();
 
         // Ticks is lifespan, not damage, for non-boats.
-        assert_eq!(data.kind, EntityKind::Boat);
+        if data.kind != EntityKind::Boat {
+            return false;
+        }
 
         // Apply energy shield damage reduction (90% absorbed when active)
         let actual_damage = if self.extension().is_energy_shield_active() {
@@ -708,20 +710,17 @@ impl Entity {
         let player = player.borrow_player();
         let other_player_ref = other_player.borrow_player();
 
-        // Elite Bot Alliance System:
-        // When enabled, high-scoring bots form an alliance with each other
-        // to challenge the player. Controlled by MK48_BOT_ALLIANCE env var.
-        // Default: disabled (bots fight each other normally)
-        use std::sync::{Once, atomic::{AtomicBool, Ordering}};
-        static BOT_ALLIANCE_INIT: Once = Once::new();
-        static BOT_ALLIANCE_ENABLED: AtomicBool = AtomicBool::new(false);
-        BOT_ALLIANCE_INIT.call_once(|| {
-            let enabled = std::env::var("MK48_BOT_ALLIANCE")
-                .map(|v| v == "1" || v.to_lowercase() == "true")
-                .unwrap_or(false);
-            BOT_ALLIANCE_ENABLED.store(enabled, Ordering::Relaxed);
-        });
-        let bot_alliance_enabled = BOT_ALLIANCE_ENABLED.load(Ordering::Relaxed);
+        // Faction mode: same faction = friendly (highest priority).
+        if crate::runtime_config::hot_faction_mode() {
+            let self_faction = player.data.faction;
+            let other_faction = other_player_ref.data.faction;
+            if let (Some(sf), Some(of)) = (self_faction, other_faction) {
+                return sf == of;
+            }
+        }
+
+        // Read bot alliance setting from hot-reloadable config.
+        let bot_alliance_enabled = crate::runtime_config::hot_bot_alliance_enabled();
         
         const ELITE_BOT_SCORE_THRESHOLD: u32 = 5000; // ~Level 6+
         

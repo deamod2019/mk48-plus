@@ -370,7 +370,15 @@ impl Mk48Translation for LanguageId {
     }
 
     fn death_reason_weapon(self, alias: PlayerAlias, entity_type: EntityType) -> String {
-        let weapon: String = format!("{:?}", entity_type.data().sub_kind);
+        // Special display for DredgerSacrifice (entity_type is the boat, not a weapon)
+        let weapon: String = if entity_type == EntityType::Dredger2 {
+            match self {
+                SimplifiedChinese => "挖泥船牺牲".to_string(),
+                _ => "Dredger Sacrifice".to_string(),
+            }
+        } else {
+            format!("{:?}", entity_type.data().sub_kind)
+        };
         match self {
             Arabic => format!("غرق بواسطة {alias} {weapon}!"),
             Bork => format!("Borked by {alias} with a {weapon}!"),

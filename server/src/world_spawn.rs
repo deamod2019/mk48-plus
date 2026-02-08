@@ -192,7 +192,7 @@ impl World {
                         return false;
                     }
                 }
-                if data.sub_kind == EntitySubKind::TankShell {
+                if matches!(data.sub_kind, EntitySubKind::TankShell | EntitySubKind::Missile) {
                     return true;
                 } else if data.sub_kind == EntitySubKind::GlideBomb {
                     return entity.altitude > Altitude(100);

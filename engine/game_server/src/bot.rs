@@ -30,11 +30,11 @@ pub struct BotRepo<G: GameArenaService> {
     /// Collection of bots, indexed corresponding to player id.
     bots: Vec<BotData<G>>,
     /// Minimum number of bots (always less than or equal to max_bots).
-    pub(crate) min_bots: usize,
+    pub min_bots: usize,
     /// Maximum number of bots.
-    max_bots: usize,
+    pub max_bots: usize,
     /// This percent of real players will help determine the target bot quantity.
-    bot_percent: usize,
+    pub bot_percent: usize,
 }
 
 impl<G: GameArenaService> BotRepo<G> {
@@ -77,7 +77,7 @@ impl<G: GameArenaService> BotRepo<G> {
     }
 
     /// Call after `GameService::post_update` to avoid sending commands between `GameService::tick` and it.
-    pub fn post_update(&mut self, service: &mut G, players: &PlayerRepo<G>) {
+    pub fn post_update(&mut self, service: &mut G, players: &mut PlayerRepo<G>) {
         for bot_data in &mut self.bots {
             match std::mem::take(&mut bot_data.action_buffer) {
                 BotAction::Some(command) => {
@@ -89,6 +89,8 @@ impl<G: GameArenaService> BotRepo<G> {
                     service.player_left(&bot_data.player_tuple, players);
                     let player_id = bot_data.player_tuple.player.borrow().player_id;
                     *bot_data = Self::bot_data(player_id);
+                    // Re-insert into PlayerRepo so faction stats see the new tuple.
+                    players.insert(player_id, Arc::clone(&bot_data.player_tuple));
                     service.player_joined(&bot_data.player_tuple, players);
                 }
             };

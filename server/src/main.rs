@@ -26,6 +26,7 @@ mod entity_extension;
 mod noise;
 mod player;
 mod protocol;
+mod runtime_config;
 mod server;
 mod world;
 mod world_inbound;
@@ -44,6 +45,15 @@ fn main() {
         for typ in EntityType::iter() {
             rustrict::add_word(typ.as_str(), rustrict::Type::SAFE);
         }
+    }
+
+    // Start hot-reload config file watcher.
+    runtime_config::start_config_watcher(None);
+
+    // Env var override: set FACTION_MODE=1 to enable faction mode on startup.
+    if std::env::var("FACTION_MODE").map_or(false, |v| v == "1" || v == "true") {
+        runtime_config::set_faction_mode(true);
+        eprintln!("[ENV] Faction mode enabled via FACTION_MODE=1");
     }
 
     game_server::entry_point::entry_point::<Server>(

@@ -7,7 +7,7 @@ use client_util::apply::Apply;
 use common::contact::Contact;
 use common::death_reason::DeathReason;
 use common::entity::EntityId;
-use common::protocol::Update;
+use common::protocol::{FactionId, FactionUpdate, Update};
 use common::terrain::Terrain;
 use std::collections::HashMap;
 
@@ -22,6 +22,10 @@ pub struct Mk48State {
     pub world_radius: f32,
     /// Whether bot alliance mode is enabled (high-score bots ally against players).
     pub bot_alliance_enabled: bool,
+    /// Faction war data (when faction_mode is enabled).
+    pub faction_data: Option<FactionUpdate>,
+    /// Current player's faction.
+    pub my_faction: Option<FactionId>,
     terrain_reset: bool,
 }
 
@@ -37,6 +41,8 @@ impl Default for Mk48State {
             // Keep border off splash screen by assuming radius.
             world_radius: 10000.0,
             bot_alliance_enabled: false,
+            faction_data: None,
+            my_faction: None,
             terrain_reset: false,
         }
     }
@@ -76,6 +82,8 @@ impl Apply<Update> for Mk48State {
         self.world_radius = update.world_radius;
         self.score = update.score;
         self.bot_alliance_enabled = update.bot_alliance_enabled;
+        self.faction_data = update.faction_data;
+        self.my_faction = update.my_faction;
     }
 
     fn reset(&mut self) {

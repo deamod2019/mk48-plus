@@ -10,6 +10,7 @@ use common::altitude::Altitude;
 use common::angle::Angle;
 use common::death_reason::DeathReason;
 use common::entity::*;
+use common::entity::EntityType;
 use common::ticks;
 use common::ticks::Ticks;
 use common::util::hash_u32_to_f32;
@@ -124,10 +125,17 @@ impl World {
                         (EntityKind::Decoy, EntityKind::Decoy) => true,
                         
                         // Weapon vs Weapon: only SAM can intercept missiles
+                        // Exception: DF-41 ICBM is immune to SAM interception
                         (EntityKind::Weapon, EntityKind::Weapon) => {
                             let is_sam = data.sub_kind == EntitySubKind::Sam;
                             let other_is_sam = other_data.sub_kind == EntitySubKind::Sam;
-                            !(is_sam || other_is_sam)
+                            let has_df41 = entity.entity_type == EntityType::Df41Missile
+                                || other_entity.entity_type == EntityType::Df41Missile;
+                            if has_df41 {
+                                true // Always skip SAM vs DF-41 interaction
+                            } else {
+                                !(is_sam || other_is_sam)
+                            }
                         }
                         
                         // Altitude layer separation: submerged vs airborne

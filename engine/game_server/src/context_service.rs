@@ -88,6 +88,6 @@ impl<G: GameArenaService> ContextService<G> {
         // `GameService::tick` and `GameService::post_update`.
         self.context
             .bots
-            .post_update(&mut self.service, &self.context.players);
+            .post_update(&mut self.service, &mut self.context.players);
     }
 }

@@ -35,6 +35,10 @@ pub enum SkillType {
     NuclearStrike,
     /// Energy shield - absorbs damage for duration (used by StellarFrigate)
     EnergyShield,
+    /// Dredger sacrifice - spawn oil platform, kill self (used by Dredger2)
+    DredgerSacrifice,
+    /// Stealth - become invisible to enemy radar (used by Assimilator2)
+    Stealth,
 }
 
 /// Skill metadata and parameters.
@@ -69,6 +73,8 @@ impl SkillType {
             SkillType::BurstLoading => &BURST_LOADING_DATA,
             SkillType::NuclearStrike => &NUCLEAR_STRIKE_DATA,
             SkillType::EnergyShield => &ENERGY_SHIELD_DATA,
+            SkillType::DredgerSacrifice => &DREDGER_SACRIFICE_DATA,
+            SkillType::Stealth => &STEALTH_DATA,
         }
     }
 
@@ -87,6 +93,8 @@ impl SkillType {
             SkillType::BurstLoading,
             SkillType::NuclearStrike,
             SkillType::EnergyShield,
+            SkillType::DredgerSacrifice,
+            SkillType::Stealth,
         ])
     }
 
@@ -110,6 +118,8 @@ impl SkillType {
             SkillType::SmokeScreen => Some('L'),
             SkillType::BurstLoading => Some('B'),
             SkillType::NuclearStrike => Some('N'),
+            SkillType::DredgerSacrifice => Some('G'),
+            SkillType::Stealth => Some('H'),
         }
     }
 
@@ -128,6 +138,8 @@ impl SkillType {
             SkillType::BurstLoading => "爆发装填",
             SkillType::NuclearStrike => "核打击",
             SkillType::EnergyShield => "能量护盾",
+            SkillType::DredgerSacrifice => "挖泥船牺牲",
+            SkillType::Stealth => "隐身",
         }
     }
 
@@ -136,6 +148,8 @@ impl SkillType {
         match self {
             SkillType::NuclearStrike => "☢",
             SkillType::EnergyShield => "🛡",
+            SkillType::DredgerSacrifice => "⚓",
+            SkillType::Stealth => "👻",
             _ => "",
         }
     }
@@ -351,3 +365,31 @@ pub const ENERGY_SHIELD_DURATION: Ticks = Ticks::from_whole_secs(8);
 pub const ENERGY_SHIELD_COOLDOWN: Ticks = Ticks::from_whole_secs(45);
 /// Energy shield damage absorption rate (0.9 = 90% absorbed)
 pub const ENERGY_SHIELD_ABSORPTION: f32 = 0.9;
+
+// ============ Dredger Sacrifice skill constants ============
+pub static DREDGER_SACRIFICE_DATA: SkillData = SkillData {
+    skill_type: SkillType::DredgerSacrifice,
+    label: "Dredger Sacrifice",
+    description: "Sacrifice your dredger to create an oil platform",
+    cooldown: Ticks::from_whole_secs(60),
+    duration: None,
+    charge_time: None,
+};
+
+/// Dredger sacrifice cooldown (player dies immediately so this is mostly cosmetic)
+pub const DREDGER_SACRIFICE_COOLDOWN: Ticks = Ticks::from_whole_secs(60);
+
+// ============ Stealth skill constants ============
+pub static STEALTH_DATA: SkillData = SkillData {
+    skill_type: SkillType::Stealth,
+    label: "Stealth",
+    description: "Become invisible to enemy radar for 30 seconds",
+    cooldown: Ticks::from_whole_secs(60),
+    duration: Some(Ticks::from_whole_secs(30)),
+    charge_time: None,
+};
+
+/// Stealth active duration
+pub const STEALTH_DURATION: Ticks = Ticks::from_whole_secs(30);
+/// Stealth cooldown
+pub const STEALTH_COOLDOWN: Ticks = Ticks::from_whole_secs(60);

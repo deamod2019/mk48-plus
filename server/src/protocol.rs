@@ -38,6 +38,8 @@ impl AsCommandTrait for Command {
             Command::BurstLoading(ref v) => v as &dyn CommandTrait,
             Command::NuclearStrike(ref v) => v as &dyn CommandTrait,
             Command::EnergyShield(ref v) => v as &dyn CommandTrait,
+            Command::DredgerSacrifice(ref v) => v as &dyn CommandTrait,
+            Command::Stealth(ref v) => v as &dyn CommandTrait,
         }
     }
 }

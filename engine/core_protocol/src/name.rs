@@ -94,7 +94,7 @@ impl_from_str!(TeamName);
 
 static BOT_NAMES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     include_str!("./famous_bots.txt")
-        .split('\n')
+        .lines()
         .filter(|s| !s.is_empty() && s.len() <= PlayerAlias::capacity())
         .collect()
 });

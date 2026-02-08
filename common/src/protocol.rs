@@ -28,6 +28,12 @@ pub struct Update {
     /// Whether bot alliance mode is enabled (high-score bots form alliance against players).
     #[serde(default)]
     pub bot_alliance_enabled: bool,
+    /// Faction war data (present when faction_mode is enabled).
+    #[serde(default)]
+    pub faction_data: Option<FactionUpdate>,
+    /// Current player's faction.
+    #[serde(default)]
+    pub my_faction: Option<FactionId>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -38,6 +44,66 @@ pub enum WorldEvent {
 
 /// Updates for terrain chunks.
 pub type TerrainUpdate = [(ChunkId, SerializedChunk)];
+
+/// Faction identifier for the 3-faction war mode.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum FactionId {
+    Red = 0,
+    Blue = 1,
+    Green = 2,
+}
+
+impl FactionId {
+    /// Number of factions in the game.
+    pub const COUNT: usize = 3;
+
+    pub fn from_index(i: u8) -> Self {
+        match i % Self::COUNT as u8 {
+            0 => Self::Red,
+            1 => Self::Blue,
+            _ => Self::Green,
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Red => "红军",
+            Self::Blue => "蓝军",
+            Self::Green => "绿军",
+        }
+    }
+
+    pub fn index(&self) -> usize {
+        *self as usize
+    }
+
+    pub fn emoji(&self) -> &'static str {
+        match self {
+            Self::Red => "🔴",
+            Self::Blue => "🔵",
+            Self::Green => "🟢",
+        }
+    }
+}
+
+/// Per-faction statistics sent to the client.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct FactionStats {
+    pub total_score: u64,
+    pub player_count: u32,
+    pub top_player: Option<String>,
+    pub top_score: u32,
+}
+
+/// Faction war update data.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FactionUpdate {
+    pub factions: [FactionStats; FactionId::COUNT],
+    /// Per-player faction assignments (for rendering faction markers above ships).
+    #[serde(default)]
+    pub player_factions: Vec<(core_protocol::id::PlayerId, FactionId)>,
+}
 
 /// Client to server commands.
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -59,6 +125,8 @@ pub enum Command {
     BurstLoading(BurstLoading),
     NuclearStrike(NuclearStrike),
     EnergyShield(EnergyShield),
+    DredgerSacrifice(DredgerSacrifice),
+    Stealth(Stealth),
 }
 
 /// Generic command to control one's ship.
@@ -160,6 +228,12 @@ pub struct NuclearStrike;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EnergyShield;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct DredgerSacrifice;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Stealth;
 
 #[cfg(test)]
 mod tests {

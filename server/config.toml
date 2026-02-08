@@ -1,0 +1,9 @@
+# MK48 Plus Runtime Configuration
+# Changes to this file are applied automatically without restarting the server.
+# The file is polled every 2 seconds for changes.
+
+# Bot settings
+min_bots = 270
+# max_bots = 400
+# bot_percent = 50
+alliance_enabled = false

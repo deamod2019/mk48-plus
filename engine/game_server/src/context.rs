@@ -16,7 +16,7 @@ pub struct Context<G: GameArenaService> {
     pub arena_id: ArenaId,
     pub players: PlayerRepo<G>,
     pub(crate) clients: ClientRepo<G>,
-    pub(crate) bots: BotRepo<G>,
+    pub bots: BotRepo<G>,
     pub(crate) chat: ChatRepo<G>,
     pub teams: TeamRepo<G>,
     pub(crate) liveboard: LiveboardRepo<G>,

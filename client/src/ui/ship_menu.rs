@@ -8,7 +8,7 @@ use common::world::outside_strict_area;
 use glam::Vec2;
 use std::collections::HashMap;
 use stylist::yew::styled_component;
-use web_sys::MouseEvent;
+use web_sys::{MouseEvent, WheelEvent};
 use yew::{
     classes, html, html_nested, use_state, use_state_eq, AttrValue, Callback, Children, Html,
     Properties,
@@ -126,6 +126,18 @@ pub fn ship_menu(props: &ShipMenuProps) -> Html {
         }))
     };
 
+    let onwheel = {
+        let level = level.clone();
+        Callback::from(move |e: WheelEvent| {
+            e.prevent_default();
+            let delta = if e.delta_y() > 0.0 { 1i8 } else { -1i8 };
+            let new = level.saturating_add_signed(delta);
+            if (min_level..=max_level).contains(&new) {
+                level.set(new);
+            }
+        })
+    };
+
     let attempt_to_unlock_factory = |entity_type: EntityType| -> Callback<MouseEvent> {
         let locker = locker.clone();
         Callback::from(move |_: MouseEvent| {
@@ -153,6 +165,7 @@ pub fn ship_menu(props: &ShipMenuProps) -> Html {
     };
 
     html! {
+        <div {onwheel}>
         <Section
             {id}
             {name}
@@ -185,6 +198,7 @@ pub fn ship_menu(props: &ShipMenuProps) -> Html {
                 }).collect::<Html>()}
             </div>
         </Section>
+        </div>
     }
 }
 

@@ -72,6 +72,9 @@ pub struct EntityExtension {
     nuclear_strike_cooldown: Ticks,
     energy_shield_cooldown: Ticks,
     energy_shield_remaining: Ticks,
+    dredger_sacrifice_cooldown: Ticks,
+    stealth_cooldown: Ticks,
+    stealth_remaining: Ticks,
 }
 
 impl EntityExtension {
@@ -119,6 +122,9 @@ impl EntityExtension {
         self.nuclear_strike_cooldown = Ticks::ZERO;
         self.energy_shield_cooldown = Ticks::ZERO;
         self.energy_shield_remaining = Ticks::ZERO;
+        self.dredger_sacrifice_cooldown = Ticks::ZERO;
+        self.stealth_cooldown = Ticks::ZERO;
+        self.stealth_remaining = Ticks::ZERO;
     }
 
     /// Returns the target altitude of the boat from submerge.
@@ -301,6 +307,9 @@ impl Default for EntityExtension {
             nuclear_strike_cooldown: Ticks::ZERO,
             energy_shield_cooldown: Ticks::ZERO,
             energy_shield_remaining: Ticks::ZERO,
+            dredger_sacrifice_cooldown: Ticks::ZERO,
+            stealth_cooldown: Ticks::ZERO,
+            stealth_remaining: Ticks::ZERO,
         }
     }
 }
@@ -567,5 +576,48 @@ impl EntityExtension {
     pub fn advance_energy_shield(&mut self, delta: Ticks) {
         self.energy_shield_remaining = self.energy_shield_remaining.saturating_sub(delta);
         self.energy_shield_cooldown = self.energy_shield_cooldown.saturating_sub(delta);
+    }
+
+    // Dredger Sacrifice methods
+    #[allow(dead_code)]
+    pub fn dredger_sacrifice_cooldown_remaining(&self) -> Ticks {
+        self.dredger_sacrifice_cooldown
+    }
+
+    #[allow(dead_code)]
+    pub fn start_dredger_sacrifice(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.dredger_sacrifice_cooldown != Ticks::ZERO {
+            return Err("dredger sacrifice on cooldown");
+        }
+        self.dredger_sacrifice_cooldown = cooldown;
+        Ok(())
+    }
+
+    // Stealth methods
+    pub fn start_stealth(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.stealth_cooldown != Ticks::ZERO {
+            return Err("stealth on cooldown");
+        }
+        self.stealth_remaining = duration;
+        self.stealth_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn stealth_cooldown_remaining(&self) -> Ticks {
+        self.stealth_cooldown
+    }
+
+    #[allow(dead_code)]
+    pub fn stealth_remaining(&self) -> Ticks {
+        self.stealth_remaining
+    }
+
+    pub fn is_stealth_active(&self) -> bool {
+        self.stealth_remaining != Ticks::ZERO
+    }
+
+    pub fn advance_stealth(&mut self, delta: Ticks) {
+        self.stealth_remaining = self.stealth_remaining.saturating_sub(delta);
+        self.stealth_cooldown = self.stealth_cooldown.saturating_sub(delta);
     }
 }
