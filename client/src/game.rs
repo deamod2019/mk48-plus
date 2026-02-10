@@ -397,6 +397,19 @@ impl GameClient for Mk48Game {
                                 .play_with_volume(Audio::Impact, Self::volume_at(distance) * 2.0);
                         }
                     }
+                    WorldEvent::AltarDiscovered { position, faction } => {
+                        web_sys::console::log_1(&format!(
+                            "[ALTAR] {:?} discovered the altar at ({:.0}, {:.0})",
+                            faction, position.x, position.y
+                        ).into());
+                    }
+                    WorldEvent::AltarConsumed { faction } => {
+                        web_sys::console::log_1(&format!(
+                            "[ALTAR] {:?} consumed the altar and upgraded a ship!",
+                            faction
+                        ).into());
+                    }
+                    WorldEvent::AltarSacrifice { .. } => {} // Server-internal, should never reach client.
                 }
             }
         }
@@ -1903,6 +1916,9 @@ impl GameClient for Mk48Game {
                 bot_alliance_enabled: context.state.game.bot_alliance_enabled,
                 faction_data: context.state.game.faction_data.clone(),
                 my_faction: context.state.game.my_faction,
+                altar_position: context.state.game.altar_position,
+                altar_sacrifice_counts: context.state.game.altar_sacrifice_counts,
+                kill_log: context.state.game.kill_log.clone(),
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
@@ -2032,7 +2048,10 @@ impl GameClient for Mk48Game {
         {
             self.reset_warp_state();
             self.zero_pulse_cooldown_secs = 0.0;
-            UiStatus::Respawning(UiStatusRespawning { death_reason })
+            UiStatus::Respawning(UiStatusRespawning {
+                death_reason,
+                kill_log: context.state.game.kill_log.clone(),
+            })
         } else {
             self.reset_warp_state();
             self.zero_pulse_cooldown_secs = 0.0;

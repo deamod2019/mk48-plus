@@ -78,6 +78,11 @@ impl World {
                     entity.guidance.direction_target = entity.transform.direction;
                 }
 
+                // Decrement altar blessing timer.
+                if entity.is_blessed() {
+                    entity.altar_blessing = entity.altar_blessing.saturating_sub(delta);
+                }
+
                 if data.lifespan != Ticks::ZERO {
                     entity.ticks = entity.ticks.saturating_add(delta);
 
@@ -357,7 +362,8 @@ impl World {
                         return Some((index, Fate::Remove(DeathReason::Terrain)));
                     }
 
-                    let immune = data.sub_kind == EntitySubKind::Hovercraft
+                    let immune = entity.is_blessed()
+                        || data.sub_kind == EntitySubKind::Hovercraft
                         || (arctic && data.sub_kind == EntitySubKind::Icebreaker)
                         || (!arctic && data.sub_kind == EntitySubKind::Dredger)
                         || data.sub_kind == EntitySubKind::Helicopter

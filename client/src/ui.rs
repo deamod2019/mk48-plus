@@ -49,6 +49,7 @@ use yew_router::{Routable, Switch};
 mod about_dialog;
 mod changelog_dialog;
 mod faction_board;
+mod hall_of_fame;
 mod help_dialog;
 mod hint;
 mod instructions;
@@ -176,8 +177,17 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                             <faction_board::FactionBoard
                                 faction_data={fd.clone()}
                                 my_faction={playing.my_faction}
+                                altar_position={playing.altar_position}
+                                altar_sacrifice_counts={playing.altar_sacrifice_counts}
                             />
                         </div>
+                    }
+                    if gctw.settings_cache.hall_of_fame {
+                        <hall_of_fame::HallOfFame
+                            score={props.score}
+                            kill_log={playing.kill_log.clone()}
+                            compact={true}
+                        />
                     }
                     <ChatOverlay
                         position={Position::BottomRight{margin}}
@@ -190,7 +200,14 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                     <Hint entity_type={playing.entity_type}/>
                 }
             } else if let UiStatus::Respawning(respawning) = status {
-                <RespawnOverlay status={respawning} score={props.score}/>
+                <RespawnOverlay status={respawning.clone()} score={props.score}/>
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; margin-top: 120px;">
+                    <hall_of_fame::HallOfFame
+                        score={props.score}
+                        kill_log={respawning.kill_log.clone()}
+                        compact={false}
+                    />
+                </div>
                 <Positioner position={Position::TopRight{margin}} max_width="25%">
                     <XButton onclick={gctw.send_ui_event_callback.reform(|_| UiEvent::OverrideRespawn)}/>
                 </Positioner>
@@ -353,6 +370,12 @@ pub struct UiStatusPlaying {
     pub faction_data: Option<common::protocol::FactionUpdate>,
     /// Current player's faction.
     pub my_faction: Option<common::protocol::FactionId>,
+    /// Known altar position for this player's faction.
+    pub altar_position: Option<glam::Vec2>,
+    /// Per-faction sacrifice counts.
+    pub altar_sacrifice_counts: [u8; common::protocol::FactionId::COUNT],
+    /// Kill log for hall of fame display.
+    pub kill_log: Vec<(common::entity::EntityType, u32)>,
 }
 
 /// Skill runtime state for UI rendering.
@@ -441,6 +464,8 @@ impl UiStatusPlaying {
 #[derive(PartialEq, Clone)]
 pub struct UiStatusRespawning {
     pub death_reason: DeathReason,
+    /// Kill log snapshot at death for hall of fame display.
+    pub kill_log: Vec<(EntityType, u32)>,
 }
 
 impl Mk48Game {

@@ -16,6 +16,7 @@ pub struct Mk48Settings {
     pub advanced_display_mode: bool,
     pub dynamic_waves: bool,
     pub fps_shown: bool,
+    pub hall_of_fame: bool,
     pub shadows: ShadowSetting,
 }
 

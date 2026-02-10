@@ -234,6 +234,7 @@ pub enum EntityType {
     #[sensors(visual)]
     #[armament(Yj18)]
     J15,
+
     #[info(
         label = "Nakajima E4N",
         link = "https://en.wikipedia.org/wiki/Nakajima_E4N"
@@ -660,6 +661,7 @@ pub enum EntityType {
     #[exhaust(forward = -50, side = -30)]
     #[skills(AirSuperiority, EmergencyRepair)]
     FortressCarrier,
+
     #[info(
         label = "Liaoning",
         link = "https://en.wikipedia.org/wiki/Chinese_aircraft_carrier_Liaoning"
@@ -2122,6 +2124,10 @@ pub enum EntityType {
     #[exhaust(forward = 7, side = 21)]
     #[exhaust(forward = -23, side = 21)]
     SuperOilPlatform,
+    #[info(label = "Droplet Altar")]
+    #[entity(Obstacle, Structure)]
+    #[size(length = 90, width = 90)]
+    DropletAltar,
     #[info(label = "M230 Chain Gun")]
     #[entity(Turret, Gun)]
     #[size(length = 2.181, width = 0.277)]

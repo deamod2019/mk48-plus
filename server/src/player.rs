@@ -3,8 +3,10 @@
 
 use crate::entities::*;
 use common::death_reason::DeathReason;
+use common::entity::EntityType;
 use common::protocol::{FactionId, Hint};
 use glam::Vec2;
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::Instant;
 
@@ -103,6 +105,8 @@ pub struct Player {
     pub faction: Option<FactionId>,
     /// Boss bots always upgrade to max level.
     pub is_boss: bool,
+    /// Kill counts per entity type within the current session.
+    pub kill_log: HashMap<EntityType, u32>,
 }
 
 impl Default for Player {
@@ -114,6 +118,7 @@ impl Default for Player {
             status: Status::Spawning,
             faction: None,
             is_boss: false,
+            kill_log: HashMap::new(),
         }
     }
 }

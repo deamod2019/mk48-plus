@@ -4,6 +4,7 @@
 use crate::complete_ref::CompleteRef;
 use crate::contact_ref::ContactRef;
 use crate::server::Server;
+use crate::player::Status;
 use common::altitude::Altitude;
 use common::angle::Angle;
 use common::complete::CompleteTrait;
@@ -40,6 +41,29 @@ pub struct Bot {
     was_submerging: bool,
     /// Makes sure bot's planes etc despawn
     has_waited_one_tick: bool,
+    /// Persistent commitment: once true, bot heads to altar until dead.
+    sacrifice_committed: bool,
+    /// Tracks whether the bot was alive last tick (for death/respawn detection).
+    was_alive_last_tick: bool,
+}
+
+/// Altar info passed from get_input to bot update.
+#[derive(Clone, Copy, Default)]
+pub struct AltarInfo {
+    pub position: Option<Vec2>,
+    pub sacrifice_count: u8,
+    /// Whether this bot is eligible for sacrifice (bottom 10 by level in faction).
+    pub is_sacrifice_eligible: bool,
+    /// This bot's current level (for scoring formula).
+    pub my_level: u8,
+    /// Whether this faction has at least one real (non-bot) player.
+    pub faction_has_real_player: bool,
+}
+
+/// Wrapper for bot input that includes both the game state and altar info.
+pub struct BotInput<'a, I: Iterator<Item = ContactRef<'a>>> {
+    pub complete: CompleteRef<'a, I>,
+    pub altar: AltarInfo,
 }
 
 impl Default for Bot {
@@ -60,6 +84,8 @@ impl Default for Bot {
             spawned_at_least_once: false,
             was_submerging: false,
             has_waited_one_tick: false,
+            sacrifice_committed: false,
+            was_alive_last_tick: false,
         }
     }
 }
@@ -113,11 +139,12 @@ impl Bot {
     }
 
     /// update processes a complete update and returns some command (or None to quit).
-    fn update<'a, U: 'a + CompleteTrait<'a>>(
+    fn update_with_altar<'a, U: 'a + CompleteTrait<'a>>(
         &mut self,
         mut update: U,
         player_id: PlayerId,
         players: &PlayerRepo<Server>,
+        altar_info: AltarInfo,
     ) -> BotAction<Command> {
         let mut rng = thread_rng();
 
@@ -165,31 +192,33 @@ impl Bot {
                 *weighted_sum = target_delta * displacement / (displacement.powi(2) + 1.0);
             };
 
-            // Terrain avoidance — boss bots scan further and repel harder.
-            let (scan_radius_mult, num_samples, repel_denom_mult) = if is_boss {
-                (3.0_f32, 20u32, 0.1_f32)
-            } else {
-                (1.0, 10, 0.5)
-            };
-            for i in 0..num_samples {
-                let angle =
-                    Angle::from_radians(i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32));
-                let delta_position = angle.to_vec() * data.length * scan_radius_mult;
-                if boat_type != EntityType::Sherman
-                    && boat_type != EntityType::Abrams
-                    && Self::is_land_or_border(
+            // Terrain avoidance — skip entirely for sacrifice-committed bots.
+            if !self.sacrifice_committed {
+                let (scan_radius_mult, num_samples, repel_denom_mult) = if is_boss {
+                    (3.0_f32, 20u32, 0.1_f32)
+                } else {
+                    (1.0, 10, 0.5)
+                };
+                for i in 0..num_samples {
+                    let angle =
+                        Angle::from_radians(i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32));
+                    let delta_position = angle.to_vec() * data.length * scan_radius_mult;
+                    if boat_type != EntityType::Sherman
+                        && boat_type != EntityType::Abrams
+                        && Self::is_land_or_border(
+                            boat.transform().position + delta_position,
+                            terrain,
+                            update.world_radius(),
+                        )
+                    {
+                        repel(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
+                    } else if Self::is_land_or_border(
                         boat.transform().position + delta_position,
                         terrain,
                         update.world_radius(),
-                    )
-                {
-                    repel(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
-                } else if Self::is_land_or_border(
-                    boat.transform().position + delta_position,
-                    terrain,
-                    update.world_radius(),
-                ) {
-                    attract(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
+                    ) {
+                        attract(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
+                    }
                 }
             }
 
@@ -251,11 +280,15 @@ impl Bot {
                             EntitySubKind::Missile | EntitySubKind::Torpedo
                         ),
                         EntityKind::Obstacle => {
-                            repel(
-                                &mut movement,
-                                delta_position,
-                                (distance_squared - contact_data.radius.powi(2)).max(0.0),
-                            );
+                            // Don't repel from altar if this bot might sacrifice.
+                            let is_altar = contact.entity_type() == Some(EntityType::DropletAltar);
+                            if !is_altar {
+                                repel(
+                                    &mut movement,
+                                    delta_position,
+                                    (distance_squared - contact_data.radius.powi(2)).max(0.0),
+                                );
+                            }
                             false
                         }
                         _ => false,
@@ -382,6 +415,65 @@ impl Bot {
                 }
             }
 
+            // ---- Droplet Altar bot behavior ----
+            let mut altar_sacrifice_mode = false;
+
+            // Death reset: if just respawned (transition dead→alive), clear commitment.
+            if !self.was_alive_last_tick {
+                self.sacrifice_committed = false;
+            }
+            self.was_alive_last_tick = true;
+
+            if let Some(altar_pos) = altar_info.position {
+                let boat_pos = boat.transform().position;
+                let to_altar = altar_pos - boat_pos;
+                let dist_to_altar = to_altar.length();
+
+                // Reset commitment if no longer eligible (e.g. leveled up past threshold).
+                if self.sacrifice_committed && !altar_info.is_sacrifice_eligible {
+                    self.sacrifice_committed = false;
+                }
+
+                if !is_boss && altar_info.is_sacrifice_eligible {
+                    // Eligible bot: use scoring formula for commit probability.
+                    if !self.sacrifice_committed {
+                        let level = altar_info.my_level.max(1) as f32;
+                        let level_factor = 1.0 / level;
+                        let distance_factor = 1.0 / (1.0 + dist_to_altar / 1000.0);
+                        let urgency = if altar_info.sacrifice_count >= 3 { 3.0 } else { 1.0 };
+                        let score = level_factor * distance_factor * urgency;
+                        let commit_chance = (score * 0.01_f32).min(0.1);
+
+                        if rng.gen_bool(commit_chance as f64) {
+                            self.sacrifice_committed = true;
+                        }
+                    }
+                    if self.sacrifice_committed {
+                        // Hard override — beeline to altar (terrain scan already skipped).
+                        movement = to_altar;
+                        altar_sacrifice_mode = true;
+                    }
+                } else if (is_boss || data.level >= 8) && health_percent > 0.5 {
+                    // High-level bot: patrol near altar.
+                    const PATROL_INNER: f32 = 500.0;
+                    const PATROL_OUTER: f32 = 800.0;
+
+                    if dist_to_altar > PATROL_OUTER {
+                        movement += to_altar.normalize_or_zero() * 2.0;
+                    } else if dist_to_altar < PATROL_INNER {
+                        movement -= to_altar.normalize_or_zero() * 1.0;
+                    } else {
+                        let tangent = Vec2::new(-to_altar.y, to_altar.x).normalize_or_zero();
+                        movement += tangent * 1.5;
+                    }
+                }
+
+            } else {
+                // No altar known (altar destroyed or not discovered) — reset commitment.
+                self.sacrifice_committed = false;
+            }
+            // ---- End Droplet Altar bot behavior ----
+
             self.was_submerging = if data.sub_kind == EntitySubKind::Submarine {
                 // More positive values mean want to surface, more negative values mean want to dive.
                 let surface_bias = health_percent - self.aggression * (2.0 / Self::MAX_AGGRESSION);
@@ -401,7 +493,7 @@ impl Bot {
             let mut ret = Command::Control(Control {
                 guidance: Some(Guidance {
                     direction_target: Angle::from(movement) + self.steer_bias,
-                    velocity_target: data.speed * 0.8,
+                    velocity_target: if altar_sacrifice_mode { data.speed } else { data.speed * 0.8 },
                 }),
                 submerge: self.was_submerging,
                 aim_target: best_firing_solution.map(|solution| solution.1 + self.aim_bias),
@@ -480,39 +572,72 @@ impl Bot {
             }
 
             BotAction::Some(ret)
-        } else if self.spawned_at_least_once && (rng.gen_bool(1.0 / 3.0)) {
-            // Rage quit.
-            BotAction::Quit
-        } else if self.has_waited_one_tick {
-            BotAction::Some(Command::Spawn(Spawn {
-                entity_type: EntityType::spawn_options(0, true, false)
-                    .choose(&mut rng)
-                    .expect("there must be at least one entity type to spawn as"),
-            }))
         } else {
-            self.has_waited_one_tick = true;
-            BotAction::None
+            // Bot is dead — mark for death→alive transition detection.
+            self.was_alive_last_tick = false;
+            if self.spawned_at_least_once && (rng.gen_bool(1.0 / 3.0)) {
+                // Rage quit.
+                BotAction::Quit
+            } else if self.has_waited_one_tick {
+                BotAction::Some(Command::Spawn(Spawn {
+                    entity_type: EntityType::spawn_options(0, true, false)
+                        .choose(&mut rng)
+                        .expect("there must be at least one entity type to spawn as"),
+                }))
+            } else {
+                self.has_waited_one_tick = true;
+                BotAction::None
+            }
         }
     }
 }
 
 impl game_server::game_service::Bot<Server> for Bot {
-    type Input<'a> = CompleteRef<'a, impl Iterator<Item = ContactRef<'a>>>;
+    type Input<'a> = BotInput<'a, impl Iterator<Item = ContactRef<'a>>>;
 
     fn get_input<'a>(
         server: &'a Server,
         player: &'a Arc<PlayerTuple<Server>>,
         _players: &'a PlayerRepo<Server>,
     ) -> Self::Input<'a> {
-        server.world.get_player_complete(player)
+        let altar = {
+            let p = player.borrow_player();
+            if let Some(faction) = p.data.faction {
+                let idx = faction.index();
+                // Check if this bot's level is at or below the bottom-10 threshold.
+                let my_level = if let Status::Alive { entity_index, .. } = p.data.status {
+                    server.world.entities[entity_index].data().level
+                } else {
+                    0
+                };
+                let threshold = server.altar_sacrifice_level_threshold[idx];
+                let has_real = _players.iter_borrow().any(|p| {
+                    !p.is_bot() && p.data.faction == Some(faction)
+                });
+                AltarInfo {
+                    position: server.altar_known_position[idx],
+                    sacrifice_count: server.altar_sacrifices[idx],
+                    is_sacrifice_eligible: my_level <= threshold && my_level > 0,
+                    my_level,
+                    faction_has_real_player: has_real,
+                }
+            } else {
+                AltarInfo::default()
+            }
+        };
+        BotInput {
+            complete: server.world.get_player_complete(player),
+            altar,
+        }
     }
 
     fn update(
         &mut self,
-        update: Self::Input<'_>,
+        input: Self::Input<'_>,
         player_id: PlayerId,
         players: &PlayerRepo<Server>,
     ) -> BotAction<<Server as GameArenaService>::GameRequest> {
-        self.update(update, player_id, players)
+        let altar_info = input.altar;
+        self.update_with_altar(input.complete, player_id, players, altar_info)
     }
 }

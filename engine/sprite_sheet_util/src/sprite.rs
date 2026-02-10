@@ -232,7 +232,7 @@ pub fn pack_sprite_sheet(
     let total_area: u32 = sorted.iter().map(|(_, v)| v.width * v.height).sum();
     assert!(total_area > 0, "empty sprite sheet");
 
-    const MAX_SIZE: u32 = 4096;
+    const MAX_SIZE: u32 = 8192;
     let sizes: Box<dyn Iterator<Item = UVec2>> = if power_of_two {
         // Dividing log by 2 is equivilant to integer sqrt beforehand.
         // Subtract 1 and add 1 to make it round up.

@@ -6,7 +6,7 @@ use crate::interpolated_contact::InterpolatedContact;
 use client_util::apply::Apply;
 use common::contact::Contact;
 use common::death_reason::DeathReason;
-use common::entity::EntityId;
+use common::entity::{EntityId, EntityType};
 use common::protocol::{FactionId, FactionUpdate, Update};
 use common::terrain::Terrain;
 use std::collections::HashMap;
@@ -18,6 +18,8 @@ pub struct Mk48State {
     pub death_reason: Option<DeathReason>,
     pub entity_id: Option<EntityId>,
     pub score: u32,
+    /// Per-entity-type kill counts for this player's current session.
+    pub kill_log: Vec<(EntityType, u32)>,
     pub terrain: Terrain,
     pub world_radius: f32,
     /// Whether bot alliance mode is enabled (high-score bots ally against players).
@@ -26,6 +28,10 @@ pub struct Mk48State {
     pub faction_data: Option<FactionUpdate>,
     /// Current player's faction.
     pub my_faction: Option<FactionId>,
+    /// Known altar position for this player's faction.
+    pub altar_position: Option<glam::Vec2>,
+    /// Per-faction sacrifice counts.
+    pub altar_sacrifice_counts: [u8; FactionId::COUNT],
     terrain_reset: bool,
 }
 
@@ -37,12 +43,15 @@ impl Default for Mk48State {
             death_reason: None,
             entity_id: None,
             score: 0,
+            kill_log: Vec::new(),
             terrain: Terrain::default(),
             // Keep border off splash screen by assuming radius.
             world_radius: 10000.0,
             bot_alliance_enabled: false,
             faction_data: None,
             my_faction: None,
+            altar_position: None,
+            altar_sacrifice_counts: [0; FactionId::COUNT],
             terrain_reset: false,
         }
     }
@@ -81,9 +90,12 @@ impl Apply<Update> for Mk48State {
 
         self.world_radius = update.world_radius;
         self.score = update.score;
+        self.kill_log = update.kill_log;
         self.bot_alliance_enabled = update.bot_alliance_enabled;
         self.faction_data = update.faction_data;
         self.my_faction = update.my_faction;
+        self.altar_position = update.altar_position;
+        self.altar_sacrifice_counts = update.altar_sacrifice_counts;
     }
 
     fn reset(&mut self) {

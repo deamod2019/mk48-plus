@@ -1,0 +1,771 @@
+﻿cargo : warning: unused import: `pack_audio_
+sprite_sheet`
+所在位置 行:1 字符: 1
++ cargo run --release 2>&1 | Out-File -FileP
+ath sprites_output2.txt -En ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+    (warning: unused...o_sprite_sheet`:Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+  --> src\main.rs:13:5
+   |
+13 |     pack_audio_sprite_sheet, pack_monoc
+hrome, pack_sprite_sheet, Animation, Image, 
+Output,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by d
+efault
+
+warning: function `sounds` is never used
+ --> src\audio.rs:6:15
+  |
+6 | pub(crate) fn sounds() -> Vec<Sound> {
+  |               ^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: `sprite_sheet_packer` (bin "sprite_
+sheet_packer") generated 2 warnings
+    Finished release [optimized] target(s) i
+n 0.22s
+     Running `target\release\sprite_sheet_pa
+cker.exe`
+#0 vec3(0.76816154, 1.0870991, 0.82120496) * x + vec3(0.30392796, -0.067789495, -0.22626717)
+#1 vec3(0.68371207, 1.1779866, 0.16889346) * x + vec3(0.007670317, -0.0036472604, 0.013303946)
+#2 vec3(1.0810544, 0.9797763, 0.95707744) * x + vec3(-0.078879535, 0.018439114, 0.05167395)
+Including sprite contact
+Including sprite JL3
+Including sprite YJ82
+Including animation explosion
+Including animation splash
+Ignoring fireball.blend.
+Loading ../assets/models/rendered/Spitfire/color0001.png
+Loading ../assets/models/rendered/Lublin/color0001.png
+Loading ../assets/models/rendered/Abrams/color0001.png
+Loading ../assets/models/rendered/Golf/color0001.png
+Loading ../assets/models/rendered/SuperEtendard/color0001.png
+Loading ../assets/models/rendered/Espana/color0001.png
+Loading ../assets/models/rendered/Osa/color0001.png
+Loading ../assets/models/rendered/Dreadnought/color0001.png
+Loading ../assets/models/rendered/JianRen/color0001.png
+Loading ../assets/models/rendered/Essex/color0001.png
+Loading ../assets/models/rendered/Zumwalt/color0001.png
+Loading ../assets/models/rendered/Buyan/color0001.png
+Loading ../assets/models/rendered/FairmileD/color0001.png
+Loading ../assets/models/rendered/AbramsTurret/color0001.png
+Loading ../assets/models/rendered/F35/color0001.png
+Loading ../assets/models/rendered/Titanic/color0001.png
+Upscaling Titanic from 1004 to 1017
+Loading ../assets/models/rendered/Fletcher/color0001.png
+Loading ../assets/models/rendered/SuperFrelon/color0001.png
+Loading ../assets/models/rendered/Pt34/color0001.png
+Loading ../assets/models/rendered/Apache/color0001.png
+Loading ../assets/models/rendered/Z18/color0001.png
+Upscaling Titanic from 1004 to 1017
+Loading ../assets/models/rendered/Akula/color0001.png
+Loading ../assets/models/rendered/Indiaman/color0001.png
+Loading ../assets/models/rendered/Minelayer49/color0001.png
+Loading ../assets/models/rendered/100Mm/color0001.png
+Loading ../assets/models/rendered/Seawolf/color0001.png
+Loading ../assets/models/rendered/Freccia/color0001.png
+Loading ../assets/models/rendered/B2/color0001.png
+Loading ../assets/models/rendered/200Mm/color0001.png
+Loading ../assets/models/rendered/Uap/color0001.png
+Loading ../assets/models/rendered/Avenger/color0001.png
+Loading ../assets/models/rendered/Barrel/color0001.png
+Loading ../assets/models/rendered/Coin/color0001.png
+Loading ../assets/models/rendered/2M3M/color0001.png
+Loading ../assets/models/rendered/J15/color0001.png
+Loading ../assets/models/rendered/Crate/color0001.png
+Loading ../assets/models/rendered/Scrap/color0001.png
+Loading ../assets/models/rendered/38CmSkc34/color0001.png
+Loading ../assets/models/rendered/Brosok/color0001.png
+Loading ../assets/models/rendered/Dredger/color0001.png
+Loading ../assets/models/rendered/Mk70/color0001.png
+Loading ../assets/models/rendered/Mk3/color0001.png
+Loading ../assets/models/rendered/FlareJ20/color0001.png
+Loading ../assets/models/rendered/Momi/color0001.png
+Loading ../assets/models/rendered/FlareF35/color0001.png
+Loading ../assets/models/rendered/Iowa/color0001.png
+Loading ../assets/models/rendered/Su57/color0001.png
+Loading ../assets/models/rendered/Ekranoplan/color0001.png
+Loading ../assets/models/rendered/E4N/color0001.png
+Loading ../assets/models/rendered/FlareB2/color0001.png
+Loading ../assets/models/rendered/FlareVindicator/color0001.png
+Loading ../assets/models/rendered/FlareSu57/color0001.png
+Loading ../assets/models/rendered/Moskit/color0001.png
+Upscaling Su57 from 285 to 294
+Loading ../assets/models/rendered/45Type94/color0001.png
+Loading ../assets/models/rendered/TieFighter/color0001.png
+Loading ../assets/models/rendered/Jagm/color0001.png
+Loading ../assets/models/rendered/ObsidianCruiseMissile/color0001.png
+Loading ../assets/models/rendered/Su57MissileHeavy/color0001.png
+Loading ../assets/models/rendered/Su57MissileMid/color0001.png
+Loading ../assets/models/rendered/Su57MissileLight/color0001.png
+Loading ../assets/models/rendered/Acacia/color0001.png
+Loading ../assets/models/rendered/DropletAltar/color0001.png
+Loading ../assets/models/rendered/J20/color0001.png
+Loading ../assets/models/rendered/Vindicator/color0001.png
+Loading ../assets/models/rendered/6Pounder/color0001.png
+Loading ../assets/models/rendered/Assimilator2/color0001.png
+Loading ../assets/models/rendered/88CmSkc35/color0001.png
+Loading ../assets/models/rendered/Freedom/color0001.png
+Loading ../assets/models/rendered/M1919/color0001.png
+Loading ../assets/models/rendered/AverageTree/color0001.png
+Upscaling M1919 from 1 to 19
+Upscaling M1919 from 1 to 19
+Loading ../assets/models/rendered/A190/color0001.png
+Loading ../assets/models/rendered/Ak130/color0001.png
+Loading ../assets/models/rendered/Ansaldo/color0001.png
+Loading ../assets/models/rendered/Montana/color0001.png
+Loading ../assets/models/rendered/Bl6MkXxiii/color0001.png
+Loading ../assets/models/rendered/Palm/color0001.png
+Loading ../assets/models/rendered/LightShieldLaser/color0001.png
+Loading ../assets/models/rendered/TurboLaserIITurret/color0001.png
+Loading ../assets/models/rendered/PlasmaGunTurret/color0001.png
+Loading ../assets/models/rendered/Bl6MkXxiiiX3/color0001.png
+Loading ../assets/models/rendered/G5/color0001.png
+Loading ../assets/models/rendered/Turbolaser/color0001.png
+Loading ../assets/models/rendered/ShermanTurret/color0001.png
+Loading ../assets/models/rendered/Bofors57MmMk3/color0001.png
+Loading ../assets/models/rendered/Skipjack/color0001.png
+Loading ../assets/models/rendered/Kaga/color0001.png
+Loading ../assets/models/rendered/Crotale/color0001.png
+Loading ../assets/models/rendered/Kolkata/color0001.png
+Loading ../assets/models/rendered/Hq10/color0001.png
+Loading ../assets/models/rendered/Hq/color0001.png
+Loading ../assets/models/rendered/Hpj38/color0001.png
+Loading ../assets/models/rendered/Df41/color0001.png
+Loading ../assets/models/rendered/ArleighBurke/color0001.png
+Loading ../assets/models/rendered/Mark12/color0001.png
+Loading ../assets/models/rendered/Dredger2/color0001.png
+Loading ../assets/models/rendered/Mark12X2/color0001.png
+Loading ../assets/models/rendered/Kirov/color0001.png
+Loading ../assets/models/rendered/Mark49/color0001.png
+Loading ../assets/models/rendered/Mark51/color0001.png
+Loading ../assets/models/rendered/StarDestroyer/color0001.png
+Loading ../assets/models/rendered/Mark7/color0001.png
+Loading ../assets/models/rendered/MarkBViii/color0001.png
+Loading ../assets/models/rendered/Igla/color0001.png
+Loading ../assets/models/rendered/Kalibr/color0001.png
+Loading ../assets/models/rendered/Lrlap/color0001.png
+Loading ../assets/models/rendered/Magic/color0001.png
+Loading ../assets/models/rendered/Mark18/color0001.png
+Loading ../assets/models/rendered/Ogon/color0001.png
+Loading ../assets/models/rendered/Mark48/color0001.png
+Loading ../assets/models/rendered/OtoMelara76Mm/color0001.png
+Loading ../assets/models/rendered/Yu10/color0001.png
+Loading ../assets/models/rendered/PoseidonTorpedo/color0001.png
+Loading ../assets/models/rendered/RatepKomar/color0001.png
+Loading ../assets/models/rendered/Mark54/color0001.png
+Loading ../assets/models/rendered/Yu7/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark9/color0001.png
+Loading ../assets/models/rendered/Shtorm/color0001.png
+Loading ../assets/models/rendered/Mistral/color0001.png
+Loading ../assets/models/rendered/Nsm/color0001.png
+Loading ../assets/models/rendered/VickersMkH12In/color0001.png
+Loading ../assets/models/rendered/039A/color0001.png
+Loading ../assets/models/rendered/Komar/color0001.png
+Loading ../assets/models/rendered/Of45/color0001.png
+Loading ../assets/models/rendered/RP3/color0001.png
+Upscaling 039A from 273 to 540
+Loading ../assets/models/rendered/Richelieu/color0001.png
+Upscaling Richelieu from 256 to 975
+Loading ../assets/models/rendered/M230/color0001.png
+Upscaling M230 from 1 to 31
+Upscaling M230 from 1 to 31
+Loading ../assets/models/rendered/Type730/color0001.png
+Loading ../assets/models/rendered/Bismarck/color0001.png
+Loading ../assets/models/rendered/ThorRailgun/color0001.png
+Loading ../assets/models/rendered/P15/color0001.png
+Loading ../assets/models/rendered/HunterKiller77/color0001.png
+Loading ../assets/models/rendered/P700/color0001.png
+Loading ../assets/models/rendered/Blaster/color0001.png
+Loading ../assets/models/rendered/Rbs15/color0001.png
+Loading ../assets/models/rendered/AxialSuperlaserBeam/color0001.png
+Loading ../assets/models/rendered/Rim116/color0001.png
+Loading ../assets/models/rendered/Rpk6/color0001.png
+Loading ../assets/models/rendered/S300/color0001.png
+Loading ../assets/models/rendered/Set65/color0001.png
+Loading ../assets/models/rendered/Yu6/color0001.png
+Loading ../assets/models/rendered/Tomahawk/color0001.png
+Loading ../assets/models/rendered/Yj82/color0001.png
+Loading ../assets/models/rendered/Torped45/color0001.png
+Loading ../assets/models/rendered/Type53/color0001.png
+Loading ../assets/models/rendered/Leander/color0001.png
+Loading ../assets/models/rendered/V611/color0001.png
+Loading ../assets/models/rendered/Vt1/color0001.png
+Loading ../assets/models/rendered/Type96Bomb/color0001.png
+Loading ../assets/models/rendered/FortressCarrier/color0001.png
+Loading ../assets/models/rendered/Mk82/color0001.png
+Loading ../assets/models/rendered/Hq10SAM/color0001.png
+Loading ../assets/models/rendered/Sub096/color0001.png
+Loading ../assets/models/rendered/Ls6/color0001.png
+Loading ../assets/models/rendered/Yj18/color0001.png
+Upscaling Sub096 from 420 to 759
+Loading ../assets/models/rendered/TurboLaserII/color0001.png
+Loading ../assets/models/rendered/PlasmaGun/color0001.png
+Loading ../assets/models/rendered/Wz0839/color0001.png
+Loading ../assets/models/rendered/Jl3/color0001.png
+Loading ../assets/models/rendered/IaigiriMine/color0001.png
+Loading ../assets/models/rendered/Skjold/color0001.png
+Loading ../assets/models/rendered/Df41Missile/color0001.png
+Loading ../assets/models/rendered/QuadBlasterCannon/color0001.png
+Loading ../assets/models/rendered/Drone/color0001.png
+Loading ../assets/models/rendered/Oberon/color0001.png
+Loading ../assets/models/rendered/GreenBlaster/color0001.png
+Loading ../assets/models/rendered/VBlaster/color0001.png
+Loading ../assets/models/rendered/TurbolaserBeam/color0001.png
+Loading ../assets/models/rendered/LightShieldBeam/color0001.png
+Loading ../assets/models/rendered/ValiantMac/color0001.png
+Loading ../assets/models/rendered/VProjector/color0001.png
+Upscaling VProjector from 200 to 288
+Upscaling VProjector from 200 to 288
+Loading ../assets/models/rendered/VMissiles/color0001.png
+Upscaling VMissiles from 35 to 57
+Loading ../assets/models/rendered/P270/color0001.png
+Upscaling VMissiles from 35 to 57
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mac/color0001.png
+Loading ../assets/models/rendered/HighExplosive/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/MacTurret/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/HeTurret/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/UnscInfinite/color0001.png
+Loading ../assets/models/rendered/ValiantHe/color0001.png
+Upscaling Sub096 from 420 to 759
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/ValiantMacTurret/color0001.png
+Loading ../assets/models/rendered/82R/color0001.png
+Loading ../assets/models/rendered/Asroc/color0001.png
+Loading ../assets/models/rendered/Barak8/color0001.png
+Loading ../assets/models/rendered/Moskva/color0001.png
+Loading ../assets/models/rendered/Pl12/color0001.png
+Loading ../assets/models/rendered/BrahMos/color0001.png
+Loading ../assets/models/rendered/Hellfire/color0001.png
+Loading ../assets/models/rendered/OilPlatform/color0001.png
+Loading ../assets/models/rendered/Sherman/color0001.png
+Loading ../assets/models/rendered/CannonBall/color0001.png
+Loading ../assets/models/rendered/Depositor/color0001.png
+Loading ../assets/models/rendered/Ohio/color0001.png
+Loading ../assets/models/rendered/Town/color0001.png
+Loading ../assets/models/rendered/ImperialStarDestroyer/color0001.png
+Loading ../assets/models/rendered/Shovel/color0001.png
+Loading ../assets/models/rendered/TypeViic/color0001.png
+Upscaling ImperialStarDestroyer from 619 to 1024
+Loading ../assets/models/rendered/TieFighterMk48/color0001.png
+Loading ../assets/models/rendered/ValiantHeTurret/color0001.png
+Loading ../assets/models/rendered/Ticonderoga/color0001.png
+Loading ../assets/models/rendered/Visby/color0001.png
+Loading ../assets/models/rendered/Valiant/color0001.png
+Loading ../assets/models/rendered/Olympias/color0001.png
+Loading ../assets/models/rendered/Essm/color0001.png
+Loading ../assets/models/rendered/Type055/color0001.png
+Loading ../assets/models/rendered/Exocet/color0001.png
+Upscaling Valiant from 624 to 1024
+Loading ../assets/models/rendered/Harpoon/color0001.png
+Loading ../assets/models/rendered/Hq9/color0001.png
+Loading ../assets/models/rendered/F35B/color0001.png
+Loading ../assets/models/rendered/F35C/color0001.png
+Loading ../assets/models/rendered/QuinjetA/color0001.png
+Loading ../assets/models/rendered/QuinjetB/color0001.png
+Loading ../assets/models/rendered/Harbin/color0001.png
+Loading ../assets/models/rendered/Tanker/color0001.png
+Loading ../assets/models/rendered/Ka25/color0001.png
+Loading ../assets/models/rendered/Kingfisher/color0001.png
+Loading ../assets/models/rendered/TerryFox/color0001.png
+Loading ../assets/models/rendered/Seahawk/color0001.png
+Loading ../assets/models/rendered/Liaoning/color0001.png
+Loading ../assets/models/rendered/Virginia/color0001.png
+Loading ../assets/models/rendered/Tianwangxing/color0001.png
+Loading ../assets/models/rendered/Type96/color0001.png
+Loading ../assets/models/rendered/Clemenceau/color0001.png
+Loading ../assets/models/rendered/TieBomber/color0001.png
+Loading ../assets/models/rendered/Marauder/color0001.png
+Loading ../assets/models/rendered/Battleship500k/color0001.png
+Upscaling Valiant from 624 to 1024
+Upscaling Marauder from 526 to 554
+Loading ../assets/models/rendered/Type054A/color0001.png
+Upscaling Type054A from 616 to 717
+Loading ../assets/models/rendered/Battleship750k/color0001.png
+Loading ../assets/models/rendered/Hunter/color0001.png
+Loading ../assets/models/rendered/SpaceYamato/color0001.png
+Loading ../assets/models/rendered/Xwing/color0001.png
+Loading ../assets/models/rendered/Marathon/color0001.png
+Loading ../assets/models/rendered/MillenniumFalcon/color0001.png
+Loading ../assets/models/rendered/Paris/color0001.png
+Loading ../assets/models/rendered/Chinook/color0001.png
+Upscaling Paris from 623 to 784
+Loading ../assets/models/rendered/Catalina/color0001.png
+Loading ../assets/models/rendered/Yamato/color0001.png
+Loading ../assets/models/rendered/CharlesDeGaulle/color0001.png
+Loading ../assets/models/rendered/SuperOilPlatform/color0001.png
+Upscaling CharlesDeGaulle from 959 to 1002
+Loading ../assets/models/rendered/Yasen/color0001.png
+Loading ../assets/models/rendered/XystonStarDestroyer/color0001.png
+Loading ../assets/models/rendered/Leviathan/color0001.png
+Loading ../assets/models/rendered/Pangu/color0001.png
+Upscaling Pangu from 480 to 1024
+Upscaling Leviathan from 520 to 1024
+Loading ../assets/models/rendered/XWing/color0001.png
+Loading ../assets/models/rendered/IronWarrior/color0001.png
+Loading ../assets/models/rendered/StellarFrigate/color0001.png
+Loading ../assets/models/rendered/SwiftWingCruiser/color0001.png
+Loading ../assets/models/rendered/Typhoon/color0001.png
+Loading ../assets/models/rendered/ShieldHelicarrier/color0001.png
+Loading ../assets/models/rendered/KirovAirship/color0001.png
+Upscaling ShieldHelicarrier from 520 to 1024
+Upscaling KirovAirship from 631 to 679
+Loading ../assets/models/rendered/Zubr/color0001.png
+Loading ../assets/models/rendered/Lst/color0001.png
+Loading ../assets/models/rendered/Zudredger/color0001.png
+Loading ../assets/models/rendered/Tu160/color0001.png
+Loading ../assets/sprites/contact.png
+Loading ../assets/sprites/JL3.png
+Loading ../assets/models/rendered/H44/color0001.png
+Loading ../assets/sprites/YJ82.png
+Upscaling H44 from 626 to 1024
+Loading ../assets/sprites/explosion/*
+Loading ../assets/sprites/splash/*
+Trying [4096, 4096]px...
+Only packed 91/335.
+Failed took more than 4096x4096!
+Loading ../assets/models/rendered/Abrams/color0001.png
+Loading ../assets/models/rendered/Assimilator2/color0001.png
+Loading ../assets/models/rendered/Osa/color0001.png
+Loading ../assets/models/rendered/TypeViic/color0001.png
+Loading ../assets/models/rendered/Sherman/color0001.png
+Loading ../assets/models/rendered/FlareSu57/color0001.png
+Loading ../assets/models/rendered/Clemenceau/color0001.png
+Loading ../assets/models/rendered/Ka25/color0001.png
+Loading ../assets/models/rendered/Tanker/color0001.png
+Loading ../assets/models/rendered/Yu7/color0001.png
+Loading ../assets/models/rendered/Pt34/color0001.png
+Loading ../assets/models/rendered/Df41/color0001.png
+Loading ../assets/models/rendered/Pangu/color0001.png
+Loading ../assets/models/rendered/Virginia/color0001.png
+Loading ../assets/models/rendered/Drone/color0001.png
+Loading ../assets/models/rendered/Skipjack/color0001.png
+Loading ../assets/models/rendered/Moskit/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Espana/color0001.png
+Loading ../assets/models/rendered/Mark9/color0001.png
+Loading ../assets/models/rendered/Kingfisher/color0001.png
+Loading ../assets/models/rendered/Mistral/color0001.png
+Loading ../assets/models/rendered/Jagm/color0001.png
+Loading ../assets/models/rendered/Nsm/color0001.png
+Loading ../assets/models/rendered/ObsidianCruiseMissile/color0001.png
+Loading ../assets/models/rendered/Sub096/color0001.png
+Loading ../assets/models/rendered/Seahawk/color0001.png
+Loading ../assets/models/rendered/Of45/color0001.png
+Loading ../assets/models/rendered/Su57MissileHeavy/color0001.png
+Loading ../assets/models/rendered/RP3/color0001.png
+Loading ../assets/models/rendered/Yasen/color0001.png
+Loading ../assets/models/rendered/Su57MissileMid/color0001.png
+Loading ../assets/models/rendered/Su57MissileLight/color0001.png
+Loading ../assets/models/rendered/Momi/color0001.png
+Loading ../assets/models/rendered/Blaster/color0001.png
+Upscaling Blaster from 50 to 80
+Loading ../assets/models/rendered/AxialSuperlaserBeam/color0001.png
+Loading ../assets/models/rendered/Skjold/color0001.png
+Loading ../assets/models/rendered/StarDestroyer/color0001.png
+Loading ../assets/models/rendered/Seawolf/color0001.png
+Loading ../assets/models/rendered/Type96/color0001.png
+Loading ../assets/models/rendered/Ticonderoga/color0001.png
+Loading ../assets/models/rendered/P15/color0001.png
+Loading ../assets/models/rendered/SuperEtendard/color0001.png
+Loading ../assets/models/rendered/P700/color0001.png
+Loading ../assets/models/rendered/Rbs15/color0001.png
+Loading ../assets/models/rendered/Rim116/color0001.png
+Loading ../assets/models/rendered/Rpk6/color0001.png
+Loading ../assets/models/rendered/S300/color0001.png
+Loading ../assets/models/rendered/Set65/color0001.png
+Loading ../assets/models/rendered/Xwing/color0001.png
+Loading ../assets/models/rendered/SuperFrelon/color0001.png
+Loading ../assets/models/rendered/Yu6/color0001.png
+Loading ../assets/models/rendered/Kolkata/color0001.png
+Loading ../assets/models/rendered/Tomahawk/color0001.png
+Loading ../assets/models/rendered/Montana/color0001.png
+Loading ../assets/models/rendered/Town/color0001.png
+Loading ../assets/models/rendered/039A/color0001.png
+Loading ../assets/models/rendered/Yj82/color0001.png
+Loading ../assets/models/rendered/TerryFox/color0001.png
+Loading ../assets/models/rendered/Torped45/color0001.png
+Loading ../assets/models/rendered/CharlesDeGaulle/color0001.png
+Loading ../assets/models/rendered/TurboLaserII/color0001.png
+Loading ../assets/models/rendered/Ekranoplan/color0001.png
+Loading ../assets/models/rendered/Leander/color0001.png
+Loading ../assets/models/rendered/Typhoon/color0001.png
+Loading ../assets/models/rendered/Type53/color0001.png
+Loading ../assets/models/rendered/Z18/color0001.png
+Loading ../assets/models/rendered/V611/color0001.png
+Loading ../assets/models/rendered/Vt1/color0001.png
+Loading ../assets/models/rendered/Tianwangxing/color0001.png
+Loading ../assets/models/rendered/Hq10SAM/color0001.png
+Loading ../assets/models/rendered/Avenger/color0001.png
+Loading ../assets/models/rendered/PlasmaGun/color0001.png
+Loading ../assets/models/rendered/Ls6/color0001.png
+Loading ../assets/models/rendered/Akula/color0001.png
+Loading ../assets/models/rendered/J15/color0001.png
+Loading ../assets/models/rendered/QuadBlasterCannon/color0001.png
+Upscaling QuadBlasterCannon from 50 to 80
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Wz0839/color0001.png
+Loading ../assets/models/rendered/GreenBlaster/color0001.png
+Upscaling GreenBlaster from 50 to 80
+Loading ../assets/models/rendered/VBlaster/color0001.png
+Loading ../assets/models/rendered/IaigiriMine/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Upscaling VBlaster from 50 to 80
+Loading ../assets/models/rendered/TurbolaserBeam/color0001.png
+Upscaling TurbolaserBeam from 50 to 80
+Loading ../assets/models/rendered/Type96Bomb/color0001.png
+Loading ../assets/models/rendered/LightShieldBeam/color0001.png
+Loading ../assets/models/rendered/Komar/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mk82/color0001.png
+Loading ../assets/models/rendered/E4N/color0001.png
+Loading ../assets/models/rendered/Type055/color0001.png
+Loading ../assets/models/rendered/Richelieu/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Yj18/color0001.png
+Loading ../assets/models/rendered/VProjector/color0001.png
+Loading ../assets/models/rendered/VMissiles/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/TieFighter/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Lublin/color0001.png
+Loading ../assets/models/rendered/Jl3/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/82R/color0001.png
+Loading ../assets/models/rendered/Df41Missile/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Asroc/color0001.png
+Loading ../assets/models/rendered/Barak8/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Moskva/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Zubr/color0001.png
+Loading ../assets/models/rendered/Pl12/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Minelayer49/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Titanic/color0001.png
+Loading ../assets/models/rendered/BrahMos/color0001.png
+Loading ../assets/models/rendered/P270/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/Hellfire/color0001.png
+Loading ../assets/models/rendered/Mark8/color0001.png
+Loading ../assets/models/rendered/MillenniumFalcon/color0001.png
+Loading ../assets/models/rendered/CannonBall/color0001.png
+Loading ../assets/models/rendered/Mac/color0001.png
+Loading ../assets/models/rendered/Bismarck/color0001.png
+Loading ../assets/models/rendered/HighExplosive/color0001.png
+Loading ../assets/models/rendered/Depositor/color0001.png
+Loading ../assets/models/rendered/UnscInfinite/color0001.png
+Loading ../assets/models/rendered/Apache/color0001.png
+Loading ../assets/models/rendered/ValiantHe/color0001.png
+Loading ../assets/models/rendered/Shovel/color0001.png
+Loading ../assets/models/rendered/Lrlap/color0001.png
+Loading ../assets/models/rendered/Magic/color0001.png
+Loading ../assets/models/rendered/Kaga/color0001.png
+Loading ../assets/models/rendered/Spitfire/color0001.png
+Loading ../assets/models/rendered/Mark18/color0001.png
+Loading ../assets/models/rendered/Lst/color0001.png
+Loading ../assets/models/rendered/Mark48/color0001.png
+Loading ../assets/models/rendered/Yu10/color0001.png
+Loading ../assets/models/rendered/PoseidonTorpedo/color0001.png
+Loading ../assets/models/rendered/Mark54/color0001.png
+Loading ../assets/models/rendered/Su57/color0001.png
+Loading ../assets/models/rendered/Uap/color0001.png
+Loading ../assets/models/rendered/Harpoon/color0001.png
+Loading ../assets/models/rendered/Hq9/color0001.png
+Loading ../assets/models/rendered/Igla/color0001.png
+Loading ../assets/models/rendered/Valiant/color0001.png
+Loading ../assets/models/rendered/Kalibr/color0001.png
+Loading ../assets/models/rendered/Oberon/color0001.png
+Loading ../assets/models/rendered/Vindicator/color0001.png
+Loading ../assets/models/rendered/Dreadnought/color0001.png
+Loading ../assets/models/rendered/HunterKiller77/color0001.png
+Loading ../assets/models/rendered/Freccia/color0001.png
+Loading ../assets/models/rendered/Yamato/color0001.png
+Loading ../assets/models/rendered/Essm/color0001.png
+Loading ../assets/models/rendered/Exocet/color0001.png
+Loading ../assets/models/rendered/Visby/color0001.png
+Loading ../assets/models/rendered/FortressCarrier/color0001.png
+Loading ../assets/models/rendered/Ohio/color0001.png
+Loading ../assets/models/rendered/J20/color0001.png
+Loading ../assets/models/rendered/Freedom/color0001.png
+Loading ../assets/models/rendered/Marathon/color0001.png
+Loading ../assets/models/rendered/F35/color0001.png
+Loading ../assets/models/rendered/Olympias/color0001.png
+Loading ../assets/models/rendered/Dredger/color0001.png
+Loading ../assets/models/rendered/ArleighBurke/color0001.png
+Loading ../assets/models/rendered/Buyan/color0001.png
+Loading ../assets/models/rendered/SpaceYamato/color0001.png
+Loading ../assets/models/rendered/TieBomber/color0001.png
+Loading ../assets/models/rendered/Battleship500k/color0001.png
+Loading ../assets/models/rendered/Zudredger/color0001.png
+Loading ../assets/models/rendered/Leviathan/color0001.png
+Loading ../assets/models/rendered/Hunter/color0001.png
+Loading ../assets/models/rendered/G5/color0001.png
+Loading ../assets/models/rendered/Liaoning/color0001.png
+Loading ../assets/models/rendered/B2/color0001.png
+Loading ../assets/models/rendered/Dredger2/color0001.png
+Loading ../assets/models/rendered/XWing/color0001.png
+Loading ../assets/models/rendered/Zumwalt/color0001.png
+Loading ../assets/models/rendered/F35C/color0001.png
+Loading ../assets/models/rendered/Golf/color0001.png
+Loading ../assets/models/rendered/QuinjetA/color0001.png
+Loading ../assets/models/rendered/QuinjetB/color0001.png
+Loading ../assets/models/rendered/Harbin/color0001.png
+Loading ../assets/models/rendered/XystonStarDestroyer/color0001.png
+Loading ../assets/models/rendered/Chinook/color0001.png
+Loading ../assets/models/rendered/Indiaman/color0001.png
+Loading ../assets/models/rendered/Brosok/color0001.png
+Loading ../assets/models/rendered/TieFighterMk48/color0001.png
+Loading ../assets/models/rendered/Mk70/color0001.png
+Loading ../assets/models/rendered/ShieldHelicarrier/color0001.png
+Loading ../assets/models/rendered/Mk3/color0001.png
+Loading ../assets/models/rendered/FlareJ20/color0001.png
+Loading ../assets/models/rendered/FlareF35/color0001.png
+Loading ../assets/models/rendered/FlareB2/color0001.png
+Loading ../assets/models/rendered/FlareVindicator/color0001.png
+Loading ../assets/models/rendered/H44/color0001.png
+Loading ../assets/models/rendered/Iowa/color0001.png
+Loading ../assets/models/rendered/F35B/color0001.png
+Loading ../assets/sprites/JL3.png
+Loading ../assets/models/rendered/Battleship750k/color0001.png
+Loading ../assets/sprites/YJ82.png
+Loading ../assets/models/rendered/Kirov/color0001.png
+Loading ../assets/models/rendered/Marauder/color0001.png
+Loading ../assets/models/rendered/Catalina/color0001.png
+Loading ../assets/models/rendered/Essex/color0001.png
+Loading ../assets/models/rendered/StellarFrigate/color0001.png
+Loading ../assets/sprites/contact.png
+Loading ../assets/models/rendered/Tu160/color0001.png
+Loading ../assets/models/rendered/ImperialStarDestroyer/color0001.png
+Loading ../assets/models/rendered/SwiftWingCruiser/color0001.png
+Loading ../assets/models/rendered/Paris/color0001.png
+Loading ../assets/models/rendered/FairmileD/color0001.png
+Loading ../assets/models/rendered/Type054A/color0001.png
+Loading ../assets/models/rendered/KirovAirship/color0001.png
+Loading ../assets/models/rendered/JianRen/color0001.png
+Loading ../assets/models/rendered/IronWarrior/color0001.png
+Loading ../assets/models/rendered/ValiantMac/color0001.png
+Loading ../assets/models/rendered/Fletcher/color0001.png
+Trying [804, 804]px...
+Only packed 112/220.
+Trying [805, 805]px...
+Only packed 112/220.
+Trying [806, 806]px...
+Only packed 112/220.
+Trying [807, 807]px...
+Only packed 115/220.
+Trying [808, 808]px...
+Only packed 106/220.
+Trying [809, 809]px...
+Only packed 106/220.
+Trying [810, 810]px...
+Only packed 114/220.
+Trying [811, 811]px...
+Only packed 114/220.
+Trying [812, 812]px...
+Only packed 117/220.
+Trying [813, 813]px...
+Only packed 117/220.
+Trying [814, 814]px...
+Only packed 117/220.
+Trying [815, 815]px...
+Only packed 118/220.
+Trying [816, 816]px...
+Only packed 123/220.
+Trying [817, 817]px...
+Only packed 123/220.
+Trying [818, 818]px...
+Only packed 123/220.
+Trying [819, 819]px...
+Only packed 123/220.
+Trying [820, 820]px...
+Only packed 122/220.
+Trying [821, 821]px...
+Only packed 122/220.
+Trying [822, 822]px...
+Only packed 123/220.
+Trying [823, 823]px...
+Only packed 123/220.
+Trying [824, 824]px...
+Only packed 119/220.
+Trying [825, 825]px...
+Only packed 124/220.
+Trying [826, 826]px...
+Only packed 124/220.
+Trying [827, 827]px...
+Only packed 125/220.
+Trying [828, 828]px...
+Only packed 126/220.
+Trying [829, 829]px...
+Only packed 126/220.
+Trying [830, 830]px...
+Only packed 125/220.
+Trying [831, 831]px...
+Only packed 131/220.
+Trying [832, 832]px...
+Only packed 130/220.
+Trying [833, 833]px...
+Only packed 131/220.
+Trying [834, 834]px...
+Only packed 131/220.
+Trying [835, 835]px...
+Only packed 131/220.
+Trying [836, 836]px...
+Only packed 131/220.
+Trying [837, 837]px...
+Only packed 137/220.
+Trying [838, 838]px...
+Only packed 137/220.
+Trying [839, 839]px...
+Only packed 137/220.
+Trying [840, 840]px...
+Only packed 137/220.
+Trying [841, 841]px...
+Only packed 137/220.
+Trying [842, 842]px...
+Only packed 141/220.
+Trying [843, 843]px...
+Only packed 138/220.
+Trying [844, 844]px...
+Only packed 140/220.
+Trying [845, 845]px...
+Only packed 139/220.
+Trying [846, 846]px...
+Only packed 139/220.
+Trying [847, 847]px...
+Only packed 141/220.
+Trying [848, 848]px...
+Only packed 152/220.
+Trying [849, 849]px...
+Only packed 150/220.
+Trying [850, 850]px...
+Only packed 150/220.
+Trying [851, 851]px...
+Only packed 150/220.
+Trying [852, 852]px...
+Only packed 146/220.
+Trying [853, 853]px...
+Only packed 153/220.
+Trying [854, 854]px...
+Only packed 151/220.
+Trying [855, 855]px...
+Only packed 153/220.
+Trying [856, 856]px...
+Only packed 151/220.
+Trying [857, 857]px...
+Only packed 151/220.
+Trying [858, 858]px...
+Only packed 150/220.
+Trying [859, 859]px...
+Only packed 150/220.
+Trying [860, 860]px...
+Only packed 157/220.
+Trying [861, 861]px...
+Only packed 157/220.
+Trying [862, 862]px...
+Only packed 169/220.
+Trying [863, 863]px...
+Only packed 165/220.
+Trying [864, 864]px...
+Only packed 170/220.
+Trying [865, 865]px...
+Only packed 167/220.
+Trying [866, 866]px...
+Only packed 167/220.
+Trying [867, 867]px...
+Only packed 167/220.
+Trying [868, 868]px...
+Only packed 174/220.
+Trying [869, 869]px...
+Only packed 167/220.
+Trying [870, 870]px...
+Only packed 167/220.
+Trying [871, 871]px...
+Only packed 167/220.
+Trying [872, 872]px...
+Only packed 167/220.
+Trying [873, 873]px...
+Only packed 167/220.
+Trying [874, 874]px...
+Only packed 167/220.
+Trying [875, 875]px...
+Only packed 175/220.
+Trying [876, 876]px...
+Only packed 182/220.
+Trying [877, 877]px...
+Only packed 186/220.
+Trying [878, 878]px...
+Only packed 189/220.
+Trying [879, 879]px...
+Only packed 186/220.
+Trying [880, 880]px...
+Only packed 190/220.
+Trying [881, 881]px...
+Only packed 184/220.
+Trying [882, 882]px...
+Only packed 190/220.
+Trying [883, 883]px...
+Only packed 192/220.
+Trying [884, 884]px...
+Only packed 195/220.
+Trying [885, 885]px...
+Only packed 197/220.
+Trying [886, 886]px...
+Only packed 198/220.
+Trying [887, 887]px...
+Only packed 199/220.
+Trying [888, 888]px...
+Only packed 198/220.
+Trying [889, 889]px...
+Only packed 198/220.
+Trying [890, 890]px...
+Only packed 209/220.
+Trying [891, 891]px...
+Only packed 199/220.
+Trying [892, 892]px...
+Only packed 199/220.
+Trying [893, 893]px...
+Only packed 199/220.
+Trying [894, 894]px...
+Only packed 198/220.
+Trying [895, 895]px...
+Only packed 213/220.
+Trying [896, 896]px...
+Only packed 213/220.
+Trying [897, 897]px...
+Only packed 198/220.
+Trying [898, 898]px...
+Only packed 216/220.
+Trying [899, 899]px...
+Only packed 219/220.
+Trying [900, 900]px...
+All packed!
+Encoding png...
+Writing ../client/sprites_css.png
+Writing ../client/src/ui/sprites_css.json

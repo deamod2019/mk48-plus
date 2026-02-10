@@ -1,12 +1,19 @@
 // Faction scoreboard overlay — shows 3-faction war stats when faction_mode is on.
 
 use common::protocol::{FactionId, FactionUpdate};
+use glam::Vec2;
 use yew::{function_component, html, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct FactionBoardProps {
     pub faction_data: FactionUpdate,
     pub my_faction: Option<FactionId>,
+    /// Known altar position for this player's faction (None = not yet discovered).
+    #[prop_or_default]
+    pub altar_position: Option<Vec2>,
+    /// Per-faction sacrifice progress [red, blue, green].
+    #[prop_or_default]
+    pub altar_sacrifice_counts: [u8; FactionId::COUNT],
 }
 
 #[function_component(FactionBoard)]
@@ -19,6 +26,20 @@ pub fn faction_board(props: &FactionBoardProps) -> Html {
 
     // Find faction with highest total score to scale bars.
     let max_score = factions.iter().map(|f| f.total_score).max().unwrap_or(1).max(1);
+
+    // Build altar sacrifice progress strings.
+    let altar_progress: Vec<String> = (0..FactionId::COUNT).map(|i| {
+        let count = props.altar_sacrifice_counts[i] as usize;
+        let filled = "█".repeat(count.min(5));
+        let empty = "░".repeat(5_usize.saturating_sub(count));
+        format!("{}{} {}/5", filled, empty, count.min(5))
+    }).collect();
+
+    let altar_coord_text = if let Some(pos) = props.altar_position {
+        format!("({:.0}, {:.0})", pos.x, pos.y)
+    } else {
+        "未发现".to_string()
+    };
 
     html! {
         <div style="
@@ -97,6 +118,36 @@ pub fn faction_board(props: &FactionBoardProps) -> Html {
                     </div>
                 }
             })}
+
+            // ---- Altar info section ----
+            <div style="
+                margin-top: 8px;
+                padding-top: 6px;
+                border-top: 1px solid rgba(255,255,255,0.15);
+            ">
+                <div style="font-weight: bold; text-align: center; font-size: 12px; margin-bottom: 4px;">
+                    {"🏛️ 水滴祭坛"}
+                </div>
+                <div style="font-size: 11px; text-align: center; opacity: 0.8; margin-bottom: 4px;">
+                    { format!("📍 {}", altar_coord_text) }
+                </div>
+                { for (0..FactionId::COUNT).map(|i| {
+                    let is_mine = props.my_faction.map_or(false, |f| f.index() == i);
+                    html! {
+                        <div style={format!(
+                            "display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 1px 2px; {}",
+                            if is_mine { "font-weight: bold;" } else { "opacity: 0.75;" }
+                        )}>
+                            <span style={format!("color: {};", colors[i])}>
+                                { labels[i] }
+                            </span>
+                            <span style="letter-spacing: 1px;">
+                                { &altar_progress[i] }
+                            </span>
+                        </div>
+                    }
+                })}
+            </div>
         </div>
     }
 }

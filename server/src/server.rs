@@ -7,7 +7,7 @@ use crate::player::*;
 use crate::protocol::*;
 use crate::world::World;
 use common::entity::EntityType;
-use common::protocol::{Command, FactionId, FactionStats, FactionUpdate, Update};
+use common::protocol::{Command, FactionId, FactionStats, FactionUpdate, Update, WorldEvent};
 use common::terrain::ChunkSet;
 use common::ticks::Ticks;
 use common::util::level_to_score;
@@ -15,6 +15,7 @@ use core_protocol::id::*;
 use game_server::context::Context;
 use game_server::game_service::GameArenaService;
 use game_server::player::{PlayerRepo, PlayerTuple};
+use glam::Vec2;
 use log::{error, warn};
 use std::cell::UnsafeCell;
 use std::sync::Arc;
@@ -28,6 +29,14 @@ pub struct Server {
     pub faction_update: Option<FactionUpdate>,
     /// Round-robin counter for init-time faction assignment.
     faction_counter: u8,
+    /// Per-faction sacrifice count for the current altar.
+    pub altar_sacrifices: [u8; FactionId::COUNT],
+    /// Per-faction known altar position (None = not yet discovered by this faction).
+    pub altar_known_position: [Option<Vec2>; FactionId::COUNT],
+    /// Global tick counter for altar timing.
+    altar_tick_counter: u64,
+    /// Per-faction level threshold: bots at/below this level are in bottom 10 and eligible to sacrifice.
+    pub altar_sacrifice_level_threshold: [u8; FactionId::COUNT],
 }
 
 /// Stores a player, and metadata related to it. Data stored here may only be accessed when processing,
@@ -71,6 +80,10 @@ impl GameArenaService for Server {
             counter: Ticks::ZERO,
             faction_update: None,
             faction_counter: 0,
+            altar_sacrifices: [0; FactionId::COUNT],
+            altar_known_position: [None; FactionId::COUNT],
+            altar_tick_counter: 0,
+            altar_sacrifice_level_threshold: [0; FactionId::COUNT],
         }
     }
 
@@ -103,16 +116,31 @@ impl GameArenaService for Server {
             player.data.faction = Some(FactionId::from_index(idx));
         }
 
-        // Boss bots: first 2*FACTION_COUNT bots get max score and is_boss flag.
+        // Boss bots: maintain exactly BOSSES_PER_FACTION bosses per faction.
+        // Must drop `player` borrow before iterating _players to avoid AtomicRefCell conflict.
         const BOSSES_PER_FACTION: usize = 2;
-        if player.is_bot() && crate::runtime_config::hot_faction_mode() {
-            use common::entity::EntityData;
-            // Bot IDs are sequential starting from 1; use faction_counter as proxy for bot index.
-            let boss_total = BOSSES_PER_FACTION * FactionId::COUNT;
-            if (self.faction_counter as usize) <= boss_total {
-                player.data.is_boss = true;
-                player.score = level_to_score(EntityData::MAX_BOAT_LEVEL);
+        let is_bot = player.is_bot();
+        let bot_faction = player.data.faction;
+        drop(player);
+
+        let mut should_be_boss = false;
+        if is_bot && crate::runtime_config::hot_faction_mode() {
+            if let Some(faction) = bot_faction {
+                use common::entity::EntityData;
+                let faction_boss_count = _players.iter_borrow()
+                    .filter(|p| p.is_bot() && p.data.is_boss && p.data.faction == Some(faction))
+                    .count();
+                if faction_boss_count < BOSSES_PER_FACTION {
+                    should_be_boss = true;
+                }
             }
+        }
+
+        let mut player = player_tuple.borrow_player_mut();
+        if should_be_boss {
+            use common::entity::EntityData;
+            player.data.is_boss = true;
+            player.score = level_to_score(EntityData::MAX_BOAT_LEVEL);
         }
 
         #[cfg(debug_assertions)]
@@ -207,10 +235,23 @@ impl GameArenaService for Server {
         client_data: &mut Self::ClientData,
         _players: &PlayerRepo<Server>,
     ) -> Option<Self::GameUpdate> {
+        let p = player.borrow_player();
+        let altar_pos = if let Some(faction) = p.data.faction {
+            self.altar_known_position[faction.index()]
+        } else {
+            None
+        };
+        drop(p);
         Some(
             self.world
                 .get_player_complete(player)
-                .into_update(self.counter, &mut client_data.loaded_chunks, self.faction_update.clone()),
+                .into_update(
+                    self.counter,
+                    &mut client_data.loaded_chunks,
+                    self.faction_update.clone(),
+                    altar_pos,
+                    self.altar_sacrifices,
+                ),
         )
     }
 
@@ -255,6 +296,191 @@ impl GameArenaService for Server {
 
 
         self.world.update(Ticks::ONE);
+
+        // ---- Droplet Altar processing ----
+        if crate::runtime_config::hot_faction_mode() {
+            use common::entity::{EntityData, EntityKind};
+            use rand::seq::SliceRandom;
+
+            self.altar_tick_counter += 1;
+
+            // Compute bottom-10 level threshold per faction for sacrifice eligibility.
+            {
+                let mut faction_levels: [Vec<u8>; FactionId::COUNT] = core::array::from_fn(|_| Vec::new());
+                for player in context.players.iter_borrow() {
+                    if !player.data.status.is_alive() || player.data.is_boss {
+                        continue;
+                    }
+                    if let Some(faction) = player.data.faction {
+                        if let Status::Alive { entity_index, .. } = player.data.status {
+                            let level = self.world.entities[entity_index].data().level;
+                            faction_levels[faction.index()].push(level);
+                        }
+                    }
+                }
+                for (i, levels) in faction_levels.iter_mut().enumerate() {
+                    levels.sort_unstable();
+                    // Bottom 10: level at index 9 (0-based), or last element if <10.
+                    self.altar_sacrifice_level_threshold[i] = if levels.len() >= 10 {
+                        levels[9]
+                    } else if let Some(&max) = levels.last() {
+                        max
+                    } else {
+                        0
+                    };
+                }
+            }
+
+            // 1. Find the altar entity position and index.
+            let mut altar_info: Option<(crate::entities::EntityIndex, Vec2)> = None;
+            for (idx, entity) in self.world.entities.iter_radius(Vec2::ZERO, self.world.radius) {
+                if entity.entity_type == EntityType::DropletAltar {
+                    altar_info = Some((idx, entity.transform.position));
+                    break;
+                }
+            }
+
+            // 2. Detect discovery: check if any alive player can see the altar.
+            if let Some((_altar_idx, altar_pos)) = altar_info {
+                for player in context.players.iter_borrow() {
+                    if !player.data.status.is_alive() {
+                        continue;
+                    }
+                    let faction = match player.data.faction {
+                        Some(f) => f,
+                        None => continue,
+                    };
+                    if self.altar_known_position[faction.index()].is_some() {
+                        continue; // Already discovered by this faction.
+                    }
+                    // Get the player's entity to check sensor range.
+                    if let Status::Alive { entity_index, .. } = player.data.status {
+                        let entity = &self.world.entities[entity_index];
+                        let sensor_range = entity.data().sensors.visual.range
+                            .max(entity.data().sensors.radar.range)
+                            .max(entity.data().sensors.sonar.range);
+                        let dist = (altar_pos - entity.transform.position).length();
+                        if dist <= sensor_range {
+                            self.altar_known_position[faction.index()] = Some(altar_pos);
+                            self.world.events.push(WorldEvent::AltarDiscovered {
+                                position: altar_pos,
+                                faction,
+                            });
+                        }
+                    }
+                }
+            }
+
+            // 3. Process AltarSacrifice events (no cooldown).
+            let sacrifice_events: Vec<_> = self.world.events.iter().filter_map(|e| {
+                if let WorldEvent::AltarSacrifice { faction } = e {
+                    Some(*faction)
+                } else {
+                    None
+                }
+            }).collect();
+
+            for faction in sacrifice_events {
+                let idx = faction.index();
+
+                self.altar_sacrifices[idx] = self.altar_sacrifices[idx].saturating_add(1);
+
+                // 4. Check if sacrifice threshold reached.
+                if self.altar_sacrifices[idx] >= 5 {
+
+                    // Collect candidates: real players and bots separately.
+                    let mut real_candidates: Vec<(core_protocol::id::PlayerId, crate::entities::EntityIndex)> = Vec::new();
+                    let mut bot_candidates: Vec<(core_protocol::id::PlayerId, crate::entities::EntityIndex)> = Vec::new();
+                    for player in context.players.iter_borrow() {
+                        if player.data.faction != Some(faction) || !player.data.status.is_alive() || player.data.is_boss {
+                            continue;
+                        }
+                        if let Status::Alive { entity_index, .. } = player.data.status {
+                            let level = self.world.entities[entity_index].data().level;
+                            if level >= EntityData::MAX_BOAT_LEVEL {
+                                continue; // Already max level, skip.
+                            }
+                            if player.is_bot() {
+                                bot_candidates.push((player.player_id, entity_index));
+                            } else {
+                                real_candidates.push((player.player_id, entity_index));
+                            }
+                        }
+                    }
+
+                    // Priority: real players first, then bots.
+                    let chosen = if !real_candidates.is_empty() {
+                        real_candidates.choose(&mut rand::thread_rng()).copied()
+                    } else {
+                        bot_candidates.choose(&mut rand::thread_rng()).copied()
+                    };
+
+                    if let Some((player_id, entity_index)) = chosen {
+                        let max_level_boats: Vec<EntityType> = EntityType::iter()
+                            .filter(|et| {
+                                let d = et.data();
+                                d.kind == EntityKind::Boat && d.level == EntityData::MAX_BOAT_LEVEL
+                            })
+                            .collect();
+
+                        if let Some(&target_type) = max_level_boats.choose(&mut rand::thread_rng()) {
+                            self.world.entities[entity_index].change_entity_type(
+                                target_type,
+                                &mut self.world.arena,
+                                false,
+                            );
+                            // Grant 60s invulnerability (terrain + damage immune).
+                            self.world.entities[entity_index].altar_blessing = Ticks::from_secs(60.0);
+                            if let Some(mut player) = context.players.borrow_player_mut(player_id) {
+                                player.score = level_to_score(EntityData::MAX_BOAT_LEVEL);
+                            }
+                        }
+                    } else {
+                    }
+
+                    // Remove old altar and atomically spawn new one.
+                    if let Some((altar_idx, _)) = altar_info {
+                        self.world.remove(altar_idx, common::death_reason::DeathReason::Border);
+                    }
+                    {
+                        use crate::entity::{unset_entity_id, Entity};
+                        use common::altitude::Altitude;
+                        use common::angle::Angle;
+                        use common::guidance::Guidance;
+                        use common::transform::Transform;
+                        use common::velocity::Velocity;
+
+                        let entity = Entity {
+                            player: None,
+                            transform: Transform {
+                                position: Vec2::ZERO,
+                                direction: Angle::ZERO,
+                                velocity: Velocity::ZERO,
+                            },
+                            guidance: Guidance {
+                                velocity_target: Velocity::ZERO,
+                                direction_target: Angle::ZERO,
+                            },
+                            entity_type: EntityType::DropletAltar,
+                            ticks: Ticks::ZERO,
+                            id: unset_entity_id(),
+                            altitude: Altitude::ZERO,
+                            frozen: Ticks::ZERO,
+                            altar_blessing: Ticks::ZERO,
+                        };
+                        let ok = self.world.spawn_here_or_nearby(entity, self.world.radius * 0.7, None);
+                    }
+
+                    // Reset all sacrifice counts and discovery state.
+                    self.altar_sacrifices = [0; FactionId::COUNT];
+                    self.altar_known_position = [None; FactionId::COUNT];
+
+                    self.world.events.push(WorldEvent::AltarConsumed { faction });
+                    break; // Only one faction can consume per tick.
+                }
+            }
+        }
+        // ---- End Droplet Altar processing ----
 
         // Calculate faction statistics each tick (cheap: just iterates players).
         if crate::runtime_config::hot_faction_mode() {

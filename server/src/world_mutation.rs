@@ -128,15 +128,25 @@ impl Mutation {
             }
             Self::HitBy(other_player, weapon_type, damage) => {
                 let e = &mut entities[index];
+                // Blessed entities are invulnerable to weapon damage.
+                if e.is_blessed() {
+                    return false;
+                }
                 if e.damage(damage) {
                     if e.player.is_none() {
                         world.remove(index, DeathReason::Unknown);
                         return true;
                     }
                     let killer_alias = {
+                        let e = &entities[index];
                         let e_score = e.borrow_player().score;
+                        let killed_entity_type = e.entity_type;
+                        let killed_is_boat = e.is_boat();
                         let mut other_player = other_player.borrow_player_mut();
                         other_player.score += kill_score(e_score, other_player.score);
+                        if killed_is_boat {
+                            *other_player.data.kill_log.entry(killed_entity_type).or_insert(0) += 1;
+                        }
                         let alias = other_player.alias();
                         drop(other_player);
                         alias
@@ -153,11 +163,21 @@ impl Mutation {
                 ram,
             } => {
                 let entity = &mut entities[index];
+                // Blessed entities are invulnerable to collision damage.
+                if entity.is_blessed() {
+                    entity.transform.velocity += impulse;
+                    return false;
+                }
                 if entity.damage(damage) {
                     let e_score = entity.borrow_player().score;
+                    let killed_entity_type = entity.entity_type;
+                    let killed_is_boat = entity.is_boat();
                     let killer_alias = {
                         let mut other_player = other_player.borrow_player_mut();
                         other_player.score += ram_score(entity.borrow_player().score, e_score);
+                        if killed_is_boat {
+                            *other_player.data.kill_log.entry(killed_entity_type).or_insert(0) += 1;
+                        }
                         let alias = other_player.alias();
                         drop(other_player);
                         alias
@@ -181,12 +201,21 @@ impl Mutation {
                 entity_type,
             } => {
                 let entity = &mut entities[index];
-                if entity.kill_in(delta, Ticks::from_secs(6.0)) {
+                // Altar collision kills faster (1s sacrifice) vs normal obstacles (6s)
+                let kill_time = if entity_type == EntityType::DropletAltar {
+                    Ticks::from_secs(1.0)
+                } else {
+                    Ticks::from_secs(6.0)
+                };
+                if entity.kill_in(delta, kill_time) {
                     world.remove(index, DeathReason::Obstacle(entity_type));
                     return true;
                 }
-                entity.transform.velocity =
-                    (entity.transform.velocity + impulse).clamp_magnitude(Velocity::from_mps(20.0));
+                // Don't bounce away from altar — stay in contact for sacrifice.
+                if entity_type != EntityType::DropletAltar {
+                    entity.transform.velocity =
+                        (entity.transform.velocity + impulse).clamp_magnitude(Velocity::from_mps(20.0));
+                }
             }
             Self::HitByAntiAir {
                 other_player,
@@ -200,9 +229,14 @@ impl Mutation {
                 let e_score = entity.borrow_player().score;
 
                 if entity.kill_in(delta, Ticks::from_secs(1.0 / anti_aircraft)) {
+                    let killed_entity_type = entity.entity_type;
+                    let killed_is_boat = entity.is_boat();
                     let killer_alias = {
                         let mut other_player = other_player.borrow_player_mut();
                         other_player.score += kill_score(entity.borrow_player().score, e_score);
+                        if killed_is_boat {
+                            *other_player.data.kill_log.entry(killed_entity_type).or_insert(0) += 1;
+                        }
                         let alias = other_player.alias();
                         drop(other_player);
                         alias
@@ -323,6 +357,14 @@ impl Mutation {
             );
 
             Self::boat_died(world, index, score_to_coins);
+
+            // Detect altar sacrifice: boat died from colliding with DropletAltar
+            if matches!(reason, DeathReason::Obstacle(EntityType::DropletAltar)) {
+                let faction = world.entities[index].borrow_player().data.faction;
+                if let Some(faction_id) = faction {
+                    world.events.push(WorldEvent::AltarSacrifice { faction: faction_id });
+                }
+            }
         } else {
             if matches!(reason, DeathReason::Terrain) || data.sub_kind == EntitySubKind::DepthCharge
             {
@@ -493,8 +535,24 @@ impl Mutation {
             radius
         );
 
+        // Collect entity types of killed boats for kill_log tracking.
+        let killed_boat_types: Vec<EntityType> = targets.iter()
+            .filter(|&&idx| world.entities[idx].is_boat())
+            .map(|&idx| world.entities[idx].entity_type)
+            .collect();
+
         for target_index in targets {
             world.remove(target_index, DeathReason::Weapon(launcher_alias.clone(), EntityType::Df41Missile));
+        }
+
+        // Update launcher's kill_log with killed boat types.
+        if !killed_boat_types.is_empty() {
+            if let Some(ref pt) = player_tuple {
+                let mut launcher = pt.borrow_player_mut();
+                for et in killed_boat_types {
+                    *launcher.data.kill_log.entry(et).or_insert(0) += 1;
+                }
+            }
         }
 
         // Push visual effect event

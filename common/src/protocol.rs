@@ -22,6 +22,9 @@ pub struct Update {
     pub death_reason: Option<DeathReason>,
     /// Player's current score.
     pub score: u32,
+    /// Per-entity-type kill counts for this player's current session.
+    #[serde(default)]
+    pub kill_log: Vec<(EntityType, u32)>,
     /// Current world border radius.
     pub world_radius: f32,
     pub terrain: Box<TerrainUpdate>,
@@ -34,12 +37,24 @@ pub struct Update {
     /// Current player's faction.
     #[serde(default)]
     pub my_faction: Option<FactionId>,
+    /// Known altar position for this player's faction (None = not yet discovered).
+    #[serde(default)]
+    pub altar_position: Option<Vec2>,
+    /// Current altar sacrifice progress for all factions.
+    #[serde(default)]
+    pub altar_sacrifice_counts: [u8; FactionId::COUNT],
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum WorldEvent {
     ZeroPulse { center: Vec2, radius: f32 },
     NuclearStrike { center: Vec2, radius: f32 },
+    /// Internal event: a boat sacrificed to the altar (server-only, filtered before sending).
+    AltarSacrifice { faction: FactionId },
+    /// Altar discovered by a faction — broadcast to that faction's players.
+    AltarDiscovered { position: Vec2, faction: FactionId },
+    /// Altar consumed — a faction completed 5 sacrifices.
+    AltarConsumed { faction: FactionId },
 }
 
 /// Updates for terrain chunks.

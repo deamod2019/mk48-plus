@@ -304,6 +304,31 @@ impl World {
             self.target_count(Self::OBSTACLE_DENSITY),
             ticks.0 as usize * 2,
         );
+
+        // Ensure exactly 1 Droplet Altar exists on the map.
+        if self.arena.count(EntityType::DropletAltar) == 0 {
+            let entity = Entity {
+                player: None,
+                transform: Transform {
+                    position: Vec2::ZERO,
+                    direction: Angle::ZERO,
+                    velocity: Velocity::ZERO,
+                },
+                guidance: Guidance {
+                    velocity_target: Velocity::ZERO,
+                    direction_target: Angle::ZERO,
+                },
+                entity_type: EntityType::DropletAltar,
+                ticks: Ticks::ZERO,
+                id: unset_entity_id(),
+                altitude: Altitude::ZERO,
+                frozen: Ticks::ZERO,
+                altar_blessing: Ticks::ZERO,
+            };
+            if self.spawn_here_or_nearby(entity, self.radius * 0.7, None) {
+            } else {
+            }
+        }
     }
 
     /// Spawns a certain amount of basic entities, all throughout the world.
@@ -362,6 +387,7 @@ impl World {
             id: unset_entity_id(),
             altitude: Altitude::ZERO,
             frozen: Ticks::ZERO,
+            altar_blessing: Ticks::ZERO,
         });
     }
 }

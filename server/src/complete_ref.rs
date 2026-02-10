@@ -6,7 +6,7 @@ use atomic_refcell::AtomicRef;
 use common::complete::CompleteTrait;
 use common::contact::ContactTrait;
 use common::death_reason::DeathReason;
-use common::protocol::{FactionUpdate, Update};
+use common::protocol::{FactionId, FactionUpdate, Update, WorldEvent};
 use common::terrain;
 use common::terrain::{ChunkSet, Terrain};
 use common::ticks::{Ticks, TicksRepr};
@@ -42,7 +42,14 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
         }
     }
 
-    pub fn into_update(self, counter: Ticks, loaded_chunks: &mut ChunkSet, faction_update: Option<FactionUpdate>) -> Update {
+    pub fn into_update(
+        self,
+        counter: Ticks,
+        loaded_chunks: &mut ChunkSet,
+        faction_update: Option<FactionUpdate>,
+        altar_position: Option<Vec2>,
+        altar_sacrifice_counts: [u8; FactionId::COUNT],
+    ) -> Update {
         let death_reason = if let Status::Dead { reason, .. } = &self.player.data.status {
             Some(reason.clone())
         } else {
@@ -85,6 +92,18 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
         // Read bot alliance setting from hot-reloadable config.
         let bot_alliance_enabled = crate::runtime_config::hot_bot_alliance_enabled();
 
+        // Filter events per-faction: strip server-internal events and
+        // only send faction-specific events to the correct faction.
+        let my_faction = self.player.data.faction;
+        let events: Vec<WorldEvent> = self.world.events.iter().filter(|e| match e {
+            // Server-internal event, never send to clients.
+            WorldEvent::AltarSacrifice { .. } => false,
+            // Only send to the faction that discovered.
+            WorldEvent::AltarDiscovered { faction, .. } => my_faction == Some(*faction),
+            // Global events.
+            _ => true,
+        }).cloned().collect();
+
         Update {
             contacts: self
                 .contacts
@@ -110,14 +129,17 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
                     send.then(|| contact.into_contact())
                 })
                 .collect(),
-            events: self.world.events.clone(),
+            events,
             death_reason,
             score: self.player.score,
+            kill_log: self.player.data.kill_log.iter().map(|(k, v)| (*k, *v)).collect(),
             world_radius: self.world.radius,
             terrain,
             bot_alliance_enabled,
             faction_data: faction_update,
-            my_faction: self.player.data.faction,
+            my_faction,
+            altar_position,
+            altar_sacrifice_counts,
         }
     }
 }

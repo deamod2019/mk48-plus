@@ -41,6 +41,8 @@ pub struct Entity {
     pub ticks: Ticks,
     /// Remaining freeze duration (Absolute Zero Pulse).
     pub frozen: Ticks,
+    /// Altar blessing: countdown for post-upgrade invulnerability (terrain + damage immune).
+    pub altar_blessing: Ticks,
 }
 
 /// unset_entity_id returns a nonexistent id that will be overwritten by world.add
@@ -60,6 +62,7 @@ impl Entity {
             player,
             ticks: Ticks::ZERO,
             frozen: Ticks::ZERO,
+            altar_blessing: Ticks::ZERO,
         }
     }
 
@@ -85,6 +88,10 @@ impl Entity {
 
     pub fn freeze_for(&mut self, duration: Ticks) {
         self.frozen = self.frozen.max(duration);
+    }
+
+    pub fn is_blessed(&self) -> bool {
+        self.altar_blessing != Ticks::ZERO
     }
 
     /// change_entity_type is the only valid way to change an entity's type.

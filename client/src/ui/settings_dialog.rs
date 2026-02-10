@@ -125,6 +125,15 @@ pub fn settings_dialog() -> Html {
         )
     });
 
+    let hall_of_fame = gctw.settings_cache.hall_of_fame;
+    let on_toggle_hall_of_fame = gctw.change_settings_callback.reform(move |_| {
+        Box::new(
+            move |settings: &mut Mk48Settings, browser_storages: &mut BrowserStorages| {
+                settings.set_hall_of_fame(!hall_of_fame, browser_storages);
+            },
+        )
+    });
+
     let circle_hud = gctw.settings_cache.circle_hud;
     let on_toggle_circle_hud = gctw.change_settings_callback.reform(move |_| {
         Box::new(
@@ -206,6 +215,11 @@ pub fn settings_dialog() -> Html {
             <label class={label_style.clone()}>
                 <input type="checkbox" checked={chat_dialog_shown} oninput={on_toggle_chat}/>
                 {"Radio"}
+            </label>
+
+            <label class={label_style.clone()}>
+                <input type="checkbox" checked={hall_of_fame} oninput={on_toggle_hall_of_fame}/>
+                {"Hall of Fame"}
             </label>
 
             <select

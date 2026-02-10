@@ -1232,6 +1232,7 @@ impl CommandTrait for DredgerSacrifice {
             id: unset_entity_id(),
             altitude: Altitude::ZERO,
             frozen: Ticks::ZERO,
+            altar_blessing: Ticks::ZERO,
         };
         world.add(oil_platform);
 
