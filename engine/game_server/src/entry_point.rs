@@ -65,6 +65,219 @@ lazy_static::lazy_static! {
     static ref HTTP_RATE_LIMITER: Mutex<IpRateLimiter> = Mutex::new(IpRateLimiter::new_bandwidth_limiter(1, 0));
 }
 
+/// Macro to generate a WebSocket upgrade handler for a given server actor Addr.
+/// This avoids duplicating 200+ lines of WS handler code for both /ws and /ws/arena.
+macro_rules! make_ws_handler {
+    ($ws_srv:expr) => {{
+        let ws_srv = $ws_srv;
+        axum::routing::get(async move |upgrade: WebSocketUpgrade, ConnectInfo(addr): ConnectInfo<SocketAddr>, user_agent: Option<TypedHeader<axum::headers::UserAgent>>, Query(query): Query<WebSocketQuery>| {
+            let user_agent_id = user_agent
+                .map(|h| UserAgent::new(h.as_str()))
+                .and_then(UserAgent::into_id);
+            let login_type = query.login_type;
+
+            let authenticate = Authenticate {
+                ip_address: addr.ip(),
+                referrer: query.referrer,
+                user_agent_id,
+                arena_id_session_id: query.arena_id.zip(query.session_id),
+                invitation_id: query.invitation_id,
+                oauth2_code: query.login_id.filter(|id| id.len() <= 2048 && login_type == Some(LoginType::Discord)).map(Oauth2Code::Discord),
+            };
+
+            const MAX_MESSAGE_SIZE: usize = 32768;
+            const TIMER_SECONDS: u64 = 10;
+            const TIMER_DURATION: Duration = Duration::from_secs(TIMER_SECONDS);
+            const WEBSOCKET_HARD_TIMEOUT: Duration = Duration::from_secs(TIMER_SECONDS * 2);
+
+            let mut protocol = query.protocol.unwrap_or_default();
+            match ws_srv.send(authenticate).await {
+                Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()),
+                Ok(result) => match result {
+                    // Currently, if authentication fails, it was due to rate limit.
+                    Err(_) => Err(StatusCode::TOO_MANY_REQUESTS.into_response()),
+                    Ok(player_id) => Ok(upgrade
+                        .max_frame_size(MAX_MESSAGE_SIZE)
+                        .max_message_size(MAX_MESSAGE_SIZE)
+                        .max_send_queue(32)
+                        .on_upgrade(async move |mut web_socket| {
+                        let (server_sender, mut server_receiver) = tokio::sync::mpsc::unbounded_channel::<ObserverUpdate<Update<G::GameUpdate>>>();
+
+                        let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate>>::Register {
+                            player_id,
+                            observer: server_sender.clone(),
+                        });
+
+                        let keep_alive = tokio::time::sleep(TIMER_DURATION);
+                        let mut last_activity = Instant::now();
+                        let mut rate_limiter = RateLimiterState::default();
+                        let mut measure_rtt_ping_governor = RateLimiterState::default();
+                        const RATE: RateLimiterProps = RateLimiterProps::const_new(Duration::from_millis(80), 5);
+                        const MEASURE_RTT_PING: RateLimiterProps = RateLimiterProps::const_new(Duration::from_secs(60), 0);
+
+                        pin_mut!(keep_alive);
+
+                        // For signaling what type of close frame should be sent, if any.
+                        // See https://github.com/tokio-rs/axum/issues/1061
+                        const NORMAL_CLOSURE: Option<CloseCode> = Some(1000);
+                        const PROTOCOL_ERROR: Option<CloseCode> = Some(1002);
+                        const SILENT_CLOSURE: Option<CloseCode> = None;
+
+                        let closure = loop {
+                            tokio::select! {
+                                web_socket_update = web_socket.recv() => {
+                                    match web_socket_update {
+                                        Some(result) => match result {
+                                            Ok(message) => {
+                                                last_activity = Instant::now();
+                                                keep_alive.as_mut().reset((last_activity + TIMER_DURATION).into());
+
+                                                match message {
+                                                    Message::Binary(binary) => {
+                                                        if rate_limiter.should_limit_rate_with_now(&RATE, last_activity) {
+                                                            continue;
+                                                        }
+
+                                                        match bincode::DefaultOptions::new()
+                                                            .with_limit(MAX_MESSAGE_SIZE as u64)
+                                                            .with_fixint_encoding()
+                                                            .allow_trailing_bytes()
+                                                            .deserialize(binary.as_ref())
+                                                        {
+                                                            Ok(request) => {
+                                                                protocol = WebSocketProtocol::Binary;
+                                                                let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate >>::Request {
+                                                                    player_id,
+                                                                    request,
+                                                                });
+                                                            }
+                                                            Err(err) => {
+                                                                warn!("deserialize binary err ignored {}", err);
+                                                            }
+                                                        }
+                                                    }
+                                                    Message::Text(text) => {
+                                                        if !ALLOW_WEB_SOCKET_JSON.load(Ordering::Relaxed) || rate_limiter.should_limit_rate_with_now(&RATE, last_activity) {
+                                                            continue;
+                                                        }
+
+                                                        let result: Result<Request<G::GameRequest>, serde_json::Error> = serde_json::from_str(&text);
+                                                        match result {
+                                                            Ok(request) => {
+                                                                protocol = WebSocketProtocol::Json;
+                                                                let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate >>::Request {
+                                                                    player_id,
+                                                                    request,
+                                                                });
+                                                            }
+                                                            Err(err) => {
+                                                                warn!("parse err ignored {}", err);
+                                                            }
+                                                        }
+                                                    }
+                                                    Message::Ping(_) => {
+                                                        // Axum spec says that automatic Pong will be sent.
+                                                    }
+                                                    Message::Pong(pong_data) => {
+                                                        if rate_limiter.should_limit_rate_with_now(&RATE, last_activity) {
+                                                            continue;
+                                                        }
+
+                                                        if let Ok(bytes) = pong_data.try_into() {
+                                                            let now = get_unix_time_now();
+                                                            let timestamp = UnixTime::from_ne_bytes(bytes);
+                                                            let rtt = now.saturating_sub(timestamp);
+                                                            if rtt <= 10000 as UnixTime {
+                                                                let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate >>::RoundTripTime {
+                                                                    player_id,
+                                                                    rtt: rtt as u16,
+                                                                });
+                                                            }
+                                                        } else {
+                                                            debug!("received invalid pong data");
+                                                        }
+                                                    },
+                                                    Message::Close(_) => {
+                                                        debug!("received close from client");
+                                                        // tungstenite will echo close frame if necessary.
+                                                        break SILENT_CLOSURE;
+                                                    },
+                                                }
+                                            }
+                                            Err(error) => {
+                                                debug!("web socket error: {:?}", error);
+                                                break PROTOCOL_ERROR;
+                                            }
+                                        }
+                                        None => {
+                                            // web socket closed already.
+                                            break SILENT_CLOSURE;
+                                        }
+                                    }
+                                },
+                                maybe_observer_update = server_receiver.recv() => {
+                                    let observer_update = match maybe_observer_update {
+                                        Some(observer_update) => observer_update,
+                                        None => {
+                                            // infrastructure wants websocket closed.
+                                            break NORMAL_CLOSURE
+                                        }
+                                    };
+                                    match observer_update {
+                                        ObserverUpdate::Send{message} => {
+                                            if !ALLOW_WEB_SOCKET_JSON.load(Ordering::Relaxed) {
+                                                protocol = WebSocketProtocol::Binary;
+                                            }
+                                            let web_socket_message = match protocol {
+                                                WebSocketProtocol::Binary => Message::Binary(bincode::serialize(&message).unwrap()),
+                                                WebSocketProtocol::Json => Message::Text(serde_json::to_string(&message).unwrap()),
+                                            };
+                                            if web_socket.send(web_socket_message).await.is_err() {
+                                                break NORMAL_CLOSURE;
+                                            }
+
+                                            if !measure_rtt_ping_governor.should_limit_rate_with_now(&MEASURE_RTT_PING, last_activity) {
+                                                if web_socket.send(Message::Ping(get_unix_time_now().to_ne_bytes().into())).await.is_err() {
+                                                    break NORMAL_CLOSURE;
+                                                }
+                                            }
+                                        }
+                                        ObserverUpdate::Close => {
+                                            break NORMAL_CLOSURE;
+                                        }
+                                    }
+                                },
+                                _ = keep_alive.as_mut() => {
+                                    if last_activity.elapsed() < WEBSOCKET_HARD_TIMEOUT {
+                                        if web_socket.send(Message::Ping(get_unix_time_now().to_ne_bytes().into())).await.is_err() {
+                                            break NORMAL_CLOSURE;
+                                        }
+                                        keep_alive.as_mut().reset((Instant::now() + TIMER_DURATION).into());
+                                    } else {
+                                        debug!("closing unresponsive");
+                                        break PROTOCOL_ERROR;
+                                    }
+                                }
+                            }
+                        };
+
+                        let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate>>::Unregister {
+                            player_id,
+                            observer: server_sender,
+                        });
+
+                        if let Some(code) = closure {
+                            let _ = web_socket.send(Message::Close(Some(CloseFrame{code, reason: "".into()}))).await;
+                        } else {
+                            let _ = web_socket.flush().await;
+                        }
+                    })),
+                },
+            }
+        })
+    }};
+}
+
 pub fn entry_point<G: GameArenaService>(game_client: MiniCdn, browser_router: bool) {
     let _ = actix::System::new().block_on(async move {
         let options = Options::from_args();
@@ -151,17 +364,46 @@ pub fn entry_point<G: GameArenaService>(game_client: MiniCdn, browser_router: bo
             .await,
         );
 
+        // --- Arena mode: second Infrastructure instance ---
+        let arena_srv = Infrastructure::<G>::start(
+            Infrastructure::new(
+                server_id,
+                None, // no system repo for arena
+                None, // no discord bot for arena
+                None, // no discord oauth2 for arena
+                static_hash,
+                region_id,
+                true, // database_read_only for arena
+                Some(0), // min_bots = 0 signals arena mode in Server::new()
+                Some(40), // max_bots = 40 for arena
+                Some(100), // bot_percent = 100 for arena
+                None, // no chat log for arena
+                None, // no trace log for arena
+                Arc::clone(&game_client),
+                &ALLOW_WEB_SOCKET_JSON,
+                None, // no admin config for arena
+                RateLimiterProps::new(
+                    Duration::from_secs(options.client_authenticate_rate_limit),
+                    options.client_authenticate_burst,
+                ),
+                true, // disable health check for arena
+                true, // disable leaderboard for arena
+            )
+            .await,
+        );
+
+        let ws_srv = srv.to_owned();
+        let ws_arena_srv = arena_srv.to_owned();
+        let admin_srv = srv.to_owned();
+        let leaderboard_srv = srv.to_owned();
+        let status_srv = srv.to_owned();
+        let system_srv = srv.to_owned();
+
         #[cfg(not(debug_assertions))]
         let certificate_paths = options
             .certificate_path
             .as_ref()
             .zip(options.private_key_path.as_ref());
-
-        let ws_srv = srv.to_owned();
-        let admin_srv = srv.to_owned();
-        let leaderboard_srv = srv.to_owned();
-        let status_srv = srv.to_owned();
-        let system_srv = srv.to_owned();
 
         #[cfg(not(debug_assertions))]
         let domain_clone_cors = domain.as_ref().map(|d| {
@@ -205,211 +447,8 @@ pub fn entry_point<G: GameArenaService>(game_client: MiniCdn, browser_router: bo
                     .body(boxed(Full::from("404 Not Found")))
                     .unwrap())
             }))
-            .route("/ws", axum::routing::get(async move |upgrade: WebSocketUpgrade, ConnectInfo(addr): ConnectInfo<SocketAddr>, user_agent: Option<TypedHeader<axum::headers::UserAgent>>, Query(query): Query<WebSocketQuery>| {
-                let user_agent_id = user_agent
-                    .map(|h| UserAgent::new(h.as_str()))
-                    .and_then(UserAgent::into_id);
-                let login_type = query.login_type;
-
-                let authenticate = Authenticate {
-                    ip_address: addr.ip(),
-                    referrer: query.referrer,
-                    user_agent_id,
-                    arena_id_session_id: query.arena_id.zip(query.session_id),
-                    invitation_id: query.invitation_id,
-                    oauth2_code: query.login_id.filter(|id| id.len() <= 2048 && login_type == Some(LoginType::Discord)).map(Oauth2Code::Discord),
-                };
-
-                const MAX_MESSAGE_SIZE: usize = 32768;
-                const TIMER_SECONDS: u64 = 10;
-                const TIMER_DURATION: Duration = Duration::from_secs(TIMER_SECONDS);
-                const WEBSOCKET_HARD_TIMEOUT: Duration = Duration::from_secs(TIMER_SECONDS * 2);
-
-                let mut protocol = query.protocol.unwrap_or_default();
-                match ws_srv.send(authenticate).await {
-                    Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()),
-                    Ok(result) => match result {
-                        // Currently, if authentication fails, it was due to rate limit.
-                        Err(_) => Err(StatusCode::TOO_MANY_REQUESTS.into_response()),
-                        Ok(player_id) => Ok(upgrade
-                            .max_frame_size(MAX_MESSAGE_SIZE)
-                            .max_message_size(MAX_MESSAGE_SIZE)
-                            .max_send_queue(32)
-                            .on_upgrade(async move |mut web_socket| {
-                            let (server_sender, mut server_receiver) = tokio::sync::mpsc::unbounded_channel::<ObserverUpdate<Update<G::GameUpdate>>>();
-
-                            let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate>>::Register {
-                                player_id,
-                                observer: server_sender.clone(),
-                            });
-
-                            let keep_alive = tokio::time::sleep(TIMER_DURATION);
-                            let mut last_activity = Instant::now();
-                            let mut rate_limiter = RateLimiterState::default();
-                            let mut measure_rtt_ping_governor = RateLimiterState::default();
-                            const RATE: RateLimiterProps = RateLimiterProps::const_new(Duration::from_millis(80), 5);
-                            const MEASURE_RTT_PING: RateLimiterProps = RateLimiterProps::const_new(Duration::from_secs(60), 0);
-
-                            pin_mut!(keep_alive);
-
-                            // For signaling what type of close frame should be sent, if any.
-                            // See https://github.com/tokio-rs/axum/issues/1061
-                            const NORMAL_CLOSURE: Option<CloseCode> = Some(1000);
-                            const PROTOCOL_ERROR: Option<CloseCode> = Some(1002);
-                            const SILENT_CLOSURE: Option<CloseCode> = None;
-
-                            let closure = loop {
-                                tokio::select! {
-                                    web_socket_update = web_socket.recv() => {
-                                        match web_socket_update {
-                                            Some(result) => match result {
-                                                Ok(message) => {
-                                                    last_activity = Instant::now();
-                                                    keep_alive.as_mut().reset((last_activity + TIMER_DURATION).into());
-
-                                                    match message {
-                                                        Message::Binary(binary) => {
-                                                            if rate_limiter.should_limit_rate_with_now(&RATE, last_activity) {
-                                                                continue;
-                                                            }
-
-                                                            match bincode::DefaultOptions::new()
-                                                                .with_limit(MAX_MESSAGE_SIZE as u64)
-                                                                .with_fixint_encoding()
-                                                                .allow_trailing_bytes()
-                                                                .deserialize(binary.as_ref())
-                                                            {
-                                                                Ok(request) => {
-                                                                    protocol = WebSocketProtocol::Binary;
-                                                                    let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate >>::Request {
-                                                                        player_id,
-                                                                        request,
-                                                                    });
-                                                                }
-                                                                Err(err) => {
-                                                                    warn!("deserialize binary err ignored {}", err);
-                                                                }
-                                                            }
-                                                        }
-                                                        Message::Text(text) => {
-                                                            if !ALLOW_WEB_SOCKET_JSON.load(Ordering::Relaxed) || rate_limiter.should_limit_rate_with_now(&RATE, last_activity) {
-                                                                continue;
-                                                            }
-
-                                                            let result: Result<Request<G::GameRequest>, serde_json::Error> = serde_json::from_str(&text);
-                                                            match result {
-                                                                Ok(request) => {
-                                                                    protocol = WebSocketProtocol::Json;
-                                                                    let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate >>::Request {
-                                                                        player_id,
-                                                                        request,
-                                                                    });
-                                                                }
-                                                                Err(err) => {
-                                                                    warn!("parse err ignored {}", err);
-                                                                }
-                                                            }
-                                                        }
-                                                        Message::Ping(_) => {
-                                                            // Axum spec says that automatic Pong will be sent.
-                                                        }
-                                                        Message::Pong(pong_data) => {
-                                                            if rate_limiter.should_limit_rate_with_now(&RATE, last_activity) {
-                                                                continue;
-                                                            }
-
-                                                            if let Ok(bytes) = pong_data.try_into() {
-                                                                let now = get_unix_time_now();
-                                                                let timestamp = UnixTime::from_ne_bytes(bytes);
-                                                                let rtt = now.saturating_sub(timestamp);
-                                                                if rtt <= 10000 as UnixTime {
-                                                                    let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate >>::RoundTripTime {
-                                                                        player_id,
-                                                                        rtt: rtt as u16,
-                                                                    });
-                                                                }
-                                                            } else {
-                                                                debug!("received invalid pong data");
-                                                            }
-                                                        },
-                                                        Message::Close(_) => {
-                                                            debug!("received close from client");
-                                                            // tungstenite will echo close frame if necessary.
-                                                            break SILENT_CLOSURE;
-                                                        },
-                                                    }
-                                                }
-                                                Err(error) => {
-                                                    debug!("web socket error: {:?}", error);
-                                                    break PROTOCOL_ERROR;
-                                                }
-                                            }
-                                            None => {
-                                                // web socket closed already.
-                                                break SILENT_CLOSURE;
-                                            }
-                                        }
-                                    },
-                                    maybe_observer_update = server_receiver.recv() => {
-                                        let observer_update = match maybe_observer_update {
-                                            Some(observer_update) => observer_update,
-                                            None => {
-                                                // infrastructure wants websocket closed.
-                                                break NORMAL_CLOSURE
-                                            }
-                                        };
-                                        match observer_update {
-                                            ObserverUpdate::Send{message} => {
-                                                if !ALLOW_WEB_SOCKET_JSON.load(Ordering::Relaxed) {
-                                                    protocol = WebSocketProtocol::Binary;
-                                                }
-                                                let web_socket_message = match protocol {
-                                                    WebSocketProtocol::Binary => Message::Binary(bincode::serialize(&message).unwrap()),
-                                                    WebSocketProtocol::Json => Message::Text(serde_json::to_string(&message).unwrap()),
-                                                };
-                                                if web_socket.send(web_socket_message).await.is_err() {
-                                                    break NORMAL_CLOSURE;
-                                                }
-
-                                                if !measure_rtt_ping_governor.should_limit_rate_with_now(&MEASURE_RTT_PING, last_activity) {
-                                                    if web_socket.send(Message::Ping(get_unix_time_now().to_ne_bytes().into())).await.is_err() {
-                                                        break NORMAL_CLOSURE;
-                                                    }
-                                                }
-                                            }
-                                            ObserverUpdate::Close => {
-                                                break NORMAL_CLOSURE;
-                                            }
-                                        }
-                                    },
-                                    _ = keep_alive.as_mut() => {
-                                        if last_activity.elapsed() < WEBSOCKET_HARD_TIMEOUT {
-                                            if web_socket.send(Message::Ping(get_unix_time_now().to_ne_bytes().into())).await.is_err() {
-                                                break NORMAL_CLOSURE;
-                                            }
-                                            keep_alive.as_mut().reset((Instant::now() + TIMER_DURATION).into());
-                                        } else {
-                                            debug!("closing unresponsive");
-                                            break PROTOCOL_ERROR;
-                                        }
-                                    }
-                                }
-                            };
-
-                            let _ = ws_srv.do_send(ObserverMessage::<Request<G::GameRequest>, Update<G::GameUpdate>>::Unregister {
-                                player_id,
-                                observer: server_sender,
-                            });
-
-                            if let Some(code) = closure {
-                                let _ = web_socket.send(Message::Close(Some(CloseFrame{code, reason: "".into()}))).await;
-                            } else {
-                                let _ = web_socket.flush().await;
-                            }
-                        })),
-                    },
-                }
-            }))
+            .route("/ws", make_ws_handler!(ws_srv))
+            .route("/ws/arena", make_ws_handler!(ws_arena_srv))
             .route("/system.json", axum::routing::get(move |ConnectInfo(addr): ConnectInfo<SocketAddr>, query: Query<SystemQuery>| {
                 let srv = system_srv.to_owned();
                 debug!("received system request");

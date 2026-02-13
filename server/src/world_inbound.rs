@@ -46,7 +46,16 @@ impl CommandTrait for Spawn {
             return Err("cannot spawn while already alive");
         }
 
-        if !self
+        // Arena mode: only submarines allowed.
+        if world.is_arena && !self.entity_type.is_submarine() {
+            return Err("arena mode: only submarines allowed");
+        }
+
+        // In arena, always allow level-2 submarines as respawn floor (matches spawn_options_arena).
+        let arena_floor = world.is_arena
+            && self.entity_type.is_submarine()
+            && self.entity_type.data().level <= 2;
+        if !arena_floor && !self
             .entity_type
             .can_spawn_as(player.score, player.is_bot(), moderator)
         {
@@ -595,6 +604,10 @@ impl CommandTrait for Upgrade {
         if let Status::Alive { entity_index, .. } = status {
             let entity = &mut world.entities[*entity_index];
             let moderator = player.client().map(|c| c.moderator).unwrap_or(false);
+            // Arena mode: can only upgrade to submarines.
+            if world.is_arena && !self.entity_type.is_submarine() {
+                return Err("arena mode: can only upgrade to submarines");
+            }
             if !entity.entity_type.can_upgrade_to(
                 self.entity_type,
                 player.score,

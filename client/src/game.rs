@@ -1919,6 +1919,7 @@ impl GameClient for Mk48Game {
                 altar_position: context.state.game.altar_position,
                 altar_sacrifice_counts: context.state.game.altar_sacrifice_counts,
                 kill_log: context.state.game.kill_log.clone(),
+                arena_mode: context.state.game.arena_mode,
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
@@ -2003,10 +2004,10 @@ impl GameClient for Mk48Game {
                             self.ui_state.armament,
                         )
                         .map(|i| {
-                            self.fire_rate_limiter.fired(i as u8);
+                            self.fire_rate_limiter.fired(i);
 
                             Fire {
-                                armament_index: i as u8,
+                                armament_index: i as u16,
                             }
                         })
                     } else {
@@ -2051,6 +2052,7 @@ impl GameClient for Mk48Game {
             UiStatus::Respawning(UiStatusRespawning {
                 death_reason,
                 kill_log: context.state.game.kill_log.clone(),
+                arena_mode: context.state.game.arena_mode,
             })
         } else {
             self.reset_warp_state();

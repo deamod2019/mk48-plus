@@ -49,6 +49,7 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
         faction_update: Option<FactionUpdate>,
         altar_position: Option<Vec2>,
         altar_sacrifice_counts: [u8; FactionId::COUNT],
+        arena_mode: bool,
     ) -> Update {
         let death_reason = if let Status::Dead { reason, .. } = &self.player.data.status {
             Some(reason.clone())
@@ -140,6 +141,7 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
             my_faction,
             altar_position,
             altar_sacrifice_counts,
+            arena_mode,
         }
     }
 }

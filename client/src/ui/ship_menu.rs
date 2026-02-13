@@ -33,6 +33,9 @@ pub struct ShipMenuProps {
     pub open: bool,
     #[prop_or(true)]
     pub closable: bool,
+    /// Whether in arena mode (submarines only).
+    #[prop_or(false)]
+    pub arena_mode: bool,
     #[prop_or_default]
     pub children: Children,
 }
@@ -88,7 +91,7 @@ pub fn ship_menu(props: &ShipMenuProps) -> Html {
     let rewarded_ad = use_rewarded_ad();
     let core_state = use_core_state();
     let moderator = core_state.player().map(|p| p.moderator).unwrap_or(false);
-    if moderator {
+    if moderator || props.arena_mode {
         min_level = 1;
         max_level = EntityData::MAX_BOAT_LEVEL;
     }
@@ -149,18 +152,31 @@ pub fn ship_menu(props: &ShipMenuProps) -> Html {
         (
             "upgrade",
             t.upgrade_to_level_label(*level as u32),
-            entity_type
-                .upgrade_options(props.score, false, moderator)
-                .filter(|entity_type| entity_type.data().level == *level)
-                .collect::<Vec<_>>(),
+            if props.arena_mode {
+                entity_type
+                    .upgrade_options_arena(props.score, false)
+                    .filter(|entity_type| entity_type.data().level == *level)
+                    .collect::<Vec<_>>()
+            } else {
+                entity_type
+                    .upgrade_options(props.score, false, moderator)
+                    .filter(|entity_type| entity_type.data().level == *level)
+                    .collect::<Vec<_>>()
+            },
         )
     } else {
         (
             "respawn",
             t.respawn_as_level_label(*level as u32),
-            EntityType::spawn_options(props.score, false, moderator)
-                .filter(|entity_type| entity_type.data().level == *level)
-                .collect::<Vec<_>>(),
+            if props.arena_mode {
+                EntityType::spawn_options_arena(props.score, false)
+                    .filter(|entity_type| entity_type.data().level == *level)
+                    .collect::<Vec<_>>()
+            } else {
+                EntityType::spawn_options(props.score, false, moderator)
+                    .filter(|entity_type| entity_type.data().level == *level)
+                    .collect::<Vec<_>>()
+            },
         )
     };
 

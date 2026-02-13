@@ -1,3 +1,4 @@
+
 // SPDX-FileCopyrightText: 2021 Softbear, Inc.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -25,6 +26,8 @@ use std::time::Duration;
 pub struct Server {
     pub world: World,
     pub counter: Ticks,
+    /// Whether this server instance runs in arena mode.
+    pub arena_mode: bool,
     /// Current faction war statistics (updated each tick when faction_mode is on).
     pub faction_update: Option<FactionUpdate>,
     /// Round-robin counter for init-time faction assignment.
@@ -75,9 +78,17 @@ impl GameArenaService for Server {
 
     /// new returns a game server with the specified parameters.
     fn new(_min_players: usize) -> Self {
+        // Convention: min_players == 0 signals arena mode.
+        let arena_mode = _min_players == 0;
+        let world = if arena_mode {
+            World::new_arena(1000.0)
+        } else {
+            World::new(6500.0)
+        };
         Self {
-            world: World::new(6500.0),
+            world,
             counter: Ticks::ZERO,
+            arena_mode,
             faction_update: None,
             faction_counter: 0,
             altar_sacrifices: [0; FactionId::COUNT],
@@ -98,6 +109,14 @@ impl GameArenaService for Server {
     ) {
         let mut player = player_tuple.borrow_player_mut();
         player.data.flags.left_game = false;
+
+        // Arena mode: give max score, no faction.
+        if self.arena_mode {
+            use common::entity::EntityData;
+            player.score = level_to_score(EntityData::MAX_BOAT_LEVEL);
+            player.data.faction = None;
+            return;
+        }
 
         // Assign faction when faction_mode is enabled.
         if crate::runtime_config::hot_faction_mode() && player.data.faction.is_none() {
@@ -222,8 +241,10 @@ impl GameArenaService for Server {
 
         let mut player = player_tuple.borrow_player_mut();
 
-        // Clear player's score.
-        player.score = 0;
+        // Arena mode: don't reset score (player keeps max score across respawns).
+        if !self.arena_mode {
+            player.score = 0;
+        }
 
         // Delete all player's entities (efficiently, in the next update cycle).
         player.data.flags.left_game = true;
@@ -251,6 +272,7 @@ impl GameArenaService for Server {
                     self.faction_update.clone(),
                     altar_pos,
                     self.altar_sacrifices,
+                    self.arena_mode,
                 ),
         )
     }
@@ -265,14 +287,23 @@ impl GameArenaService for Server {
         self.counter = self.counter.next();
 
         // Hot-reload bot limits from config file (if configured).
-        if let Some(v) = crate::runtime_config::hot_min_bots() {
-            context.bots.min_bots = v;
-        }
-        if let Some(v) = crate::runtime_config::hot_max_bots() {
-            context.bots.max_bots = v;
-        }
-        if let Some(v) = crate::runtime_config::hot_bot_percent() {
-            context.bots.bot_percent = v;
+        // Skip for arena mode — arena has its own fixed bot limits.
+        if !self.arena_mode {
+            if let Some(v) = crate::runtime_config::hot_min_bots() {
+                context.bots.min_bots = v;
+            }
+            if let Some(v) = crate::runtime_config::hot_max_bots() {
+                context.bots.max_bots = v;
+            }
+            if let Some(v) = crate::runtime_config::hot_bot_percent() {
+                context.bots.bot_percent = v;
+            }
+        } else {
+            // Arena mode: override min_bots since the initial value of 0 was
+            // only used as a signal for arena mode detection.
+            context.bots.min_bots = 20;
+            context.bots.max_bots = 40;
+            context.bots.bot_percent = 100;
         }
 
         #[cfg(not(debug_assertions))]
@@ -294,11 +325,27 @@ impl GameArenaService for Server {
             }
         }
 
-
         self.world.update(Ticks::ONE);
 
-        // ---- Droplet Altar processing ----
-        if crate::runtime_config::hot_faction_mode() {
+        // Arena mode: score cap as win condition.
+        // When a player reaches 10,000 points, they win and are removed.
+        if self.arena_mode {
+            const ARENA_SCORE_CAP: u32 = 10_000;
+            let mut to_kill: Vec<crate::entities::EntityIndex> = Vec::new();
+            for player in context.players.iter_borrow() {
+                if player.score >= ARENA_SCORE_CAP {
+                    if let Status::Alive { entity_index, .. } = player.data.status {
+                        to_kill.push(entity_index);
+                    }
+                }
+            }
+            for idx in to_kill {
+                self.world.remove(idx, common::death_reason::DeathReason::Border);
+            }
+        }
+
+        // ---- Droplet Altar processing (skip in arena mode) ----
+        if !self.arena_mode && crate::runtime_config::hot_faction_mode() {
             use common::entity::{EntityData, EntityKind};
             use rand::seq::SliceRandom;
 
@@ -483,7 +530,7 @@ impl GameArenaService for Server {
         // ---- End Droplet Altar processing ----
 
         // Calculate faction statistics each tick (cheap: just iterates players).
-        if crate::runtime_config::hot_faction_mode() {
+        if !self.arena_mode && crate::runtime_config::hot_faction_mode() {
             let mut factions: [FactionStats; FactionId::COUNT] = core::array::from_fn(|_| FactionStats::default());
             let mut player_factions = Vec::new();
             for player in context.players.iter_borrow() {

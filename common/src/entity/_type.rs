@@ -114,6 +114,36 @@ impl EntityType {
         .flatten()
     }
 
+    /// Returns true if this entity type is a submarine (Boat + Submarine sub_kind).
+    pub fn is_submarine(self) -> bool {
+        let data = self.data();
+        data.kind == EntityKind::Boat && data.sub_kind == EntitySubKind::Submarine
+    }
+
+    /// Arena spawn options: submarines available at the given score.
+    /// Always includes the lowest-level submarines (level 2) as a respawn floor,
+    /// so players/bots can always respawn regardless of score.
+    pub fn spawn_options_arena(
+        score: u32,
+        bot: bool,
+    ) -> impl Iterator<Item = Self> + IteratorRandom {
+        Self::iter().filter(move |t| {
+            t.is_submarine()
+                && (t.can_spawn_as(score, bot, false) || t.data().level <= 2)
+        })
+    }
+
+    /// Arena upgrade options: only upgrade to other submarines.
+    pub fn upgrade_options_arena(
+        self,
+        score: u32,
+        bot: bool,
+    ) -> impl Iterator<Item = Self> + IteratorRandom {
+        Self::iter().filter(move |t| {
+            t.is_submarine() && self.can_upgrade_to(*t, score, bot, false)
+        })
+    }
+
     /// iterates all loot types entity should drop. Takes score before death.
     pub fn loot(self, score: u32, score_to_coins: bool) -> impl Iterator<Item = Self> + 'static {
         let data: &EntityData = self.data();
@@ -1491,7 +1521,7 @@ pub enum EntityType {
     #[entity(Boat, Tank, level = 8)]
     #[size(length = 22.0, width = 5.7, draft = 1.0)]
     #[props(speed = 16.67, ram_damage = 3)]
-    #[sensors(visual = 800, radar = 800)]
+    #[sensors(visual = 20000, radar = 20000)]
     #[armament(Df41Missile, forward = -5.0, side = 0.0, angle = 0.0, vertical)]
     Df41,
     #[info(
@@ -1845,10 +1875,10 @@ pub enum EntityType {
     #[props(speed = 16.5, torpedo_resistance = 0.5, stealth = 0.1, damage = 200.0)]
     #[sensors(visual = 1000, radar = 1000)]
     #[armament(TieFighter, forward = 0.0, side = 0.0, angle = 0.0, count = 12, hidden)]
-    #[turret(_458X1980MmR, forward = 160.0, side = 0.0, slow, azimuth_b = 10)]
-    #[turret(_458X1980MmR, forward = 100.0, slow, azimuth_b = 25)]
-    #[turret(_458X1980MmR, forward = -60.0, angle = 180, slow, azimuth_b = 25)]
-    #[turret(_458X1980MmR, forward = -120.0, angle = 180, slow, azimuth_b = 10)]
+    #[turret(_45Type94, forward = 160.0, side = 0.0, slow, azimuth_b = 10)]
+    #[turret(_45Type94, forward = 100.0, slow, azimuth_b = 25)]
+    #[turret(_45Type94, forward = -60.0, angle = 180, slow, azimuth_b = 25)]
+    #[turret(_45Type94, forward = -120.0, angle = 180, slow, azimuth_b = 10)]
     #[turret(Turbolaser, forward = 140.0, side = 25.0, symmetrical)]
     #[turret(Turbolaser, forward = -40.0, side = 25.0, symmetrical)]
     #[turret(_127X680MmR, forward = 120.0, side = 20.0, fast, azimuth_b = 120)]
@@ -1888,7 +1918,14 @@ pub enum EntityType {
     #[size(length = 480.0, width = 110.0, draft = 12.0, mast = 60.0)]
     #[props(speed = 12.0, torpedo_resistance = 0.5, damage = 180.0)]
     #[sensors(visual = 1000, radar = 1000, sonar = 900)]
-    #[armament(ObsidianCruiseMissile, forward = -20.0, side = 0.0, count = 7, symmetrical, vertical)]
+    // 替代导弹的舰炮 x14 (原 ObsidianCruiseMissile count=7 × symmetrical)
+    #[turret(_45Type94, forward = -10.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -20.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -30.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -40.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -50.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -60.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -70.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
     #[armament(PoseidonTorpedo, forward = 80.0, side = 6.0, angle = 0.0, count = 2, symmetrical)]
     #[turret(ThorRailgun, forward = 170.0, side = 0.0, slow, azimuth_b = 10)]
     #[turret(ThorRailgun, forward = 140.0, side = 12.0, slow, azimuth_b = 20, symmetrical)]
@@ -1930,6 +1967,20 @@ pub enum EntityType {
     #[armament(BrahMos, forward = 15, side = 3, count = 4, symmetrical, vertical)]
     #[armament(Brosok, forward = -50, side = 2, count = 2, symmetrical, angle = 180)]
     Typhoon,
+    // ============ Level 12 Belgorod ============
+    #[info(label = "别尔哥罗德", link = "https://en.wikipedia.org/wiki/Russian_submarine_Belgorod")]
+    #[entity(Boat, Submarine, level = 12)]
+    #[size(length = 184.0, width = 18.2, draft = 10.0, mast = 6.0)]
+    #[props(speed = 20.0, depth = 500, torpedo_resistance = 0.4, stealth = 0.3, damage = 12.0)]
+    #[sensors(sonar = 700, visual = 500, radar = 600)]
+    // 波塞冬核鱼雷 ×4
+    #[armament(Poseidon, forward = 20.0, side = 4.0, angle = 0, count = 2, symmetrical)]
+    // P-700 反舰导弹 ×6
+    #[armament(P700, forward = 10.0, side = 5.0, angle = 0, count = 3, symmetrical, vertical)]
+    // 诱饵 ×4
+    #[armament(Brosok, forward = -50.0, side = 3.0, angle = 180, count = 2, symmetrical)]
+    #[skills(EmergencyRepair)]
+    Belgorod,
     #[info(label = "Zubr", link = "https://en.wikipedia.org/wiki/Zubr-class_LCAC")]
     #[entity(Boat, Hovercraft, level = 2)]
     #[size(length = 57, width = 21.152344, draft = 1.6)]
@@ -2069,12 +2120,6 @@ pub enum EntityType {
     #[props(speed = 1000, range = 8000)]
     #[sensors(radar)]
     Jagm,
-    #[info(label = "Obsidian Hypersonic Cruise Missile")]
-    #[entity(Weapon, Missile, level = 13)]
-    #[size(length = 6.0, width = 0.9)]
-    #[props(speed = 1200, range = 200000, reload = 10, damage = 12.0)]
-    #[sensors(radar)]
-    ObsidianCruiseMissile,
     #[info(label = "SU-57 Heavy Missile")]
     #[entity(Weapon, Missile, level = 13)]
     #[size(length = 1.8, width = 0.18)]
@@ -2927,6 +2972,12 @@ pub enum EntityType {
     #[props(speed = 300.0, range = 300000.0, reload = 60.0, damage = 15.0)]
     #[sensors(radar)]
     Df41Missile,
+    #[info(label = "Poseidon", link = "https://en.wikipedia.org/wiki/Status-6_Oceanic_Multipurpose_System")]
+    #[entity(Weapon, Torpedo, level = 12)]
+    #[size(length = 20.0, width = 2.0)]
+    #[props(speed = 51.44, range = 200000.0, reload = 15.0, damage = 5.0)]
+    #[sensors(sonar)]
+    Poseidon,
     // ============ UNSC Infinite Weapons ============
     #[info(label = "P-270 Moskit", link = "https://en.wikipedia.org/wiki/P-270_Moskit")]
     #[entity(Weapon, Missile, level = 6)]
@@ -3039,12 +3090,12 @@ pub enum EntityType {
     #[props(speed = 21.6, damage = 60.0)]
     #[sensors(visual = 1200, radar = 1200, sonar = 800)]
     // 主炮塔 460mm三联装 x6 (turret 0-5)
-    #[turret(_458X1980MmR, forward = 250.0, slow, azimuth_b = 20)]
-    #[turret(_458X1980MmR, forward = 180.0, slow, azimuth_b = 30)]
-    #[turret(_458X1980MmR, forward = 110.0, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = -110.0, angle = 180, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = -180.0, angle = 180, slow, azimuth_b = 30)]
-    #[turret(_458X1980MmR, forward = -250.0, angle = 180, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = 250.0, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = 180.0, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = 110.0, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -110.0, angle = 180, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -180.0, angle = 180, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = -250.0, angle = 180, slow, azimuth_b = 20)]
     // 副炮 127mm x12 (turret 6-17, symmetrical = 6 pairs)
     #[turret(_127X680MmR, forward = 200.0, side = 35.0, fast, symmetrical)]
     #[turret(_127X680MmR, forward = 140.0, side = 40.0, fast, symmetrical)]
@@ -3057,36 +3108,36 @@ pub enum EntityType {
     #[turret(Rim116, forward = 100.0, side = 45.0, fast, symmetrical)]
     #[turret(Rim116, forward = -100.0, side = 45.0, fast, symmetrical)]
     #[turret(Rim116, forward = -220.0, side = 30.0, fast, symmetrical)]
-    // 巡航导弹 Tomahawk x32 (symmetrical = 2 slots each, 16 declarations = 32 slots)
-    #[armament(Tomahawk, forward = 60.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 50.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 40.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 30.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 20.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 10.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 0.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -10.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -20.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -30.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -40.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -50.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -60.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -70.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -80.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -90.0, side = 25.0, symmetrical, vertical)]
-    // 防空导弹 ESSM x24 (symmetrical = 2 slots each, 12 declarations = 24 slots)
-    #[armament(Essm, forward = 150.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 140.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 130.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -130.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -140.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -150.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 70.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 60.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 50.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -50.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -60.0, side = 20.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -70.0, side = 20.0, symmetrical, vertical)]
+    // 替代巡航导弹的舰炮 x32 (原 Tomahawk x16 lines × symmetrical)
+    #[turret(_45Type94, forward = 60.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 50.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 40.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 30.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 20.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 10.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 0.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -10.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -20.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -30.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -40.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -50.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -60.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -70.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -80.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -90.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    // 替代防空导弹的舰炮 x24 (原 Essm x12 lines × symmetrical)
+    #[turret(_45Type94, forward = 150.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 140.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 130.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -130.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -140.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -150.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 70.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 60.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 50.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -50.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -60.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -70.0, side = 20.0, slow, azimuth_b = 40, symmetrical)]
     // 反潜直升机 x8
     #[armament(Seahawk, forward = -180.0, side = 0.0, angle = 0.0, count = 8, hidden)]
     // 总计: 6主炮 + 12副炮 + 8近防 + 32巡航 + 24防空 + 8直升机 = 90炮塔武器 + 64导弹武器 + 8直升机
@@ -3112,14 +3163,14 @@ pub enum EntityType {
     #[props(speed = 55.0, damage = 75.0)]
     #[sensors(visual = 1400, radar = 1400, sonar = 1000)]
     // 主炮塔 460mm三联装 x8 (turret 0-7)
-    #[turret(_458X1980MmR, forward = 220.0, slow, azimuth_b = 20)]
-    #[turret(_458X1980MmR, forward = 165.0, slow, azimuth_b = 30)]
-    #[turret(_458X1980MmR, forward = 110.0, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = 55.0, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = -55.0, angle = 180, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = -110.0, angle = 180, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = -165.0, angle = 180, slow, azimuth_b = 30)]
-    #[turret(_458X1980MmR, forward = -220.0, angle = 180, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = 220.0, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = 165.0, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = 110.0, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = 55.0, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -55.0, angle = 180, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -110.0, angle = 180, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -165.0, angle = 180, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = -220.0, angle = 180, slow, azimuth_b = 20)]
     // 副炮 127mm x16 (turret 8-23, symmetrical = 8 pairs)
     #[turret(_127X680MmR, forward = 180.0, side = 45.0, fast, symmetrical)]
     #[turret(_127X680MmR, forward = 130.0, side = 50.0, fast, symmetrical)]
@@ -3136,50 +3187,50 @@ pub enum EntityType {
     #[turret(Rim116, forward = -70.0, side = 55.0, fast, symmetrical)]
     #[turret(Rim116, forward = -140.0, side = 55.0, fast, symmetrical)]
     #[turret(Rim116, forward = -200.0, side = 35.0, fast, symmetrical)]
-    // 巡航导弹 Tomahawk x48 (symmetrical = 2 each, 24 declarations)
-    #[armament(Tomahawk, forward = 100.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 90.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 80.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 70.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 60.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 50.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 40.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 30.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 20.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 10.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 0.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -10.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -20.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -30.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -40.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -50.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -60.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -70.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -80.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -90.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -100.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -110.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -120.0, side = 30.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -130.0, side = 30.0, symmetrical, vertical)]
-    // 防空导弹 ESSM x36 (symmetrical = 2 each, 18 declarations)
-    #[armament(Essm, forward = 150.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 140.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 130.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 120.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 110.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -110.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -120.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -130.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -140.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -150.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 25.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 15.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = 5.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -5.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -15.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -25.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -35.0, side = 25.0, symmetrical, vertical)]
-    #[armament(Essm, forward = -45.0, side = 25.0, symmetrical, vertical)]
+    // 替代巡航导弹的舰炮 x48 (原 Tomahawk x24 lines × symmetrical)
+    #[turret(_45Type94, forward = 100.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 90.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 80.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 70.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 60.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 50.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 40.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 30.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 20.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 10.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 0.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -10.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -20.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -30.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -40.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -50.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -60.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -70.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -80.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -90.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -100.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -110.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -120.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -130.0, side = 30.0, slow, azimuth_b = 40, symmetrical)]
+    // 替代防空导弹的舰炮 x36 (原 Essm x18 lines × symmetrical)
+    #[turret(_45Type94, forward = 150.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 140.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 130.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 120.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 110.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -110.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -120.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -130.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -140.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -150.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 25.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 15.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 5.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -5.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -15.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -25.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -35.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -45.0, side = 25.0, slow, azimuth_b = 40, symmetrical)]
     // 反潜直升机 x12
     #[armament(Seahawk, forward = -180.0, side = 0.0, angle = 0.0, count = 12, hidden)]
     // 鱼雷 Mark48 x24 (symmetrical = 2 each, 12 declarations)
@@ -3211,11 +3262,11 @@ pub enum EntityType {
     #[turret(_127X680MmR, forward = 20.0, fast)]
     #[turret(_127X680MmR, forward = -20.0, angle = 180, fast)]
     #[turret(_127X680MmR, forward = -40.0, angle = 180, fast)]
-    // Tomahawk 巡航导弹 x8
-    #[armament(Tomahawk, forward = 10.0, side = 5.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = 0.0, side = 5.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -10.0, side = 5.0, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -20.0, side = 5.0, symmetrical, vertical)]
+    // 替代导弹的舰炮 x8 (原 Tomahawk x4 lines × symmetrical)
+    #[turret(_45Type94, forward = 10.0, side = 5.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 0.0, side = 5.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -10.0, side = 5.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -20.0, side = 5.0, slow, azimuth_b = 40, symmetrical)]
     // Mark54 鱼雷 x4
     #[armament(Mark54, forward = 20.0, side = 6.0, angle = 90, symmetrical)]
     #[armament(Mark54, forward = 0.0, side = 6.0, angle = 90, symmetrical)]
@@ -3623,6 +3674,41 @@ pub enum EntityType {
     // 总计: 24 Mk82 + 8 P700 = 32 武器槽 ✅
     #[skills(EngineBoost)]
     KirovAirship,
+    // ============ Kearsarge-class Battleship ============
+    #[info(label = "Kearsarge", link = "https://en.wikipedia.org/wiki/Kearsarge-class_battleship")]
+    #[entity(Boat, Battleship, level = 11)]
+    #[size(length = 114.4, width = 27.0, draft = 7.16, mast = 20.0)]
+    #[props(speed = 16.0, damage = 25.0, torpedo_resistance = 0.40)]
+    #[sensors(visual = 800, radar = 800)]
+    // 主炮塔 Mark7 x2 — 前1后1
+    #[turret(_45Type94, forward = 40.0, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = -35.0, angle = 180, slow, azimuth_b = 20)]
+    // 200mm副炮 x4 — 两侧各2
+    #[turret(_127X680MmR, forward = 15.0, side = 10.0, fast, symmetrical)]
+    #[turret(_127X680MmR, forward = -15.0, side = 10.0, fast, symmetrical)]
+    // 替代导弹的舰炮 x12 (原 Tomahawk count=3 × 2 lines × symmetrical)
+    #[turret(_45Type94, forward = 8.0, side = 8.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 5.0, side = 8.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 2.0, side = 8.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -22.0, side = 8.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -25.0, side = 8.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -28.0, side = 8.0, slow, azimuth_b = 40, symmetrical)]
+    // Mark48 鱼雷 x12 — 两侧各6
+    #[armament(Mark48, forward = 20.0, side = 12.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = 10.0, side = 12.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = 0.0, side = 12.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -5.0, side = 12.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -10.0, side = 12.0, angle = 90, symmetrical)]
+    #[armament(Mark48, forward = -20.0, side = 12.0, angle = 90, symmetrical)]
+    // Seahawk 直升机 x5 — 后部甲板
+    #[armament(Seahawk, forward = -45.0, external)]
+    #[armament(Seahawk, forward = -40.0, side = 8.0, symmetrical, external)]
+    #[armament(Seahawk, forward = -50.0, side = 8.0, symmetrical, external)]
+    // 总计: 2主炮 + 4副炮 + 12 Tomahawk + 12 Mark48 + 5 Seahawk = 35 武器槽 ✅
+    #[exhaust(forward = -10.0)]
+    #[exhaust(forward = -25.0)]
+    #[skills(BurstLoading, EmergencyRepair)]
+    Kearsarge,
     // ============ H-44 超级战列舰 ============
     #[info(label = "H-44 超级战列舰", link = "https://en.wikipedia.org/wiki/H-class_battleship_proposals")]
     #[entity(Boat, Battleship, level = 11)]
@@ -3630,26 +3716,30 @@ pub enum EntityType {
     #[props(speed = 16.0, damage = 30.0, torpedo_resistance = 0.3)]
     #[sensors(visual = 1000, radar = 1000)]
     // 508mm主炮塔 x12 — 前6后6
-    #[turret(_458X1980MmR, forward = 140.0, slow, azimuth_b = 20)]
-    #[turret(_458X1980MmR, forward = 115.0, slow, azimuth_b = 25)]
-    #[turret(_458X1980MmR, forward = 90.0, slow, azimuth_b = 30)]
-    #[turret(_458X1980MmR, forward = 65.0, slow, azimuth_b = 35)]
-    #[turret(_458X1980MmR, forward = 40.0, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = 15.0, slow, azimuth_b = 45)]
-    #[turret(_458X1980MmR, forward = -15.0, angle = 180, slow, azimuth_b = 45)]
-    #[turret(_458X1980MmR, forward = -40.0, angle = 180, slow, azimuth_b = 40)]
-    #[turret(_458X1980MmR, forward = -65.0, angle = 180, slow, azimuth_b = 35)]
-    #[turret(_458X1980MmR, forward = -90.0, angle = 180, slow, azimuth_b = 30)]
-    #[turret(_458X1980MmR, forward = -115.0, angle = 180, slow, azimuth_b = 25)]
-    #[turret(_458X1980MmR, forward = -140.0, angle = 180, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = 140.0, slow, azimuth_b = 20)]
+    #[turret(_45Type94, forward = 115.0, slow, azimuth_b = 25)]
+    #[turret(_45Type94, forward = 90.0, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = 65.0, slow, azimuth_b = 35)]
+    #[turret(_45Type94, forward = 40.0, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = 15.0, slow, azimuth_b = 45)]
+    #[turret(_45Type94, forward = -15.0, angle = 180, slow, azimuth_b = 45)]
+    #[turret(_45Type94, forward = -40.0, angle = 180, slow, azimuth_b = 40)]
+    #[turret(_45Type94, forward = -65.0, angle = 180, slow, azimuth_b = 35)]
+    #[turret(_45Type94, forward = -90.0, angle = 180, slow, azimuth_b = 30)]
+    #[turret(_45Type94, forward = -115.0, angle = 180, slow, azimuth_b = 25)]
+    #[turret(_45Type94, forward = -140.0, angle = 180, slow, azimuth_b = 20)]
     // 127mm副炮 x8 (两侧各4)
     #[turret(_127X680MmR, forward = 100.0, side = 25.0, fast, symmetrical)]
     #[turret(_127X680MmR, forward = 50.0, side = 30.0, fast, symmetrical)]
     #[turret(_127X680MmR, forward = -50.0, side = 30.0, fast, symmetrical)]
     #[turret(_127X680MmR, forward = -100.0, side = 25.0, fast, symmetrical)]
-    // Tomahawk 巡航导弹 x12
-    #[armament(Tomahawk, forward = 10.0, side = 15.0, count = 3, symmetrical, vertical)]
-    #[armament(Tomahawk, forward = -20.0, side = 15.0, count = 3, symmetrical, vertical)]
+    // 替代导弹的舰炮 x12 (原 Tomahawk count=3 × 2 lines × symmetrical)
+    #[turret(_45Type94, forward = 13.0, side = 15.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 10.0, side = 15.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = 7.0, side = 15.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -17.0, side = 15.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -20.0, side = 15.0, slow, azimuth_b = 40, symmetrical)]
+    #[turret(_45Type94, forward = -23.0, side = 15.0, slow, azimuth_b = 40, symmetrical)]
     // Seahawk 直升机 x5
     #[armament(Seahawk, forward = -150.0, external)]
     #[armament(Seahawk, forward = -140.0, side = 10.0, symmetrical, external)]

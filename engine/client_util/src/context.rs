@@ -343,7 +343,8 @@ impl<G: GameClient> Context<G> {
 
         let query = js_hooks::window().location().search().ok();
         let params = query.and_then(|query| UrlSearchParams::new_with_str(&query).ok());
-        let oauth2_code = params.and_then(|params| params.get("code"));
+        let oauth2_code = params.as_ref().and_then(|params| params.get("code"));
+        let is_arena = params.as_ref().and_then(|params| params.get("arena")).is_some();
 
         let web_socket_query = WebSocketQuery {
             protocol: Some(common_settings.protocol),
@@ -357,8 +358,10 @@ impl<G: GameClient> Context<G> {
 
         let web_socket_query_url = serde_urlencoded::to_string(&web_socket_query).unwrap();
 
+        let ws_path = if is_arena { "/ws/arena" } else { "/ws" };
+
         (
-            format!("{}://{}/ws?{}", scheme, ideal_host, web_socket_query_url),
+            format!("{}://{}{}?{}", scheme, ideal_host, ws_path, web_socket_query_url),
             ideal_server_id,
         )
     }

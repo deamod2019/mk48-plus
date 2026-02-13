@@ -305,8 +305,8 @@ impl World {
             ticks.0 as usize * 2,
         );
 
-        // Ensure exactly 1 Droplet Altar exists on the map.
-        if self.arena.count(EntityType::DropletAltar) == 0 {
+        // Ensure exactly 1 Droplet Altar exists on the map (skip in arena mode).
+        if !self.is_arena && self.arena.count(EntityType::DropletAltar) == 0 {
             let entity = Entity {
                 player: None,
                 transform: Transform {

@@ -32,6 +32,8 @@ pub struct Mk48State {
     pub altar_position: Option<glam::Vec2>,
     /// Per-faction sacrifice counts.
     pub altar_sacrifice_counts: [u8; FactionId::COUNT],
+    /// Whether connected to arena mode server.
+    pub arena_mode: bool,
     terrain_reset: bool,
 }
 
@@ -52,6 +54,7 @@ impl Default for Mk48State {
             my_faction: None,
             altar_position: None,
             altar_sacrifice_counts: [0; FactionId::COUNT],
+            arena_mode: false,
             terrain_reset: false,
         }
     }
@@ -96,6 +99,7 @@ impl Apply<Update> for Mk48State {
         self.my_faction = update.my_faction;
         self.altar_position = update.altar_position;
         self.altar_sacrifice_counts = update.altar_sacrifice_counts;
+        self.arena_mode = update.arena_mode;
     }
 
     fn reset(&mut self) {

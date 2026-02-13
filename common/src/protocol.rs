@@ -43,6 +43,9 @@ pub struct Update {
     /// Current altar sacrifice progress for all factions.
     #[serde(default)]
     pub altar_sacrifice_counts: [u8; FactionId::COUNT],
+    /// Whether this update comes from an arena instance.
+    #[serde(default)]
+    pub arena_mode: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -169,7 +172,7 @@ pub struct Control {
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct Fire {
     /// The index of the weapon to fire/use, relative to `EntityData.armaments`.
-    pub armament_index: u8,
+    pub armament_index: u16,
 }
 
 /// Provide hints to optimize experience.

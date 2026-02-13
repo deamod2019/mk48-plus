@@ -41,7 +41,7 @@ impl Mk48Game {
 
                 // Don't limit dredger fire rate so players with bad ping can build faster.
                 // TODO fix ping reducing fire rate for all weapons.
-                if !((player_contact.reloads()[i] && fire_rate_limiter.is_ready(i as u8))
+                if !((player_contact.reloads()[i] && fire_rate_limiter.is_ready(i))
                     || armament_entity_data.sub_kind == EntitySubKind::Depositor
                     || armament_entity_data.sub_kind == EntitySubKind::Shovel)
                 {
@@ -208,9 +208,9 @@ impl FireRateLimiter {
         }
     }
 
-    pub fn is_ready(&self, armament_index: u8) -> bool {
+    pub fn is_ready(&self, armament_index: usize) -> bool {
         self.counters
-            .get(armament_index as usize)
+            .get(armament_index)
             .map(|&v| v == 0)
             .unwrap_or(true)
     }
@@ -219,11 +219,11 @@ impl FireRateLimiter {
         self.counters.iter().all(|&v| v == 0)
     }
 
-    pub fn fired(&mut self, armament_index: u8) {
-        while armament_index as usize >= self.counters.len() {
+    pub fn fired(&mut self, armament_index: usize) {
+        while armament_index >= self.counters.len() {
             self.counters.push(0);
         }
-        self.counters[armament_index as usize] = 3;
+        self.counters[armament_index] = 3;
     }
 
     pub fn update(&mut self, elapsed_seconds: f32) {

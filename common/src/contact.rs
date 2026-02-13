@@ -19,41 +19,33 @@ use std::fmt::Formatter;
 use std::iter::repeat_with;
 use std::sync::Arc;
 
-pub type ReloadsStorage = [u32; 8];
+pub type ReloadsStorage = [u32; 16];
 
-/// Total bits available in ReloadsStorage (256 bits)
-pub const RELOADS_STORAGE_BITS: usize = 256;
-/// Total bytes in ReloadsStorage (32 bytes)
-pub const RELOADS_STORAGE_BYTES: usize = 32;
+/// Total bits available in ReloadsStorage (512 bits)
+pub const RELOADS_STORAGE_BITS: usize = 512;
+/// Total bytes in ReloadsStorage (64 bytes)
+pub const RELOADS_STORAGE_BYTES: usize = 64;
 
 /// Helper to convert ReloadsStorage to little-endian bytes
 #[inline]
 pub fn reloads_to_le_bytes(storage: &ReloadsStorage) -> [u8; RELOADS_STORAGE_BYTES] {
     let mut bytes = [0u8; RELOADS_STORAGE_BYTES];
-    bytes[0..4].copy_from_slice(&storage[0].to_le_bytes());
-    bytes[4..8].copy_from_slice(&storage[1].to_le_bytes());
-    bytes[8..12].copy_from_slice(&storage[2].to_le_bytes());
-    bytes[12..16].copy_from_slice(&storage[3].to_le_bytes());
-    bytes[16..20].copy_from_slice(&storage[4].to_le_bytes());
-    bytes[20..24].copy_from_slice(&storage[5].to_le_bytes());
-    bytes[24..28].copy_from_slice(&storage[6].to_le_bytes());
-    bytes[28..32].copy_from_slice(&storage[7].to_le_bytes());
+    for i in 0..16 {
+        let offset = i * 4;
+        bytes[offset..offset + 4].copy_from_slice(&storage[i].to_le_bytes());
+    }
     bytes
 }
 
 /// Helper to convert little-endian bytes to ReloadsStorage
 #[inline]
 pub fn reloads_from_le_bytes(bytes: [u8; RELOADS_STORAGE_BYTES]) -> ReloadsStorage {
-    [
-        u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
-        u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
-        u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
-        u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
-        u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
-        u32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
-        u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
-        u32::from_le_bytes([bytes[28], bytes[29], bytes[30], bytes[31]]),
-    ]
+    let mut storage = [0u32; 16];
+    for i in 0..16 {
+        let offset = i * 4;
+        storage[i] = u32::from_le_bytes([bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]]);
+    }
+    storage
 }
 
 pub trait ContactTrait {

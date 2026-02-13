@@ -59,6 +59,7 @@ pub fn respawn_overlay(props: &RespawnOverlayProps) -> Html {
                 score={props.score}
                 {onclick}
                 closable={false}
+                arena_mode={props.status.arena_mode}
             />
             <div id="banner_bottom" style="margin: 5rem auto;"></div>
         </div>

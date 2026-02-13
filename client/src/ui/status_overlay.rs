@@ -21,20 +21,34 @@ pub fn status_overlay(props: &StatusProps) -> Html {
     let t = use_translation();
     let status = &props.status;
     let score = props.score;
+    let arena_mode = props.status.arena_mode;
+
+    // Arena mode: show progress toward 10,000 goal
+    const ARENA_GOAL: u32 = 10000;
+
     let level = score_to_level(score);
     let level_score = level_to_score(level);
     let next_level = level + 1;
     let next_level_score = level_to_score(next_level);
-    let progress = common_util::range::map_ranges(
-        props.score as f32,
-        level_score as f32..next_level_score as f32,
-        0.0..1.0,
-        true,
-    );
+    let progress = if arena_mode {
+        common_util::range::map_ranges(
+            props.score as f32,
+            0.0..ARENA_GOAL as f32,
+            0.0..1.0,
+            true,
+        )
+    } else {
+        common_util::range::map_ranges(
+            props.score as f32,
+            level_score as f32..next_level_score as f32,
+            0.0..1.0,
+            true,
+        )
+    };
     html! {
         <>
             <h2 style="margin-bottom: 0.25rem; font-family: monospace, sans-serif;">
-                if next_level > EntityData::MAX_BOAT_LEVEL {
+                if arena_mode || next_level > EntityData::MAX_BOAT_LEVEL {
                     {t.score(props.score).replace(' ', "\u{00A0}")}
                     {" "}
                 }
@@ -50,7 +64,9 @@ pub fn status_overlay(props: &StatusProps) -> Html {
                     {format!("{:\u{00A0}>5.1}\u{00A0}fps", fps)}
                 }
             </h2>
-            if next_level <= EntityData::MAX_BOAT_LEVEL {
+            if arena_mode {
+                <Meter value={progress}>{"Arena "}{t.score(props.score).replace(' ', "\u{00A0}")}{" / "}{ARENA_GOAL.to_string()}</Meter>
+            } else if next_level <= EntityData::MAX_BOAT_LEVEL {
                 <Meter value={progress}>{t.score(props.score).replace(' ', "\u{00A0}")}{" | "}{t.upgrade_to_level_progress((progress * 100.0) as u8, next_level as u32)}</Meter>
             }
         </>

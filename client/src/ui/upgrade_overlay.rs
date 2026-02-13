@@ -24,6 +24,7 @@ pub fn upgrade_overlay(props: &UpgradeOverlayProps) -> Html {
             entity={Some((props.status.entity_type, props.status.position))}
             score={props.score}
             position={props.position.clone()}
+            arena_mode={props.status.arena_mode}
             {onclick}
         >
             <Instructions position={props.position} status={props.status.instruction_status}/>

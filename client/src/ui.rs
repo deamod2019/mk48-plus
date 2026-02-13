@@ -79,9 +79,17 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
 
     let gctw = use_gctw::<Mk48Game>();
     let t = use_translation();
-    let on_play = gctw.send_ui_event_callback.reform(|alias| UiEvent::Spawn {
-        alias,
-        entity_type: EntityType::G5,
+    let on_play = gctw.send_ui_event_callback.reform(|alias| {
+        let is_arena = web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .map(|s| s.contains("arena"))
+            .unwrap_or(false);
+        let entity_type = if is_arena {
+            EntityType::TypeViic
+        } else {
+            EntityType::G5
+        };
+        UiEvent::Spawn { alias, entity_type }
     });
 
     let margin = "0.75rem";
@@ -218,6 +226,47 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                 <Positioner id="back" position={Position::TopRight{margin}} flex={Flex::Row}>
                     <LanguageMenu/>
                 </Positioner>
+                <button
+                    id="arena_toggle"
+                    style="
+                        position: fixed;
+                        bottom: 2.5rem;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: linear-gradient(135deg, #e84393, #fd79a8);
+                        border: none;
+                        border-radius: 2rem;
+                        color: white;
+                        cursor: pointer;
+                        font-size: 1.1rem;
+                        font-weight: bold;
+                        padding: 0.6em 1.8em;
+                        box-shadow: 0 4px 15px rgba(232, 67, 147, 0.4);
+                        transition: all 0.3s ease;
+                        z-index: 100;
+                        letter-spacing: 0.05em;
+                    "
+                    onclick={Callback::from(|_| {
+                        let window = web_sys::window().unwrap();
+                        let location = window.location();
+                        let search = location.search().unwrap_or_default();
+                        let has_arena = search.contains("arena");
+                        let new_url = if has_arena {
+                            "/".to_string()
+                        } else {
+                            "/?arena".to_string()
+                        };
+                        let _ = location.set_href(&new_url);
+                    })}
+                >
+                    {
+                        if web_sys::window().unwrap().location().search().unwrap_or_default().contains("arena") {
+                            "⚓ Normal Mode"
+                        } else {
+                            "⚔ Arena Mode"
+                        }
+                    }
+                </button>
             }
             if !matches!(props.status, UiStatus::Playing(_)) {
                 if outbound_enabled {
@@ -316,6 +365,7 @@ pub enum UiEvent {
 pub struct UiProps {
     pub fps: f32,
     pub score: u32,
+    pub arena_mode: bool,
     pub status: UiStatus,
 }
 
@@ -376,6 +426,8 @@ pub struct UiStatusPlaying {
     pub altar_sacrifice_counts: [u8; common::protocol::FactionId::COUNT],
     /// Kill log for hall of fame display.
     pub kill_log: Vec<(common::entity::EntityType, u32)>,
+    /// Whether in arena mode.
+    pub arena_mode: bool,
 }
 
 /// Skill runtime state for UI rendering.
@@ -466,6 +518,8 @@ pub struct UiStatusRespawning {
     pub death_reason: DeathReason,
     /// Kill log snapshot at death for hall of fame display.
     pub kill_log: Vec<(EntityType, u32)>,
+    /// Whether in arena mode.
+    pub arena_mode: bool,
 }
 
 impl Mk48Game {
@@ -473,6 +527,7 @@ impl Mk48Game {
         let props = UiProps {
             fps: self.fps_counter.last_sample().unwrap_or(0.0),
             score: context.state.game.score,
+            arena_mode: context.state.game.arena_mode,
             status,
         };
 

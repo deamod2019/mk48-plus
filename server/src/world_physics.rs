@@ -498,7 +498,6 @@ impl World {
                     entity.transform.velocity =
                         Velocity::from_mps(10.0 * normal.dot(entity.transform.direction.to_vec()));
 
-                    // Everything but boats is instantly killed by border
                     if dead {
                         return Some((index, Fate::Remove(DeathReason::Border)));
                     }

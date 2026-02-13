@@ -64,6 +64,7 @@ pub struct AltarInfo {
 pub struct BotInput<'a, I: Iterator<Item = ContactRef<'a>>> {
     pub complete: CompleteRef<'a, I>,
     pub altar: AltarInfo,
+    pub is_arena: bool,
 }
 
 impl Default for Bot {
@@ -145,11 +146,12 @@ impl Bot {
         player_id: PlayerId,
         players: &PlayerRepo<Server>,
         altar_info: AltarInfo,
+        is_arena: bool,
     ) -> BotAction<Command> {
         let mut rng = thread_rng();
 
         // Faction-aware friendly detection: look up bot's own faction once.
-        let faction_mode = crate::runtime_config::hot_faction_mode();
+        let faction_mode = !is_arena && crate::runtime_config::hot_faction_mode();
         let my_faction: Option<FactionId> = if faction_mode {
             players.borrow_player(player_id).and_then(|p| p.data.faction)
         } else {
@@ -403,11 +405,11 @@ impl Bot {
                         continue;
                     }
 
-                    let firing_solution = (i as u8, enemy.transform().position, angle_diff);
+                    let firing_solution = (i as u16, enemy.transform().position, angle_diff);
 
                     if firing_solution.2
                         < best_firing_solution
-                            .map(|s: (u8, Vec2, Angle)| s.2)
+                            .map(|s: (u16, Vec2, Angle)| s.2)
                             .unwrap_or(Angle::MAX)
                     {
                         best_firing_solution = Some(firing_solution);
@@ -509,11 +511,17 @@ impl Bot {
             });
 
             if rng.gen_bool(self.aggression as f64) && data.level < self.level_ambition {
-                // Upgrade, if possible.
-                if let Some(entity_type) = boat_type
-                    .upgrade_options(update.score(), true, false)
-                    .choose(&mut rng)
-                {
+                // Upgrade, if possible — arena bots only pick submarines.
+                let maybe_upgrade = if is_arena {
+                    boat_type
+                        .upgrade_options_arena(update.score(), true)
+                        .choose(&mut rng)
+                } else {
+                    boat_type
+                        .upgrade_options(update.score(), true, false)
+                        .choose(&mut rng)
+                };
+                if let Some(entity_type) = maybe_upgrade {
                     ret = Command::Upgrade(Upgrade { entity_type });
                 }
             }
@@ -579,10 +587,19 @@ impl Bot {
                 // Rage quit.
                 BotAction::Quit
             } else if self.has_waited_one_tick {
-                BotAction::Some(Command::Spawn(Spawn {
-                    entity_type: EntityType::spawn_options(0, true, false)
+                // Arena bots only spawn as submarines.
+                let spawn_type = if is_arena {
+                    let bot_score = players.borrow_player(player_id).map(|p| p.score).unwrap_or(0);
+                    EntityType::spawn_options_arena(bot_score, true)
                         .choose(&mut rng)
-                        .expect("there must be at least one entity type to spawn as"),
+                        .expect("there must be at least one submarine to spawn as")
+                } else {
+                    EntityType::spawn_options(0, true, false)
+                        .choose(&mut rng)
+                        .expect("there must be at least one entity type to spawn as")
+                };
+                BotAction::Some(Command::Spawn(Spawn {
+                    entity_type: spawn_type,
                 }))
             } else {
                 self.has_waited_one_tick = true;
@@ -628,6 +645,7 @@ impl game_server::game_service::Bot<Server> for Bot {
         BotInput {
             complete: server.world.get_player_complete(player),
             altar,
+            is_arena: server.arena_mode,
         }
     }
 
@@ -638,6 +656,7 @@ impl game_server::game_service::Bot<Server> for Bot {
         players: &PlayerRepo<Server>,
     ) -> BotAction<<Server as GameArenaService>::GameRequest> {
         let altar_info = input.altar;
-        self.update_with_altar(input.complete, player_id, players, altar_info)
+        let is_arena = input.is_arena;
+        self.update_with_altar(input.complete, player_id, players, altar_info, is_arena)
     }
 }

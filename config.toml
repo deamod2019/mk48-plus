@@ -1,0 +1,16 @@
+# MK48 Plus Runtime Configuration
+# Changes to this file are applied automatically without restarting the server.
+# The file is polled every 2 seconds for changes.
+
+# Bot settings
+min_bots = 250
+# max_bots = 400
+# bot_percent = 50
+alliance_enabled = false
+faction_mode = false
+
+# Minimap settings
+# minimap_speed_coeff = 30.0
+# minimap_default_mult = 2.0
+# minimap_min_range = 500.0
+# minimap_max_range = 5000.0

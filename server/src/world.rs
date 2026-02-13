@@ -21,6 +21,8 @@ pub struct World {
     pub events: Vec<WorldEvent>,
     /// Frame counter for temporal spreading of physics interactions
     pub frame_counter: u32,
+    /// Whether this world is an arena instance (submarine-only, fixed radius).
+    pub is_arena: bool,
 }
 
 impl World {
@@ -33,6 +35,20 @@ impl World {
             radius: initial_radius,
             events: Vec::new(),
             frame_counter: 0,
+            is_arena: false,
+        }
+    }
+
+    /// Creates a new arena World with fixed radius.
+    pub fn new_arena(radius: f32) -> Self {
+        Self {
+            arena: Arena::new(),
+            entities: Entities::new(),
+            terrain: Terrain::with_generator(noise_generator),
+            radius,
+            events: Vec::new(),
+            frame_counter: 0,
+            is_arena: true,
         }
     }
 
@@ -57,10 +73,12 @@ impl World {
         //     })
         //     .sum::<f32>();
 
-        let target_radius: f32 = 9750.0; // 1.5x original (was 6500)
-        let s = delta.to_secs();
-
-        self.radius += (target_radius - self.radius).clamp(-s, 2.0 * s);
+        // Arena worlds have fixed radius.
+        if !self.is_arena {
+            let target_radius: f32 = 9750.0; // 1.5x original (was 6500)
+            let s = delta.to_secs();
+            self.radius += (target_radius - self.radius).clamp(-s, 2.0 * s);
+        }
     }
 
     /// Adds an entity to the world (assigning it an id).

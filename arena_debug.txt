@@ -1,0 +1,183 @@
+[ERROR game_server::entry_point] could not set open file limit: unsupported OS
+[INFO  game_server::options] HTTP port is 8081
+[INFO  game_server::system] checker https://v4.ident.me/ returned reqwest::Error { kind: Request, url: Url { scheme: "https", cannot_be_a_base: false, username: "", password: None, host: Some(Domain("v4.ident.me")), port: None, path: "/", query: None, fragment: None }, source: TimedOut }
+[INFO  game_server::system] checker https://ipecho.net/plain returned reqwest::Error { kind: Request, url: Url { scheme: "https", cannot_be_a_base: false, username: "", password: None, host: Some(Domain("ipecho.net")), port: None, path: "/plain", query: None, fragment: None }, source: TimedOut }
+[INFO  game_server::system] checker https://ifconfig.me/ip returned reqwest::Error { kind: Request, url: Url { scheme: "https", cannot_be_a_base: false, username: "", password: None, host: Some(Domain("ifconfig.me")), port: None, path: "/ip", query: None, fragment: None }, source: TimedOut }
+[INFO  game_server::system] predicting Some(154.17.31.137) for ip (confirmed by 2 of 7 third parties)
+[INFO  game_server::admin] admin config is: ConfigFile { allow_web_socket_json: true, password: "zik7ipHojupNRvhWarVByw==", redirect_server_id_preference: 0, distribute_load: false }
+[INFO  game_server::admin] admin config is: ConfigFile { allow_web_socket_json: true, password: "zik7ipHojupNRvhWarVByw==", redirect_server_id_preference: 0, distribute_load: false }
+[ERROR game_server::entry_point] http server stopped: Err(Os { code: 10048, kind: AddrInUse, message: "通常每个套接字地址(协议/网络地址/端口)只允许使用一次。" })
+[INFO  game_server::infrastructure] infrastructure started
+thread 'main' panicked at 'there is no reactor running, must be called from the context of a Tokio 1.x runtime', C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\utils.rs:186:20
+stack backtrace:
+   0: std::panicking::begin_panic_handler
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a/library\std\src\panicking.rs:584
+   1: core::panicking::panic_fmt
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a/library\core\src\panicking.rs:142
+   2: core::panicking::panic_display<tokio::runtime::handle::TryCurrentError>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\panicking.rs:72
+   3: enum$<tokio::runtime::scheduler::Handle>::current
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\scheduler\mod.rs:57
+   4: tokio::time::sleep::Sleep::new_timeout
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\time\sleep.rs:259
+   5: tokio::time::sleep::sleep
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\time\sleep.rs:129
+   6: actix::utils::IntervalFunc<game_server::infrastructure::Infrastructure<server::server::Server> >::new<game_server::infrastructure::Infrastructure<server::server::Server>,void (*)(ref_mut$<game_server::infrastructure::Infrastructure<server::server::Server>
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\utils.rs:186
+   7: actix::actor::AsyncContext::run_interval<actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> >,game_server::infrastructure::Infrastructure<server::server::Server>,void (*)(ref_mut$<game_server::infrastructure::Infra
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\actor.rs:459
+   8: game_server::infrastructure::impl$0::started<server::server::Server>
+             at .\engine\game_server\src\infrastructure.rs:67
+   9: actix::contextimpl::impl$5::poll<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\contextimpl.rs:360
+  10: actix::contextimpl::impl$3::drop<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\contextimpl.rs:226
+  11: core::ptr::drop_in_place<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > > >
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  12: core::ptr::drop_in_place<enum$<tokio::runtime::task::core::Stage<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  13: tokio::runtime::task::core::impl$6::set_stage::closure$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,all
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\core.rs:277
+  14: tokio::loom::std::unsafe_cell::UnsafeCell<enum$<tokio::runtime::task::core::Stage<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\loom\std\unsafe_cell.rs:14
+  15: tokio::runtime::task::core::Core<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<tokio::tas
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\core.rs:277
+  16: tokio::runtime::task::core::Core<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<tokio::tas
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\core.rs:242
+  17: tokio::runtime::task::harness::cancel_task::closure$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc:
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\harness.rs:452
+  18: core::ops::function::FnOnce::call_once<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infras
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ops\function.rs:248
+  19: core::panic::unwind_safe::impl$23::call_once<tuple$<>,tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrast
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\panic\unwind_safe.rs:271
+  20: std::panicking::try::do_call<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<ga
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\panicking.rs:492
+  21: std::panicking::try::do_catch<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::poll_future::closure_env$0<hyper::proto::h2::server::H2Stream<axum::routing::route::RouteFuture<hyper::body::body::Body,enum$<core::convert::Infallible
+  22: std::panicking::try<tuple$<>,core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<ga
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\panicking.rs:456
+  23: std::panic::catch_unwind<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_s
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\panic.rs:137
+  24: tokio::runtime::task::harness::cancel_task<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\harness.rs:451
+  25: tokio::runtime::task::harness::Harness<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<toki
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\harness.rs:241
+  26: tokio::runtime::task::raw::shutdown<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<tokio::
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\raw.rs:295
+  27: tokio::runtime::task::raw::RawTask::shutdown
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\raw.rs:234
+  28: tokio::runtime::task::Task<alloc::sync::Arc<tokio::task::local::Shared> >::shutdown<alloc::sync::Arc<tokio::task::local::Shared> >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\mod.rs:450
+  29: tokio::runtime::task::list::LocalOwnedTasks<alloc::sync::Arc<tokio::task::local::Shared> >::close_and_shutdown_all<alloc::sync::Arc<tokio::task::local::Shared> >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\list.rs:227
+  30: tokio::task::local::LocalState::close_and_shutdown_all
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:1084
+  31: tokio::task::local::impl$6::drop::closure$0
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:838
+  32: tokio::task::local::impl$2::with_if_possible::closure$0<tuple$<>,tokio::task::local::impl$6::drop::closure_env$0>
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:711
+  33: std::thread::local::LocalKey<tokio::task::local::LocalData>::try_with<tokio::task::local::LocalData,tokio::task::local::impl$2::with_if_possible::closure_env$0<tuple$<>,tokio::task::local::impl$6::drop::closure_env$0>,tuple$<> >
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\thread\local.rs:445
+  34: tokio::task::local::LocalSet::with_if_possible<tuple$<>,tokio::task::local::impl$6::drop::closure_env$0>
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:694
+  35: tokio::task::local::impl$6::drop
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:833
+  36: core::ptr::drop_in_place<tokio::task::local::LocalSet>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  37: core::ptr::drop_in_place<actix_rt::runtime::Runtime>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  38: core::ptr::drop_in_place<actix_rt::system::SystemRunner>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  39: game_server::entry_point::entry_point<server::server::Server>
+             at .\engine\game_server\src\entry_point.rs:720
+  40: server::main
+             at .\server\src\main.rs:59
+  41: core::ops::function::FnOnce::call_once<void (*)(),tuple$<> >
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ops\function.rs:248
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+[INFO  game_server::infrastructure] infrastructure started
+thread 'main' panicked at 'there is no reactor running, must be called from the context of a Tokio 1.x runtime', C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\utils.rs:186:20
+stack backtrace:
+   0: std::panicking::begin_panic_handler
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a/library\std\src\panicking.rs:584
+   1: core::panicking::panic_fmt
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a/library\core\src\panicking.rs:142
+   2: core::panicking::panic_display<tokio::runtime::handle::TryCurrentError>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\panicking.rs:72
+   3: enum$<tokio::runtime::scheduler::Handle>::current
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\scheduler\mod.rs:57
+   4: tokio::time::sleep::Sleep::new_timeout
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\time\sleep.rs:259
+   5: tokio::time::sleep::sleep
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\time\sleep.rs:129
+   6: actix::utils::IntervalFunc<game_server::infrastructure::Infrastructure<server::server::Server> >::new<game_server::infrastructure::Infrastructure<server::server::Server>,void (*)(ref_mut$<game_server::infrastructure::Infrastructure<server::server::Server>
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\utils.rs:186
+   7: actix::actor::AsyncContext::run_interval<actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> >,game_server::infrastructure::Infrastructure<server::server::Server>,void (*)(ref_mut$<game_server::infrastructure::Infra
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\actor.rs:459
+   8: game_server::infrastructure::impl$0::started<server::server::Server>
+             at .\engine\game_server\src\infrastructure.rs:67
+   9: actix::contextimpl::impl$5::poll<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\contextimpl.rs:360
+  10: actix::contextimpl::impl$3::drop<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\actix-0.13.0\src\contextimpl.rs:226
+  11: core::ptr::drop_in_place<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > > >
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  12: core::ptr::drop_in_place<enum$<tokio::runtime::task::core::Stage<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  13: tokio::runtime::task::core::impl$6::set_stage::closure$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,all
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\core.rs:277
+  14: tokio::loom::std::unsafe_cell::UnsafeCell<enum$<tokio::runtime::task::core::Stage<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\loom\std\unsafe_cell.rs:14
+  15: tokio::runtime::task::core::Core<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<tokio::tas
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\core.rs:277
+  16: tokio::runtime::task::core::Core<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<tokio::tas
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\core.rs:242
+  17: tokio::runtime::task::harness::cancel_task::closure$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc:
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\harness.rs:452
+  18: core::ops::function::FnOnce::call_once<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infras
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ops\function.rs:248
+  19: core::panic::unwind_safe::impl$23::call_once<tuple$<>,tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrast
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\panic\unwind_safe.rs:271
+  20: std::panicking::try::do_call<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<ga
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\panicking.rs:492
+  21: std::panicking::try::do_catch<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::poll_future::closure_env$0<hyper::proto::h2::server::H2Stream<axum::routing::route::RouteFuture<hyper::body::body::Body,enum$<core::convert::Infallible
+  22: std::panicking::try<tuple$<>,core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<ga
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\panicking.rs:456
+  23: std::panic::catch_unwind<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::cancel_task::closure_env$0<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_s
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\panic.rs:137
+  24: tokio::runtime::task::harness::cancel_task<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\harness.rs:451
+  25: tokio::runtime::task::harness::Harness<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<toki
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\harness.rs:241
+  26: tokio::runtime::task::raw::shutdown<actix::contextimpl::ContextFut<game_server::infrastructure::Infrastructure<server::server::Server>,actix::context::Context<game_server::infrastructure::Infrastructure<server::server::Server> > >,alloc::sync::Arc<tokio::
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\raw.rs:295
+  27: tokio::runtime::task::raw::RawTask::shutdown
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\raw.rs:234
+  28: tokio::runtime::task::Task<alloc::sync::Arc<tokio::task::local::Shared> >::shutdown<alloc::sync::Arc<tokio::task::local::Shared> >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\mod.rs:450
+  29: tokio::runtime::task::list::LocalOwnedTasks<alloc::sync::Arc<tokio::task::local::Shared> >::close_and_shutdown_all<alloc::sync::Arc<tokio::task::local::Shared> >
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\runtime\task\list.rs:227
+  30: tokio::task::local::LocalState::close_and_shutdown_all
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:1084
+  31: tokio::task::local::impl$6::drop::closure$0
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:838
+  32: tokio::task::local::impl$2::with_if_possible::closure$0<tuple$<>,tokio::task::local::impl$6::drop::closure_env$0>
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:711
+  33: std::thread::local::LocalKey<tokio::task::local::LocalData>::try_with<tokio::task::local::LocalData,tokio::task::local::impl$2::with_if_possible::closure_env$0<tuple$<>,tokio::task::local::impl$6::drop::closure_env$0>,tuple$<> >
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\std\src\thread\local.rs:445
+  34: tokio::task::local::LocalSet::with_if_possible<tuple$<>,tokio::task::local::impl$6::drop::closure_env$0>
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:694
+  35: tokio::task::local::impl$6::drop
+             at C:\Users\deamo\.cargo\registry\src\github.com-1ecc6299db9ec823\tokio-1.23.0\src\task\local.rs:833
+  36: core::ptr::drop_in_place<tokio::task::local::LocalSet>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  37: core::ptr::drop_in_place<actix_rt::runtime::Runtime>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  38: core::ptr::drop_in_place<actix_rt::system::SystemRunner>
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ptr\mod.rs:487
+  39: game_server::entry_point::entry_point<server::server::Server>
+             at .\engine\game_server\src\entry_point.rs:720
+  40: server::main
+             at .\server\src\main.rs:59
+  41: core::ops::function::FnOnce::call_once<void (*)(),tuple$<> >
+             at /rustc/75b7e52e92c3b00fc891b47f5b2efdff0a2be55a\library\core\src\ops\function.rs:248
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
