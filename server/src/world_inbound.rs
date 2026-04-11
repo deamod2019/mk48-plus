@@ -8,12 +8,11 @@ use crate::server::Server;
 use crate::world::World;
 use common::altitude::Altitude;
 use common::angle::Angle;
-use common::entity::*;
 use common::death_reason::DeathReason;
+use common::entity::*;
 use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
-use common::skill::SkillType;
 use common::util::{level_to_score, score_to_level};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
@@ -56,12 +55,12 @@ impl CommandTrait for Spawn {
         }
 
         // In arena, always allow level-2 submarines as respawn floor (matches spawn_options_arena).
-        let arena_floor = world.is_arena
-            && self.entity_type.is_submarine()
-            && self.entity_type.data().level <= 2;
-        if !arena_floor && !self
-            .entity_type
-            .can_spawn_as(player.score, player.is_bot(), moderator)
+        let arena_floor =
+            world.is_arena && self.entity_type.is_submarine() && self.entity_type.data().level <= 2;
+        if !arena_floor
+            && !self
+                .entity_type
+                .can_spawn_as(player.score, player.is_bot(), moderator)
         {
             return Err("cannot spawn as given entity type");
         }
@@ -263,36 +262,6 @@ impl CommandTrait for Control {
     }
 }
 
-impl CommandTrait for Warp {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::Warp,
-            SkillTarget::Position(self.target),
-        )
-    }
-}
-
-impl CommandTrait for ZeroPulse {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::ZeroPulse,
-            SkillTarget::None,
-        )
-    }
-}
-
 impl CommandTrait for Fire {
     fn apply(
         &self,
@@ -350,7 +319,10 @@ impl CommandTrait for Fire {
             if entity.altitude > Altitude(50)
                 && !(matches!(
                     data.sub_kind,
-                    EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::FlyingMecha | EntitySubKind::Helicopter
+                    EntitySubKind::Aeroplane
+                        | EntitySubKind::Starship
+                        | EntitySubKind::FlyingMecha
+                        | EntitySubKind::Helicopter
                 ))
             {
                 return Err("cannot fire while flying high (lol)");
@@ -610,265 +582,6 @@ fn clamp_to_range(
         Ok(center + delta.clamp_length_max(range))
     }
 }
-
-
-impl CommandTrait for Iaigiri {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::Iaigiri,
-            SkillTarget::Position(self.target),
-        )
-    }
-}
-
-impl CommandTrait for EngineBoost {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::EngineBoost,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for SonarPulse {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::SonarPulse,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for DepthChargeBarrage {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::DepthChargeBarrage,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for AirSuperiority {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::AirSuperiority,
-            SkillTarget::None,
-        )
-    }
-}
-
-
-
-impl CommandTrait for EmergencyRepair {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::EmergencyRepair,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for SmokeScreen {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::SmokeScreen,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for BurstLoading {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::BurstLoading,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for NuclearStrike {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::NuclearStrike,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for EnergyShield {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::EnergyShield,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for DredgerSacrifice {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::DredgerSacrifice,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for Stealth {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::Stealth,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for UnjustGame {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::UnjustGame,
-            SkillTarget::Entity(self.target_id),
-        )
-    }
-}
-
-impl CommandTrait for common::protocol::Ironclad {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::Ironclad,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for common::protocol::YamatoCannon {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::YamatoCannon,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for common::protocol::OrbitalBombardment {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::OrbitalBombardment,
-            SkillTarget::None,
-        )
-    }
-}
-
-impl CommandTrait for common::protocol::RiftStorm {
-    fn apply(
-        &self,
-        world: &mut World,
-        player_tuple: &Arc<PlayerTuple<Server>>,
-    ) -> Result<(), &'static str> {
-        crate::skill_dispatch::dispatch_skill(
-            world,
-            player_tuple,
-            SkillType::RiftStorm,
-            SkillTarget::None,
-        )
-    }
-}
-
 impl CommandTrait for common::protocol::SetFactionMode {
     fn apply(
         &self,
@@ -938,8 +651,7 @@ impl CommandTrait for CheatCommand {
                 if arg.is_empty() {
                     return Err("usage: /spawn <EntityName>");
                 }
-                let entity_type = EntityType::from_str(arg)
-                    .ok_or("unknown entity type")?;
+                let entity_type = EntityType::from_str(arg).ok_or("unknown entity type")?;
                 let entity = &mut world.entities[entity_index];
                 entity.change_entity_type(entity_type, &mut world.arena, false);
                 log::info!("[CHEAT] Spawned as {:?}", entity_type);
@@ -959,7 +671,8 @@ impl CommandTrait for CheatCommand {
                     let target_name = arg.trim();
                     let my_pos = world.entities[entity_index].transform.position;
                     let search_radius = world.radius * 2.0;
-                    let target = world.entities
+                    let target = world
+                        .entities
                         .iter_radius(my_pos, search_radius)
                         .filter(|(idx, entity)| {
                             if *idx == entity_index {
@@ -1003,7 +716,8 @@ impl CommandTrait for CheatCommand {
                     }
                     let my_pos = world.entities[entity_index].transform.position;
                     let search_radius = world.radius * 2.0;
-                    let target_pos = world.entities
+                    let target_pos = world
+                        .entities
                         .iter_radius(my_pos, search_radius)
                         .filter(|(idx, entity)| {
                             if *idx == entity_index {

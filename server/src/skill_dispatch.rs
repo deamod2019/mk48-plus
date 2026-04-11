@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Softbear, Inc.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::entity::Entity;
 use crate::entities::EntityIndex;
+use crate::entity::Entity;
 use crate::player::Status;
 use crate::server::Server;
 use crate::world::World;
@@ -26,10 +26,15 @@ pub fn dispatch_use_skill(
     player_tuple: &Arc<PlayerTuple<Server>>,
     use_skill: &UseSkill,
 ) -> Result<(), &'static str> {
-    dispatch_skill(world, player_tuple, use_skill.skill, use_skill.target.clone())
+    dispatch_skill(
+        world,
+        player_tuple,
+        use_skill.skill,
+        use_skill.target.clone(),
+    )
 }
 
-pub fn dispatch_skill(
+fn dispatch_skill(
     world: &mut World,
     player_tuple: &Arc<PlayerTuple<Server>>,
     skill: SkillType,
@@ -52,9 +57,7 @@ pub fn dispatch_skill(
         (SkillType::BurstLoading, SkillTarget::None) => burst_loading(world, player_tuple),
         (SkillType::NuclearStrike, SkillTarget::None) => nuclear_strike(world, player_tuple),
         (SkillType::EnergyShield, SkillTarget::None) => energy_shield(world, player_tuple),
-        (SkillType::DredgerSacrifice, SkillTarget::None) => {
-            dredger_sacrifice(world, player_tuple)
-        }
+        (SkillType::DredgerSacrifice, SkillTarget::None) => dredger_sacrifice(world, player_tuple),
         (SkillType::Stealth, SkillTarget::None) => stealth(world, player_tuple),
         (SkillType::UnjustGame, SkillTarget::Entity(target_id)) => {
             unjust_game(world, player_tuple, target_id)
@@ -184,9 +187,7 @@ fn zero_pulse(
         world.entities[target_index].freeze_for(common::skill::ZERO_PULSE_DURATION);
     }
 
-    world
-        .events
-        .push(WorldEvent::ZeroPulse { center, radius });
+    world.events.push(WorldEvent::ZeroPulse { center, radius });
 
     Ok(())
 }
@@ -206,8 +207,7 @@ fn iaigiri(
     let data = entity.data();
     let mut target = target;
     let valid_range = -world.radius * 2.0..world.radius * 2.0;
-    target.x = sanitize_float(target.x, valid_range.clone())
-        .unwrap_or(entity.transform.position.x);
+    target.x = sanitize_float(target.x, valid_range.clone()).unwrap_or(entity.transform.position.x);
     target.y = sanitize_float(target.y, valid_range).unwrap_or(entity.transform.position.y);
 
     let max_offset = data.camera_range() * common::skill::IAIGIRI_MAX_RANGE_SCALE;
@@ -249,11 +249,13 @@ fn engine_boost(
 ) -> Result<(), &'static str> {
     let entity_index = alive_entity_index(player_tuple, "cannot boost while not alive")?;
 
-    world.entities[entity_index].extension_mut().start_engine_boost(
-        common::skill::ENGINE_BOOST_MAX_DURATION,
-        common::skill::ENGINE_BOOST_DECEL_DURATION,
-        common::skill::ENGINE_BOOST_COOLDOWN,
-    )?;
+    world.entities[entity_index]
+        .extension_mut()
+        .start_engine_boost(
+            common::skill::ENGINE_BOOST_MAX_DURATION,
+            common::skill::ENGINE_BOOST_DECEL_DURATION,
+            common::skill::ENGINE_BOOST_COOLDOWN,
+        )?;
 
     Ok(())
 }
@@ -293,7 +295,9 @@ fn sonar_pulse(
         .collect();
 
     for target_index in targets {
-        world.entities[target_index].extension_mut().set_active(true);
+        world.entities[target_index]
+            .extension_mut()
+            .set_active(true);
     }
 
     world.events.push(WorldEvent::ZeroPulse {
@@ -308,10 +312,8 @@ fn depth_charge_barrage(
     world: &mut World,
     player_tuple: &Arc<PlayerTuple<Server>>,
 ) -> Result<(), &'static str> {
-    let entity_index = alive_entity_index(
-        player_tuple,
-        "cannot depth charge barrage while not alive",
-    )?;
+    let entity_index =
+        alive_entity_index(player_tuple, "cannot depth charge barrage while not alive")?;
     let entity = &world.entities[entity_index];
 
     if entity.extension().depth_charge_barrage_cooldown_remaining() != Ticks::ZERO {
@@ -468,7 +470,8 @@ fn nuclear_strike(
     player_tuple: &Arc<PlayerTuple<Server>>,
 ) -> Result<(), &'static str> {
     log::warn!("NuclearStrike command received!");
-    let entity_index = alive_entity_index(player_tuple, "cannot use nuclear strike while not alive")?;
+    let entity_index =
+        alive_entity_index(player_tuple, "cannot use nuclear strike while not alive")?;
 
     let entity = &world.entities[entity_index];
     if entity.extension().nuclear_strike_cooldown_remaining() != Ticks::ZERO {
@@ -523,7 +526,10 @@ fn nuclear_strike(
     world
         .events
         .push(WorldEvent::NuclearStrike { center, radius });
-    log::warn!("NuclearStrike: events Vec now has {} events", world.events.len());
+    log::warn!(
+        "NuclearStrike: events Vec now has {} events",
+        world.events.len()
+    );
 
     Ok(())
 }
@@ -532,15 +538,14 @@ fn energy_shield(
     world: &mut World,
     player_tuple: &Arc<PlayerTuple<Server>>,
 ) -> Result<(), &'static str> {
-    let entity_index = alive_entity_index(player_tuple, "cannot use energy shield while not alive")?;
+    let entity_index =
+        alive_entity_index(player_tuple, "cannot use energy shield while not alive")?;
 
     let entity = &mut world.entities[entity_index];
-    entity
-        .extension_mut()
-        .start_energy_shield(
-            common::skill::ENERGY_SHIELD_DURATION,
-            common::skill::ENERGY_SHIELD_COOLDOWN,
-        )?;
+    entity.extension_mut().start_energy_shield(
+        common::skill::ENERGY_SHIELD_DURATION,
+        common::skill::ENERGY_SHIELD_COOLDOWN,
+    )?;
 
     log::warn!("EnergyShield activated for {:?}", entity.data().label);
     Ok(())
@@ -562,7 +567,11 @@ fn dredger_sacrifice(
     let direction = entity.transform.direction;
     let entity_type = entity.entity_type;
 
-    log::warn!("DredgerSacrifice: {:?} sacrificing at {:?}", player_alias, position);
+    log::warn!(
+        "DredgerSacrifice: {:?} sacrificing at {:?}",
+        player_alias,
+        position
+    );
 
     world.remove(entity_index, DeathReason::Weapon(player_alias, entity_type));
 
@@ -592,10 +601,7 @@ fn dredger_sacrifice(
     Ok(())
 }
 
-fn stealth(
-    world: &mut World,
-    player_tuple: &Arc<PlayerTuple<Server>>,
-) -> Result<(), &'static str> {
+fn stealth(world: &mut World, player_tuple: &Arc<PlayerTuple<Server>>) -> Result<(), &'static str> {
     let entity_index = alive_entity_index(player_tuple, "not alive")?;
     let entity = &world.entities[entity_index];
 
@@ -603,11 +609,15 @@ fn stealth(
         return Err("stealth on cooldown");
     }
 
-    world.entities[entity_index]
-        .extension_mut()
-        .start_stealth(common::skill::STEALTH_DURATION, common::skill::STEALTH_COOLDOWN)?;
+    world.entities[entity_index].extension_mut().start_stealth(
+        common::skill::STEALTH_DURATION,
+        common::skill::STEALTH_COOLDOWN,
+    )?;
 
-    log::info!("Stealth activated for {:?}", player_tuple.borrow_player().alias());
+    log::info!(
+        "Stealth activated for {:?}",
+        player_tuple.borrow_player().alias()
+    );
     Ok(())
 }
 
@@ -839,7 +849,10 @@ fn rift_storm(
         world.remove(*target_index, DeathReason::Unknown);
     }
 
-    log::info!("[SKILL] Rift Storm activated, hit {} targets", targets.len());
+    log::info!(
+        "[SKILL] Rift Storm activated, hit {} targets",
+        targets.len()
+    );
     Ok(())
 }
 

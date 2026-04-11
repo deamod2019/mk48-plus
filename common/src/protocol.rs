@@ -58,14 +58,27 @@ pub struct Update {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum WorldEvent {
-    ZeroPulse { center: Vec2, radius: f32 },
-    NuclearStrike { center: Vec2, radius: f32 },
+    ZeroPulse {
+        center: Vec2,
+        radius: f32,
+    },
+    NuclearStrike {
+        center: Vec2,
+        radius: f32,
+    },
     /// Internal event: a boat sacrificed to the altar (server-only, filtered before sending).
-    AltarSacrifice { faction: FactionId },
+    AltarSacrifice {
+        faction: FactionId,
+    },
     /// Altar discovered by a faction — broadcast to that faction's players.
-    AltarDiscovered { position: Vec2, faction: FactionId },
+    AltarDiscovered {
+        position: Vec2,
+        faction: FactionId,
+    },
     /// Altar consumed — a faction completed 5 sacrifices.
-    AltarConsumed { faction: FactionId },
+    AltarConsumed {
+        faction: FactionId,
+    },
 }
 
 /// Updates for terrain chunks.
@@ -199,25 +212,6 @@ pub enum Command {
     Spawn(Spawn),
     Upgrade(Upgrade),
     UseSkill(UseSkill),
-    Warp(Warp),
-    ZeroPulse(ZeroPulse),
-    Iaigiri(Iaigiri),
-    EngineBoost(EngineBoost),
-    SonarPulse(SonarPulse),
-    DepthChargeBarrage(DepthChargeBarrage),
-    AirSuperiority(AirSuperiority),
-    EmergencyRepair(EmergencyRepair),
-    SmokeScreen(SmokeScreen),
-    BurstLoading(BurstLoading),
-    NuclearStrike(NuclearStrike),
-    EnergyShield(EnergyShield),
-    DredgerSacrifice(DredgerSacrifice),
-    Stealth(Stealth),
-    UnjustGame(UnjustGame),
-    Ironclad(Ironclad),
-    YamatoCannon(YamatoCannon),
-    OrbitalBombardment(OrbitalBombardment),
-    RiftStorm(RiftStorm),
     SetFactionMode(SetFactionMode),
     Cheat(CheatCommand),
 }
@@ -305,71 +299,6 @@ pub struct SkillSnapshot {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct Warp {
-    /// 目标世界坐标，服务器会再次裁剪。
-    pub target: Vec2,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ZeroPulse;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct Iaigiri {
-    pub target: Vec2,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct EngineBoost;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct SonarPulse;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct DepthChargeBarrage;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct AirSuperiority;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct EmergencyRepair;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct SmokeScreen;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct BurstLoading;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct NuclearStrike;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct EnergyShield;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct DredgerSacrifice;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct Stealth;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct UnjustGame {
-    /// Target entity to swap with.
-    pub target_id: EntityId,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct Ironclad;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct YamatoCannon;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct OrbitalBombardment;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct RiftStorm;
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct SetFactionMode {
     pub mode: FactionMode,
 }
@@ -395,6 +324,66 @@ mod tests {
     use glam::vec2;
     use rand::prelude::*;
     use std::num::NonZeroU32;
+
+    #[test]
+    fn use_skill_command_round_trips() {
+        let command = Command::UseSkill(UseSkill {
+            skill: SkillType::Warp,
+            target: SkillTarget::Position(vec2(12.5, -48.0)),
+        });
+
+        let options = DefaultOptions::new()
+            .with_fixint_encoding()
+            .allow_trailing_bytes();
+        let bytes = options.serialize(&command).unwrap();
+        let decoded = options.deserialize::<Command>(&bytes).unwrap();
+
+        match decoded {
+            Command::UseSkill(decoded) => assert_eq!(
+                decoded,
+                UseSkill {
+                    skill: SkillType::Warp,
+                    target: SkillTarget::Position(vec2(12.5, -48.0)),
+                }
+            ),
+            other => panic!("unexpected command variant: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn update_skill_snapshots_round_trip() {
+        let update = Update {
+            contacts: Vec::new(),
+            events: Vec::new(),
+            death_reason: None,
+            score: 42,
+            kill_log: Vec::new(),
+            world_radius: 9000.0,
+            terrain: Vec::new().into_boxed_slice(),
+            bot_alliance_enabled: false,
+            skills: vec![SkillSnapshot {
+                skill: SkillType::EnergyShield,
+                cooldown_remaining: Ticks::from_secs(12.0),
+                active_remaining: Ticks::from_secs(5.0),
+                charge_remaining: Ticks::ZERO,
+            }],
+            faction_data: None,
+            my_faction: None,
+            altar_position: None,
+            altar_sacrifice_counts: Vec::new(),
+            arena_mode: false,
+            faction_mode: None,
+        };
+
+        let options = DefaultOptions::new()
+            .with_fixint_encoding()
+            .allow_trailing_bytes();
+        let bytes = options.serialize(&update).unwrap();
+        let decoded = options.deserialize::<Update>(&bytes).unwrap();
+
+        assert_eq!(decoded.skills, update.skills);
+        assert_eq!(decoded.score, update.score);
+    }
 
     #[test]
     fn serialize() {

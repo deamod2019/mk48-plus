@@ -161,7 +161,10 @@ impl Bot {
         if altitude > Altitude(50)
             && !matches!(
                 boat_data.sub_kind,
-                EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::Helicopter
+                EntitySubKind::Aeroplane
+                    | EntitySubKind::Starship
+                    | EntitySubKind::FlyingMecha
+                    | EntitySubKind::Helicopter
             )
         {
             return false;
@@ -182,7 +185,7 @@ impl Bot {
         let mut rng = thread_rng();
 
         // Faction-aware friendly detection: look up bot's own faction once.
-        let faction_mode = !is_arena && crate::runtime_config::hot_faction_mode();
+        let faction_mode = !is_arena && crate::runtime_config::hot_faction_mode_enabled();
         let my_faction: Option<FactionId> = if faction_mode {
             players
                 .borrow_player(player_id)
@@ -231,60 +234,57 @@ impl Bot {
                 *weighted_sum = target_delta * displacement / (displacement.powi(2) + 1.0);
             };
 
-            let terrain_escape_enabled =
-                !self.sacrifice_committed && Self::should_use_terrain_escape(boat_type, data);
+            let terrain_escape_enabled = Self::should_use_terrain_escape(boat_type, data);
             let mut terrain_blocked_count: u8 = 0;
             let mut terrain_front_pressure = 0.0_f32;
             let mut terrain_left_pressure = 0.0_f32;
             let mut terrain_right_pressure = 0.0_f32;
             let mut terrain_escape_sum = Vec2::ZERO;
 
-            // Terrain avoidance — skip entirely for sacrifice-committed bots.
-            if !self.sacrifice_committed {
-                let (scan_radius_mult, num_samples, repel_denom_mult) = if is_boss {
-                    (3.0_f32, 20u32, 0.1_f32)
-                } else {
-                    (1.0, 10, 0.5)
-                };
-                for i in 0..num_samples {
-                    let angle = Angle::from_radians(
-                        i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32),
-                    );
-                    let delta_position = angle.to_vec() * data.length * scan_radius_mult;
-                    let blocked = Self::is_land_or_border(
-                        boat.transform().position + delta_position,
-                        terrain,
-                        update.world_radius(),
-                    );
-                    if blocked {
-                        if boat_type != EntityType::Sherman && boat_type != EntityType::Abrams {
-                            repel(
-                                &mut movement,
-                                delta_position,
-                                repel_denom_mult * data.length.powi(2),
-                            );
+            // Terrain avoidance also stays active for altar-committed bots so they can route around islands.
+            let (scan_radius_mult, num_samples, repel_denom_mult) = if is_boss {
+                (3.0_f32, 20u32, 0.1_f32)
+            } else {
+                (1.0, 10, 0.5)
+            };
+            for i in 0..num_samples {
+                let angle = Angle::from_radians(
+                    i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32),
+                );
+                let delta_position = angle.to_vec() * data.length * scan_radius_mult;
+                let blocked = Self::is_land_or_border(
+                    boat.transform().position + delta_position,
+                    terrain,
+                    update.world_radius(),
+                );
+                if blocked {
+                    if boat_type != EntityType::Sherman && boat_type != EntityType::Abrams {
+                        repel(
+                            &mut movement,
+                            delta_position,
+                            repel_denom_mult * data.length.powi(2),
+                        );
+                    } else {
+                        attract(
+                            &mut movement,
+                            delta_position,
+                            repel_denom_mult * data.length.powi(2),
+                        );
+                    }
+
+                    if terrain_escape_enabled {
+                        let sample_dir = delta_position.normalize_or_zero();
+                        let front = sample_dir.dot(forward).max(0.0);
+                        let side = sample_dir.dot(port);
+
+                        terrain_blocked_count = terrain_blocked_count.saturating_add(1);
+                        terrain_front_pressure += front;
+                        if side >= 0.0 {
+                            terrain_left_pressure += side;
                         } else {
-                            attract(
-                                &mut movement,
-                                delta_position,
-                                repel_denom_mult * data.length.powi(2),
-                            );
+                            terrain_right_pressure += -side;
                         }
-
-                        if terrain_escape_enabled {
-                            let sample_dir = delta_position.normalize_or_zero();
-                            let front = sample_dir.dot(forward).max(0.0);
-                            let side = sample_dir.dot(port);
-
-                            terrain_blocked_count = terrain_blocked_count.saturating_add(1);
-                            terrain_front_pressure += front;
-                            if side >= 0.0 {
-                                terrain_left_pressure += side;
-                            } else {
-                                terrain_right_pressure += -side;
-                            }
-                            terrain_escape_sum -= sample_dir * (1.0 + front * 1.5);
-                        }
+                        terrain_escape_sum -= sample_dir * (1.0 + front * 1.5);
                     }
                 }
             }
@@ -551,6 +551,8 @@ impl Bot {
 
             // ---- Droplet Altar bot behavior ----
             let mut altar_sacrifice_mode = false;
+            let mut altar_route_blocked = false;
+            let mut altar_pull = Vec2::ZERO;
 
             // Death reset: if just respawned (transition dead→alive), clear commitment.
             if !self.was_alive_last_tick {
@@ -566,6 +568,7 @@ impl Bot {
                 let boat_pos = boat.transform().position;
                 let to_altar = altar_pos - boat_pos;
                 let dist_to_altar = to_altar.length();
+                altar_pull = to_altar.normalize_or_zero();
 
                 // Reset commitment if no longer eligible (e.g. leveled up past threshold).
                 if self.sacrifice_committed && !altar_info.is_sacrifice_eligible {
@@ -591,9 +594,22 @@ impl Bot {
                         }
                     }
                     if self.sacrifice_committed {
-                        // Hard override — beeline to altar (terrain scan already skipped).
-                        movement = to_altar;
                         altar_sacrifice_mode = true;
+                        let terrain_pressure =
+                            terrain_blocked_count >= 2 || terrain_front_pressure >= 0.6;
+                        if terrain_pressure {
+                            altar_route_blocked = true;
+                            let slide_dir = if terrain_left_pressure > terrain_right_pressure {
+                                -port
+                            } else if terrain_right_pressure > terrain_left_pressure {
+                                port
+                            } else {
+                                port
+                            };
+                            movement += slide_dir * 1.1 + altar_pull * 0.35;
+                        } else {
+                            movement += altar_pull * 1.5;
+                        }
                     }
                 } else if (is_boss || data.level >= 8) && health_percent > 0.5 {
                     // High-level bot: patrol near altar.
@@ -617,12 +633,22 @@ impl Bot {
 
             let terrain_escape_active = self.terrain_escape_ticks != Ticks::ZERO;
             let mut velocity_target = if altar_sacrifice_mode {
-                data.speed
+                if altar_route_blocked {
+                    data.speed * 0.5
+                } else {
+                    data.speed * 0.85
+                }
             } else {
                 data.speed * 0.8
             };
             if terrain_escape_active {
                 movement = self.terrain_escape_dir;
+                if altar_sacrifice_mode && altar_pull.length_squared() >= 0.01 {
+                    let blended_escape = movement * 0.9 + altar_pull * 0.1;
+                    if blended_escape.length_squared() >= 0.01 {
+                        movement = blended_escape.normalize();
+                    }
+                }
                 velocity_target = if terrain_escape_reverse {
                     data.speed * -0.15
                 } else {
@@ -692,42 +718,66 @@ impl Bot {
 
                 // 1. Emergency Repair — critical HP
                 if health_percent < 0.4 && data.has_skill(SkillType::EmergencyRepair) {
-                    ret = Command::EmergencyRepair(EmergencyRepair);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::EmergencyRepair,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 2. Energy Shield — moderate HP or under fire
                 else if health_percent < 0.6 && data.has_skill(SkillType::EnergyShield) {
-                    ret = Command::EnergyShield(EnergyShield);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::EnergyShield,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 3. Zero Pulse — enemy within 1000m (dist_sq < 1_000_000)
                 else if closest_dist_sq.map_or(false, |d| d < 1_000_000.0)
                     && data.has_skill(SkillType::ZeroPulse)
                 {
-                    ret = Command::ZeroPulse(ZeroPulse);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::ZeroPulse,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 4. Air Superiority — enemy detected
                 else if has_enemy && data.has_skill(SkillType::AirSuperiority) {
-                    ret = Command::AirSuperiority(AirSuperiority);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::AirSuperiority,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 5. Burst Loading — enemy in weapon range
                 else if closest_dist_sq.map_or(false, |d| d < data.range * data.range)
                     && data.has_skill(SkillType::BurstLoading)
                 {
-                    ret = Command::BurstLoading(BurstLoading);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::BurstLoading,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 6. Smoke Screen — retreating under fire
                 else if health_percent < 0.5 && data.has_skill(SkillType::SmokeScreen) {
-                    ret = Command::SmokeScreen(SmokeScreen);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::SmokeScreen,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 7. Stealth — enemy detected
                 else if has_enemy && data.has_skill(SkillType::Stealth) {
-                    ret = Command::Stealth(Stealth);
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::Stealth,
+                        target: SkillTarget::None,
+                    });
                 }
                 // 8. Warp — escape death
                 else if health_percent < 0.25 && data.has_skill(SkillType::Warp) {
                     let escape_dir = Angle::from_radians(rng.gen_range(0.0..std::f32::consts::TAU));
                     let target = boat.transform().position
                         + escape_dir.to_vec() * data.sensors.visual.range * 0.8;
-                    ret = Command::Warp(Warp { target });
+                    ret = Command::UseSkill(UseSkill {
+                        skill: SkillType::Warp,
+                        target: SkillTarget::Position(target),
+                    });
                 }
                 // NuclearStrike intentionally excluded — too destructive for AI.
             }
@@ -740,6 +790,16 @@ impl Bot {
             self.terrain_escape_dir = Vec2::ZERO;
             self.terrain_pressure_streak = 0;
             self.terrain_clear_streak = 0;
+
+            // Hardcore mode: bots stay dead, don't respawn or quit.
+            if crate::runtime_config::hot_hardcore_mode()
+                && players
+                    .borrow_player(player_id)
+                    .map_or(false, |p| p.data.has_died)
+            {
+                return BotAction::None;
+            }
+
             if self.spawned_at_least_once && (rng.gen_bool(1.0 / 3.0)) {
                 // Rage quit.
                 BotAction::Quit
