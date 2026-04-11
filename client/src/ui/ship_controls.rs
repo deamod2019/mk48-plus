@@ -171,26 +171,6 @@ fn active_sensor_button(
     }
 }
 
-/// Convert a SkillType to its corresponding UiEvent.
-fn skill_to_ui_event(skill: SkillType) -> UiEvent {
-    match skill {
-        SkillType::Warp => UiEvent::WarpToggle,
-        SkillType::ZeroPulse => UiEvent::ZeroPulse,
-        SkillType::Iaigiri => UiEvent::IaigiriToggle,
-        SkillType::EngineBoost => UiEvent::EngineBoostToggle,
-        SkillType::SonarPulse => UiEvent::SonarPulse,
-        SkillType::DepthChargeBarrage => UiEvent::DepthChargeBarrage,
-        SkillType::AirSuperiority => UiEvent::AirSuperiority,
-        SkillType::EmergencyRepair => UiEvent::EmergencyRepair,
-        SkillType::SmokeScreen => UiEvent::SmokeScreen,
-        SkillType::BurstLoading => UiEvent::BurstLoading,
-        SkillType::NuclearStrike => UiEvent::NuclearStrike,
-        SkillType::EnergyShield => UiEvent::EnergyShield,
-        SkillType::DredgerSacrifice => UiEvent::DredgerSacrifice,
-        SkillType::Stealth => UiEvent::Stealth,
-    }
-}
-
 /// Render all skill buttons for the current entity dynamically.
 fn skill_buttons(
     status: &UiStatusPlaying,
@@ -200,11 +180,22 @@ fn skill_buttons(
     ui_event_callback: &Callback<UiEvent>,
 ) -> Html {
     let data = status.entity_type.data();
-    
-    // Dynamically render buttons for all skills this entity has
-    data.skills.iter().map(|skill| {
-        skill_button(*skill, status, button_style, button_selected_style, disabled_style, ui_event_callback)
-    }).collect::<Html>()
+
+    // Dynamically render buttons for all skills this entity has (skip passive skills)
+    data.skills
+        .iter()
+        .filter(|s| !s.is_passive())
+        .map(|skill| {
+            skill_button(
+                *skill,
+                status,
+                button_style,
+                button_selected_style,
+                disabled_style,
+                ui_event_callback,
+            )
+        })
+        .collect::<Html>()
 }
 
 /// Render a single skill button based on SkillType.
@@ -217,7 +208,7 @@ fn skill_button(
     ui_event_callback: &Callback<UiEvent>,
 ) -> Html {
     let state = status.get_skill_state(skill);
-    
+
     // Determine button label and state
     let (label, disabled, selecting) = match &state {
         SkillState::Ready => ("就绪".to_string(), false, false),
@@ -226,31 +217,33 @@ fn skill_button(
         SkillState::Active(secs) => (format!("生效中 {:.1}s", secs), true, false),
         SkillState::Cooling(secs) => (format!("冷却 {:.1}s", secs), true, false),
     };
-    
+
     // Create click handler if not disabled
     let onclick = if !disabled {
-        let event = skill_to_ui_event(skill);
-        Some(ui_event_callback.reform(move |_: MouseEvent| event.clone()))
+        Some(ui_event_callback.reform(move |_: MouseEvent| UiEvent::UseSkill(skill)))
     } else {
         None
     };
-    
+
     // Build hotkey hint
-    let hotkey_hint = skill.hotkey().map(|k| format!(" [{}]", k)).unwrap_or_default();
-    
+    let hotkey_hint = skill
+        .hotkey()
+        .map(|k| format!(" [{}]", k))
+        .unwrap_or_default();
+
     // Get skill metadata
     let skill_label = skill.label_cn();
     let icon = skill.icon();
     let description = skill.data().description;
-    
+
     html! {
-        <div 
+        <div
             class={classes!(
-                button_style.clone(), 
-                selecting.then(|| button_selected_style.clone()), 
+                button_style.clone(),
+                selecting.then(|| button_selected_style.clone()),
                 disabled.then(|| disabled_style.clone())
-            )} 
-            {onclick} 
+            )}
+            {onclick}
             title={format!("{}{} - {}", hotkey_hint.trim(), "", description)}
         >
             <span>{format!("{}{} · {}", icon, skill_label, label)}</span>

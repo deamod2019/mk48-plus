@@ -26,6 +26,7 @@ impl AsCommandTrait for Command {
             Command::Control(ref v) => v as &dyn CommandTrait,
             Command::Spawn(ref v) => v as &dyn CommandTrait,
             Command::Upgrade(ref v) => v as &dyn CommandTrait,
+            Command::UseSkill(ref v) => v as &dyn CommandTrait,
             Command::Warp(ref v) => v as &dyn CommandTrait,
             Command::ZeroPulse(ref v) => v as &dyn CommandTrait,
             Command::Iaigiri(ref v) => v as &dyn CommandTrait,
@@ -40,6 +41,13 @@ impl AsCommandTrait for Command {
             Command::EnergyShield(ref v) => v as &dyn CommandTrait,
             Command::DredgerSacrifice(ref v) => v as &dyn CommandTrait,
             Command::Stealth(ref v) => v as &dyn CommandTrait,
+            Command::UnjustGame(ref v) => v as &dyn CommandTrait,
+            Command::Ironclad(ref v) => v as &dyn CommandTrait,
+            Command::YamatoCannon(ref v) => v as &dyn CommandTrait,
+            Command::OrbitalBombardment(ref v) => v as &dyn CommandTrait,
+            Command::RiftStorm(ref v) => v as &dyn CommandTrait,
+            Command::SetFactionMode(ref v) => v as &dyn CommandTrait,
+            Command::Cheat(ref v) => v as &dyn CommandTrait,
         }
     }
 }

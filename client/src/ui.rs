@@ -59,8 +59,8 @@ mod respawn_overlay;
 mod settings_dialog;
 mod ship_controls;
 mod ship_menu;
-mod ships_dialog;
 mod ships_detail_dialog;
+mod ships_dialog;
 mod sprite;
 mod status_overlay;
 mod upgrade_overlay;
@@ -180,15 +180,14 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                         style="max-width:25%;"
                         bot_alliance_enabled={playing.bot_alliance_enabled}
                     />
-                    if let Some(ref fd) = playing.faction_data {
-                        <div style="position: fixed; bottom: 260px; right: 1em; z-index: 5; pointer-events: auto;">
-                            <faction_board::FactionBoard
-                                faction_data={fd.clone()}
-                                my_faction={playing.my_faction}
-                                altar_position={playing.altar_position}
-                                altar_sacrifice_counts={playing.altar_sacrifice_counts}
-                            />
-                        </div>
+                    if let (Some(ref fd), Some(mode)) = (&playing.faction_data, playing.faction_mode) {
+                        <faction_board::FactionBoard
+                            faction_data={fd.clone()}
+                            my_faction={playing.my_faction}
+                            faction_mode={mode}
+                            altar_position={playing.altar_position}
+                            altar_sacrifice_counts={playing.altar_sacrifice_counts.clone()}
+                        />
                     }
                     if gctw.settings_cache.hall_of_fame {
                         <hall_of_fame::HallOfFame
@@ -202,6 +201,7 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                         style="max-width:25%;"
                         {hints}
                         label={LanguageId::chat_radio_label as fn(LanguageId) -> &'static str}
+                        on_cheat={gctw.send_ui_event_callback.reform(|text: String| UiEvent::Cheat(text))}
                     />
                 </div>
                 if !gctw.settings_cache.cinematic {
@@ -226,47 +226,106 @@ pub fn mk48_ui(props: &PropertiesWrapper<UiProps>) -> Html {
                 <Positioner id="back" position={Position::TopRight{margin}} flex={Flex::Row}>
                     <LanguageMenu/>
                 </Positioner>
-                <button
-                    id="arena_toggle"
-                    style="
-                        position: fixed;
-                        bottom: 2.5rem;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        background: linear-gradient(135deg, #e84393, #fd79a8);
-                        border: none;
-                        border-radius: 2rem;
-                        color: white;
-                        cursor: pointer;
-                        font-size: 1.1rem;
-                        font-weight: bold;
-                        padding: 0.6em 1.8em;
-                        box-shadow: 0 4px 15px rgba(232, 67, 147, 0.4);
-                        transition: all 0.3s ease;
-                        z-index: 100;
-                        letter-spacing: 0.05em;
-                    "
-                    onclick={Callback::from(|_| {
-                        let window = web_sys::window().unwrap();
-                        let location = window.location();
-                        let search = location.search().unwrap_or_default();
-                        let has_arena = search.contains("arena");
-                        let new_url = if has_arena {
-                            "/".to_string()
-                        } else {
-                            "/?arena".to_string()
-                        };
-                        let _ = location.set_href(&new_url);
-                    })}
-                >
-                    {
-                        if web_sys::window().unwrap().location().search().unwrap_or_default().contains("arena") {
-                            "⚓ Normal Mode"
-                        } else {
-                            "⚔ Arena Mode"
+                // ---- Mode Switch Buttons ----
+                <div style="
+                    position: fixed;
+                    bottom: 2.5rem;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    display: flex;
+                    gap: 0.8rem;
+                    z-index: 100;
+                ">
+                    <button
+                        id="arena_toggle"
+                        style="
+                            background: linear-gradient(135deg, #e84393, #fd79a8);
+                            border: none;
+                            border-radius: 2rem;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            font-weight: bold;
+                            padding: 0.5em 1.4em;
+                            box-shadow: 0 4px 15px rgba(232, 67, 147, 0.4);
+                            transition: all 0.3s ease;
+                            letter-spacing: 0.05em;
+                        "
+                        onclick={Callback::from(|_| {
+                            let window = web_sys::window().unwrap();
+                            let location = window.location();
+                            let search = location.search().unwrap_or_default();
+                            let has_arena = search.contains("arena");
+                            let new_url = if has_arena {
+                                "/".to_string()
+                            } else {
+                                "/?arena".to_string()
+                            };
+                            let _ = location.set_href(&new_url);
+                        })}
+                    >
+                        {
+                            if web_sys::window().unwrap().location().search().unwrap_or_default().contains("arena") {
+                                "\u{2693} Normal"
+                            } else {
+                                "\u{2694} Arena"
+                            }
                         }
-                    }
-                </button>
+                    </button>
+                    <button
+                        id="faction_mode_toggle"
+                        style="
+                            background: linear-gradient(135deg, #0984e3, #74b9ff);
+                            border: none;
+                            border-radius: 2rem;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            font-weight: bold;
+                            padding: 0.5em 1.4em;
+                            box-shadow: 0 4px 15px rgba(9, 132, 227, 0.4);
+                            transition: all 0.3s ease;
+                            letter-spacing: 0.05em;
+                        "
+                        onclick={gctw.send_ui_event_callback.reform(|_| UiEvent::CycleFactionMode)}
+                    >
+                        {
+                            match props.faction_mode {
+                                Some(common::protocol::FactionMode::TwoTeam) => "\u{2694}\u{fe0f} \u{8230}\u{961f}\u{5bf9}\u{6297}",
+                                Some(common::protocol::FactionMode::ThreeTeam) => "\u{1f6e1}\u{fe0f} \u{9635}\u{8425}\u{6218}\u{4e89}",
+                                None => "\u{2694}\u{fe0f} \u{65e0}\u{9635}\u{8425}",
+                            }
+                        }
+                    </button>
+                    <button
+                        id="hardcore_toggle"
+                        style={format!("
+                            background: linear-gradient(135deg, {}, {});
+                            border: none;
+                            border-radius: 2rem;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            font-weight: bold;
+                            padding: 0.5em 1.4em;
+                            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
+                            transition: all 0.3s ease;
+                            letter-spacing: 0.05em;
+                        ",
+                            if props.hardcore_mode { "#d63031" } else { "#636e72" },
+                            if props.hardcore_mode { "#ff7675" } else { "#b2bec3" },
+                        )}
+                        onclick={gctw.send_ui_event_callback.reform(|_| UiEvent::ToggleHardcoreMode)}
+                    >
+                        {
+                            if props.hardcore_mode {
+                                "\u{1f480} \u{6781}\u{9650}\u{6a21}\u{5f0f}"
+                            } else {
+                                "\u{1f480} \u{6781}\u{9650}\u{5173}"
+                            }
+                        }
+                    </button>
+                </div>
             }
             if !matches!(props.status, UiStatus::Playing(_)) {
                 if outbound_enabled {
@@ -345,20 +404,10 @@ pub enum UiEvent {
     },
     Submerge(bool),
     Upgrade(EntityType),
-    WarpToggle,
-    ZeroPulse,
-    IaigiriToggle,
-    EngineBoostToggle,
-    SonarPulse,
-    DepthChargeBarrage,
-    AirSuperiority,
-    EmergencyRepair,
-    SmokeScreen,
-    BurstLoading,
-    NuclearStrike,
-    EnergyShield,
-    DredgerSacrifice,
-    Stealth,
+    UseSkill(common::skill::SkillType),
+    CycleFactionMode,
+    ToggleHardcoreMode,
+    Cheat(String),
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -366,6 +415,8 @@ pub struct UiProps {
     pub fps: f32,
     pub score: u32,
     pub arena_mode: bool,
+    pub faction_mode: Option<common::protocol::FactionMode>,
+    pub hardcore_mode: bool,
     pub status: UiStatus,
 }
 
@@ -392,28 +443,8 @@ pub struct UiStatusPlaying {
     pub armament: Option<EntityType>,
     pub armament_consumption: Box<[bool]>,
     pub team_proximity: HashMap<TeamId, f32>,
-    pub warp_selecting: bool,
-    pub warp_charge_remaining: f32,
-    pub warp_cooldown_remaining: f32,
-    pub zero_pulse_cooldown_remaining: f32,
-    pub iaigiri_selecting: bool,
-    pub iaigiri_cooldown_remaining: f32,
-    pub engine_boost_remaining: f32,
-    pub engine_boost_cooldown_remaining: f32,
-    pub sonar_pulse_cooldown_remaining: f32,
-    pub depth_charge_barrage_cooldown_remaining: f32,
-    pub air_superiority_cooldown_remaining: f32,
-    pub emergency_repair_cooldown_remaining: f32,
-    pub smoke_screen_cooldown_remaining: f32,
-    pub smoke_screen_active_remaining: f32,
-    pub burst_loading_cooldown_remaining: f32,
-    pub burst_loading_active_remaining: f32,
-    pub nuclear_strike_cooldown_remaining: f32,
-    pub energy_shield_cooldown_remaining: f32,
-    pub energy_shield_active_remaining: f32,
-    pub dredger_sacrifice_cooldown_remaining: f32,
-    pub stealth_cooldown_remaining: f32,
-    pub stealth_active_remaining: f32,
+    pub pending_skill: Option<common::skill::SkillType>,
+    pub skills: Vec<common::protocol::SkillSnapshot>,
     /// Whether bot alliance mode is enabled.
     pub bot_alliance_enabled: bool,
     /// Faction war data.
@@ -423,11 +454,13 @@ pub struct UiStatusPlaying {
     /// Known altar position for this player's faction.
     pub altar_position: Option<glam::Vec2>,
     /// Per-faction sacrifice counts.
-    pub altar_sacrifice_counts: [u8; common::protocol::FactionId::COUNT],
+    pub altar_sacrifice_counts: Vec<u8>,
     /// Kill log for hall of fame display.
     pub kill_log: Vec<(common::entity::EntityType, u32)>,
     /// Whether in arena mode.
     pub arena_mode: bool,
+    /// Current faction mode.
+    pub faction_mode: Option<common::protocol::FactionMode>,
 }
 
 /// Skill runtime state for UI rendering.
@@ -441,74 +474,30 @@ pub enum SkillState {
 }
 
 impl UiStatusPlaying {
+    fn skill_snapshot(
+        &self,
+        skill: common::skill::SkillType,
+    ) -> Option<&common::protocol::SkillSnapshot> {
+        self.skills.iter().find(|snapshot| snapshot.skill == skill)
+    }
+
     /// Query the current state of a skill for UI rendering.
     pub fn get_skill_state(&self, skill: common::skill::SkillType) -> SkillState {
-        use common::skill::SkillType;
-        match skill {
-            SkillType::Warp => {
-                if self.warp_selecting { SkillState::Selecting }
-                else if self.warp_charge_remaining > 0.0 { SkillState::Charging(self.warp_charge_remaining) }
-                else if self.warp_cooldown_remaining > 0.0 { SkillState::Cooling(self.warp_cooldown_remaining) }
-                else { SkillState::Ready }
+        let selecting = self.pending_skill == Some(skill);
+        if selecting {
+            SkillState::Selecting
+        } else if let Some(snapshot) = self.skill_snapshot(skill) {
+            if snapshot.charge_remaining > common::ticks::Ticks::ZERO {
+                SkillState::Charging(snapshot.charge_remaining.to_secs())
+            } else if snapshot.active_remaining > common::ticks::Ticks::ZERO {
+                SkillState::Active(snapshot.active_remaining.to_secs())
+            } else if snapshot.cooldown_remaining > common::ticks::Ticks::ZERO {
+                SkillState::Cooling(snapshot.cooldown_remaining.to_secs())
+            } else {
+                SkillState::Ready
             }
-            SkillType::ZeroPulse => {
-                if self.zero_pulse_cooldown_remaining > 0.0 { SkillState::Cooling(self.zero_pulse_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::Iaigiri => {
-                if self.iaigiri_selecting { SkillState::Selecting }
-                else if self.iaigiri_cooldown_remaining > 0.0 { SkillState::Cooling(self.iaigiri_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::EngineBoost => {
-                if self.engine_boost_remaining > 0.0 { SkillState::Active(self.engine_boost_remaining) }
-                else if self.engine_boost_cooldown_remaining > 0.0 { SkillState::Cooling(self.engine_boost_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::SonarPulse => {
-                if self.sonar_pulse_cooldown_remaining > 0.0 { SkillState::Cooling(self.sonar_pulse_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::DepthChargeBarrage => {
-                if self.depth_charge_barrage_cooldown_remaining > 0.0 { SkillState::Cooling(self.depth_charge_barrage_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::AirSuperiority => {
-                if self.air_superiority_cooldown_remaining > 0.0 { SkillState::Cooling(self.air_superiority_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::EmergencyRepair => {
-                if self.emergency_repair_cooldown_remaining > 0.0 { SkillState::Cooling(self.emergency_repair_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::SmokeScreen => {
-                if self.smoke_screen_active_remaining > 0.0 { SkillState::Active(self.smoke_screen_active_remaining) }
-                else if self.smoke_screen_cooldown_remaining > 0.0 { SkillState::Cooling(self.smoke_screen_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::BurstLoading => {
-                if self.burst_loading_active_remaining > 0.0 { SkillState::Active(self.burst_loading_active_remaining) }
-                else if self.burst_loading_cooldown_remaining > 0.0 { SkillState::Cooling(self.burst_loading_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::NuclearStrike => {
-                if self.nuclear_strike_cooldown_remaining > 0.0 { SkillState::Cooling(self.nuclear_strike_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::EnergyShield => {
-                if self.energy_shield_active_remaining > 0.0 { SkillState::Active(self.energy_shield_active_remaining) }
-                else if self.energy_shield_cooldown_remaining > 0.0 { SkillState::Cooling(self.energy_shield_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::DredgerSacrifice => {
-                if self.dredger_sacrifice_cooldown_remaining > 0.0 { SkillState::Cooling(self.dredger_sacrifice_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
-            SkillType::Stealth => {
-                if self.stealth_active_remaining > 0.0 { SkillState::Active(self.stealth_active_remaining) }
-                else if self.stealth_cooldown_remaining > 0.0 { SkillState::Cooling(self.stealth_cooldown_remaining) }
-                else { SkillState::Ready }
-            }
+        } else {
+            SkillState::Ready
         }
     }
 }
@@ -528,6 +517,8 @@ impl Mk48Game {
             fps: self.fps_counter.last_sample().unwrap_or(0.0),
             score: context.state.game.score,
             arena_mode: context.state.game.arena_mode,
+            faction_mode: context.state.game.faction_mode,
+            hardcore_mode: self.hardcore_mode_local,
             status,
         };
 

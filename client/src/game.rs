@@ -30,9 +30,10 @@ use common::contact::{Contact, ContactTrait};
 use common::entity::{EntityData, EntityId, EntityKind, EntitySubKind, EntityType};
 use common::guidance::Guidance;
 use common::protocol::{
-    Command, Control, Fire, Hint, Pay, Spawn, Update, Upgrade, Warp, WorldEvent, ZeroPulse,
+    CheatCommand, Command, Control, Fire, Hint, Pay, SkillTarget, Spawn, Update, Upgrade, UseSkill,
+    WorldEvent,
 };
-use common::skill::{ZERO_PULSE_COOLDOWN, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, SMOKE_SCREEN_RADIUS};
+use common::skill::{SkillType, SMOKE_SCREEN_RADIUS, WARP_MAX_RANGE_SCALE};
 use common::ticks::Ticks;
 use common::transform::Transform;
 use common::velocity::Velocity;
@@ -85,31 +86,11 @@ pub struct Mk48Game {
     /// FPS counter
     pub fps_counter: FpsMonitor,
     ui_state: UiState,
-    /// Warp UI/计时
-    warp_selecting: bool,
-    warp_charge_secs: f32,
-    warp_cooldown_secs: f32,
-    zero_pulse_cooldown_secs: f32,
-    iaigiri_selecting: bool,
-    iaigiri_cooldown_secs: f32,
-    engine_boost_remaining_secs: f32,
-    engine_boost_cooldown_secs: f32,
-    sonar_pulse_cooldown_secs: f32,
-    depth_charge_barrage_cooldown_secs: f32,
-    air_superiority_cooldown_secs: f32,
-    emergency_repair_cooldown_secs: f32,
-    emergency_repair_active_secs: f32,
-    smoke_screen_cooldown_secs: f32,
-    smoke_screen_active_secs: f32,
-    burst_loading_cooldown_secs: f32,
-    burst_loading_active_secs: f32,
-    nuclear_strike_cooldown_secs: f32,
+    /// Targeted skills currently waiting for a click confirmation.
+    pending_skill: Option<SkillType>,
     nuclear_flash_secs: f32,
-    energy_shield_cooldown_secs: f32,
-    energy_shield_active_secs: f32,
-    dredger_sacrifice_cooldown_secs: f32,
-    stealth_cooldown_secs: f32,
-    stealth_active_secs: f32,
+    /// Local hardcore mode toggle state (sent to server via command).
+    pub hardcore_mode_local: bool,
 }
 
 type FullLayer = ShadowLayer<Mk48Layer>;
@@ -235,30 +216,9 @@ impl GameClient for Mk48Game {
             fire_rate_limiter: FireRateLimiter::new(),
             fps_counter: FpsMonitor::new(1.0),
             ui_state: UiState::default(),
-            warp_selecting: false,
-            warp_charge_secs: 0.0,
-            warp_cooldown_secs: 0.0,
-            zero_pulse_cooldown_secs: 0.0,
-            iaigiri_selecting: false,
-            iaigiri_cooldown_secs: 0.0,
-            engine_boost_remaining_secs: 0.0,
-            engine_boost_cooldown_secs: 0.0,
-            sonar_pulse_cooldown_secs: 0.0,
-            depth_charge_barrage_cooldown_secs: 0.0,
-            air_superiority_cooldown_secs: 0.0,
-            emergency_repair_cooldown_secs: 0.0,
-            emergency_repair_active_secs: 0.0,
-            smoke_screen_cooldown_secs: 0.0,
-            smoke_screen_active_secs: 0.0,
-            burst_loading_cooldown_secs: 0.0,
-            burst_loading_active_secs: 0.0,
-            nuclear_strike_cooldown_secs: 0.0,
+            pending_skill: None,
             nuclear_flash_secs: 0.0,
-            energy_shield_cooldown_secs: 0.0,
-            energy_shield_active_secs: 0.0,
-            dredger_sacrifice_cooldown_secs: 0.0,
-            stealth_cooldown_secs: 0.0,
-            stealth_active_secs: 0.0,
+            hardcore_mode_local: false,
         })
     }
 
@@ -266,9 +226,16 @@ impl GameClient for Mk48Game {
     fn peek_game(&mut self, update: &Update, context: &mut Context<Self>) {
         // Debug: Log events received from server
         if !update.events.is_empty() {
-            web_sys::console::log_1(&format!("peek_game: received {} events: {:?}", update.events.len(), update.events).into());
+            web_sys::console::log_1(
+                &format!(
+                    "peek_game: received {} events: {:?}",
+                    update.events.len(),
+                    update.events
+                )
+                .into(),
+            );
         }
-        
+
         self.peek_update_sound_counter = self.peek_update_sound_counter.saturating_add(1);
         // Only play sounds for 10 peeked updates between frames.
         let play_sounds = self.peek_update_sound_counter < 10;
@@ -398,16 +365,22 @@ impl GameClient for Mk48Game {
                         }
                     }
                     WorldEvent::AltarDiscovered { position, faction } => {
-                        web_sys::console::log_1(&format!(
-                            "[ALTAR] {:?} discovered the altar at ({:.0}, {:.0})",
-                            faction, position.x, position.y
-                        ).into());
+                        web_sys::console::log_1(
+                            &format!(
+                                "[ALTAR] {:?} discovered the altar at ({:.0}, {:.0})",
+                                faction, position.x, position.y
+                            )
+                            .into(),
+                        );
                     }
                     WorldEvent::AltarConsumed { faction } => {
-                        web_sys::console::log_1(&format!(
-                            "[ALTAR] {:?} consumed the altar and upgraded a ship!",
-                            faction
-                        ).into());
+                        web_sys::console::log_1(
+                            &format!(
+                                "[ALTAR] {:?} consumed the altar and upgraded a ship!",
+                                faction
+                            )
+                            .into(),
+                        );
                     }
                     WorldEvent::AltarSacrifice { .. } => {} // Server-internal, should never reach client.
                 }
@@ -418,8 +391,14 @@ impl GameClient for Mk48Game {
         for event in &update.events {
             if let WorldEvent::NuclearStrike { center, radius } = event {
                 let distance = player_position.distance(*center);
-                web_sys::console::log_1(&format!("NuclearStrike event: center={:?}, radius={}, distance={}", center, radius, distance).into());
-                if distance <= *radius * 2.0 {                    
+                web_sys::console::log_1(
+                    &format!(
+                        "NuclearStrike event: center={:?}, radius={}, distance={}",
+                        center, radius, distance
+                    )
+                    .into(),
+                );
+                if distance <= *radius * 2.0 {
                     // Trigger visual flash (1.0 = full white, decays over time)
                     self.nuclear_flash_secs = 0.8;
                     web_sys::console::log_1(&"Nuclear flash triggered!".into());
@@ -573,7 +552,7 @@ impl GameClient for Mk48Game {
                             .map(|Group { entity_type, .. }| *entity_type);
                     }
                     // Data-driven skill hotkey handling
-                    Key::Q | Key::J | Key::K | Key::L | Key::B | Key::N => {
+                    Key::Q | Key::J | Key::K | Key::L | Key::B | Key::N | Key::U => {
                         let data = entity_type.data();
                         let pressed_char = match event.key {
                             Key::Q => 'Q',
@@ -582,9 +561,10 @@ impl GameClient for Mk48Game {
                             Key::L => 'L',
                             Key::B => 'B',
                             Key::N => 'N',
+                            Key::U => 'U',
                             _ => unreachable!(),
                         };
-                        
+
                         // Find skill with matching hotkey that this entity has
                         for skill in data.skills.iter() {
                             if skill.hotkey() == Some(pressed_char) {
@@ -744,7 +724,7 @@ impl GameClient for Mk48Game {
         );
 
         // Determine smoke screen visual effect
-        let smoke_screen = if self.smoke_screen_active_secs > 0.0 {
+        let smoke_screen = if Self::skill_active_remaining(context, SkillType::SmokeScreen) > 0.0 {
             if let Some(pc) = context.state.game.player_contact() {
                 Some((pc.transform().position, SMOKE_SCREEN_RADIUS))
             } else {
@@ -793,24 +773,28 @@ impl GameClient for Mk48Game {
 
         for InterpolatedContact { view: contact, .. } in context.state.game.contacts.values() {
             let friendly = context.state.core.is_friendly(contact.player_id());
-            
+
             // Check if this is an alliance bot (high-score bot when alliance mode is enabled)
             const ELITE_BOT_SCORE_THRESHOLD: u32 = 5000;
             let is_alliance_bot = context.state.game.bot_alliance_enabled
                 && contact.player_id().map(|id| id.is_bot()).unwrap_or(false)
-                && context.state.core.liveboard.iter()
+                && context
+                    .state
+                    .core
+                    .liveboard
+                    .iter()
                     .find(|lb| lb.player_id == contact.player_id().unwrap())
                     .map(|lb| lb.score >= ELITE_BOT_SCORE_THRESHOLD)
                     .unwrap_or(false);
 
             let color_bytes = if friendly {
-                [58, 255, 140]  // Green for friendly
+                [58, 255, 140] // Green for friendly
             } else if is_alliance_bot {
-                [255, 100, 50]  // Orange-red for alliance bots
+                [255, 100, 50] // Orange-red for alliance bots
             } else if contact.is_boat() {
-                [255; 3]  // White for normal boats
+                [255; 3] // White for normal boats
             } else {
-                [231, 76, 60]  // Red for enemy weapons
+                [231, 76, 60] // Red for enemy weapons
             };
             let color = rgb_array(color_bytes);
 
@@ -831,7 +815,9 @@ impl GameClient for Mk48Game {
                 };
 
                 // Stealth visual effect: make own ship semi-transparent when stealth is active.
-                if friendly && self.stealth_active_secs > 0.0 {
+                if context.state.game.entity_id == Some(contact.id())
+                    && Self::skill_active_remaining(context, SkillType::Stealth) > 0.0
+                {
                     alpha *= 0.3;
                 }
                 let entity_id = contact.id();
@@ -1011,13 +997,16 @@ impl GameClient for Mk48Game {
                                 }
 
                                 // Energy Shield visual effect - pulsing blue aura
-                                if self.energy_shield_active_secs > 0.0 {
+                                if Self::skill_active_remaining(context, SkillType::EnergyShield)
+                                    > 0.0
+                                {
                                     let shield_radius = data.radius * 1.5;
                                     // Pulsing effect: oscillate between 0.3 and 0.7 alpha
-                                    let pulse = (context.client.time_seconds * 4.0).sin() * 0.2 + 0.5;
+                                    let pulse =
+                                        (context.client.time_seconds * 4.0).sin() * 0.2 + 0.5;
                                     let shield_color = rgba(50, 150, 255, (pulse * 200.0) as u8);
                                     let shield_thickness = 0.01 * zoom;
-                                    
+
                                     // Draw outer shield ring
                                     layer.graphics.draw_circle(
                                         contact.transform().position,
@@ -1035,13 +1024,16 @@ impl GameClient for Mk48Game {
                                 }
 
                                 // Emergency Repair visual effect - pulsing green aura
-                                if self.emergency_repair_active_secs > 0.0 {
+                                if Self::skill_active_remaining(context, SkillType::EmergencyRepair)
+                                    > 0.0
+                                {
                                     let repair_radius = data.radius * 1.3;
                                     // Pulsing effect: oscillate between 0.3 and 0.7 alpha
-                                    let pulse = (context.client.time_seconds * 3.0).sin() * 0.2 + 0.5;
+                                    let pulse =
+                                        (context.client.time_seconds * 3.0).sin() * 0.2 + 0.5;
                                     let repair_color = rgba(50, 255, 100, (pulse * 180.0) as u8);
                                     let repair_thickness = 0.008 * zoom;
-                                    
+
                                     // Draw outer repair ring
                                     layer.graphics.draw_circle(
                                         contact.transform().position,
@@ -1347,11 +1339,8 @@ impl GameClient for Mk48Game {
 
                                 if context.settings.advanced_display_mode {
                                     // Numerical display mode: current/max
-                                    let text = format!(
-                                        "{:.0}/{:.0}",
-                                        current_health.max(0.0),
-                                        max_health
-                                    );
+                                    let text =
+                                        format!("{:.0}/{:.0}", current_health.max(0.0), max_health);
                                     let c = color_bytes;
                                     layer.text.draw(
                                         &text,
@@ -1390,14 +1379,25 @@ impl GameClient for Mk48Game {
 
                             // Name
                             let player_id = contact.player_id().unwrap();
-                            let faction_prefix = context.state.game.faction_data.as_ref()
-                                .and_then(|fd| fd.player_factions.iter().find(|(pid, _)| *pid == player_id))
-                                .map(|(_, fid)| fid.emoji())
-                                .unwrap_or("");
-                            let text = if let Some(player) = context
-                                .state
-                                .core
-                                .player_or_bot(player_id)
+                            let faction_prefix =
+                                context
+                                    .state
+                                    .game
+                                    .faction_data
+                                    .as_ref()
+                                    .and_then(|fd| {
+                                        fd.player_factions.iter().find(|(pid, _)| *pid == player_id)
+                                    })
+                                    .map(|(_, fid)| {
+                                        fid.emoji(
+                                            context.state.game.faction_mode.unwrap_or(
+                                                common::protocol::FactionMode::ThreeTeam,
+                                            ),
+                                        )
+                                    })
+                                    .unwrap_or("");
+                            let text = if let Some(player) =
+                                context.state.core.player_or_bot(player_id)
                             {
                                 if let Some(team) = player
                                     .team_id
@@ -1540,6 +1540,7 @@ impl GameClient for Mk48Game {
                         layer.airborne_particles.add(particle2);
                     } else if data.sub_kind == EntitySubKind::Drone
                         || data.sub_kind == EntitySubKind::Starship
+                        || data.sub_kind == EntitySubKind::FlyingMecha
                         || data.sub_kind == EntitySubKind::Helicopter
                         || data.sub_kind == EntitySubKind::Laser
                         || data.kind == EntityKind::Aircraft
@@ -1738,8 +1739,7 @@ impl GameClient for Mk48Game {
 
         // Send command later, when lifetimes allow.
         let mut control: Option<Command> = None;
-        let mut pending_warp: Option<Warp> = None;
-        let mut pending_iaigiri: Option<common::protocol::Iaigiri> = None;
+        let mut pending_use_skill: Option<UseSkill> = None;
 
         let player_contact = Self::maybe_contact_mut(
             &mut context.state.game.contacts,
@@ -1752,31 +1752,6 @@ impl GameClient for Mk48Game {
         );
 
         let status = if let Some(player_contact) = player_contact {
-            // Data-driven skill timer updates: iterate over skills the entity actually has
-            if let Some(entity_type) = player_contact.view.entity_type() {
-                let data = entity_type.data();
-                use common::skill::SkillType;
-                
-                for skill in data.skills.iter() {
-                    match skill {
-                        SkillType::Warp => self.update_warp_timers(elapsed_seconds, true),
-                        SkillType::ZeroPulse => self.update_zero_pulse_timers(elapsed_seconds, true),
-                        SkillType::Iaigiri => self.update_iaigiri_timers(elapsed_seconds, true),
-                        SkillType::EngineBoost => self.update_engine_boost_timers(elapsed_seconds, true),
-                        SkillType::SonarPulse => self.update_sonar_pulse_timers(elapsed_seconds, true),
-                        SkillType::DepthChargeBarrage => self.update_depth_charge_barrage_timers(elapsed_seconds, true),
-                        SkillType::AirSuperiority => self.update_air_superiority_timers(elapsed_seconds),
-                        SkillType::EmergencyRepair => self.update_emergency_repair_timers(elapsed_seconds),
-                        SkillType::SmokeScreen => self.update_smoke_screen_timers(elapsed_seconds),
-                        SkillType::BurstLoading => self.update_burst_loading_timers(elapsed_seconds),
-                        SkillType::NuclearStrike => self.update_nuclear_strike_timers(elapsed_seconds),
-                        SkillType::EnergyShield => self.update_energy_shield_timers(elapsed_seconds),
-                        SkillType::DredgerSacrifice => self.update_dredger_sacrifice_timers(elapsed_seconds),
-                        SkillType::Stealth => self.update_stealth_timers(elapsed_seconds),
-                    }
-                }
-            }
-
             let mut guidance = None;
 
             {
@@ -1870,7 +1845,6 @@ impl GameClient for Mk48Game {
             // Re-borrow as immutable.
             let player_contact = context.state.game.player_contact().unwrap();
 
-
             let status = UiStatus::Playing(UiStatusPlaying {
                 entity_type: player_contact.entity_type().unwrap(),
                 position: player_contact.transform().position.into(),
@@ -1891,60 +1865,92 @@ impl GameClient for Mk48Game {
                 armament: self.ui_state.armament,
                 armament_consumption: player_contact.reloads().iter().map(|b| *b).collect(),
                 team_proximity,
-                warp_selecting: self.warp_selecting,
-                warp_charge_remaining: self.warp_charge_secs.max(0.0),
-                warp_cooldown_remaining: self.warp_cooldown_secs.max(0.0),
-                zero_pulse_cooldown_remaining: self.zero_pulse_cooldown_secs.max(0.0),
-                iaigiri_selecting: self.iaigiri_selecting,
-                iaigiri_cooldown_remaining: self.iaigiri_cooldown_secs.max(0.0),
-                engine_boost_remaining: self.engine_boost_remaining_secs.max(0.0),
-                engine_boost_cooldown_remaining: self.engine_boost_cooldown_secs.max(0.0),
-                sonar_pulse_cooldown_remaining: self.sonar_pulse_cooldown_secs.max(0.0),
-                depth_charge_barrage_cooldown_remaining: self.depth_charge_barrage_cooldown_secs.max(0.0),
-                air_superiority_cooldown_remaining: self.air_superiority_cooldown_secs.max(0.0),
-                emergency_repair_cooldown_remaining: self.emergency_repair_cooldown_secs.max(0.0),
-                smoke_screen_cooldown_remaining: self.smoke_screen_cooldown_secs.max(0.0),
-                smoke_screen_active_remaining: self.smoke_screen_active_secs.max(0.0),
-                burst_loading_cooldown_remaining: self.burst_loading_cooldown_secs.max(0.0),
-                burst_loading_active_remaining: self.burst_loading_active_secs.max(0.0),
-                nuclear_strike_cooldown_remaining: self.nuclear_strike_cooldown_secs.max(0.0),
-                energy_shield_cooldown_remaining: self.energy_shield_cooldown_secs.max(0.0),
-                energy_shield_active_remaining: self.energy_shield_active_secs.max(0.0),
-                dredger_sacrifice_cooldown_remaining: self.dredger_sacrifice_cooldown_secs.max(0.0),
-                stealth_cooldown_remaining: self.stealth_cooldown_secs.max(0.0),
-                stealth_active_remaining: self.stealth_active_secs.max(0.0),
+                pending_skill: self.pending_skill,
+                skills: context.state.game.skills.clone(),
                 bot_alliance_enabled: context.state.game.bot_alliance_enabled,
                 faction_data: context.state.game.faction_data.clone(),
                 my_faction: context.state.game.my_faction,
                 altar_position: context.state.game.altar_position,
-                altar_sacrifice_counts: context.state.game.altar_sacrifice_counts,
+                altar_sacrifice_counts: context.state.game.altar_sacrifice_counts.clone(),
                 kill_log: context.state.game.kill_log.clone(),
                 arena_mode: context.state.game.arena_mode,
+                faction_mode: context.state.game.faction_mode,
             });
 
             if self.control_rate_limiter.update_ready(elapsed_seconds) {
                 let mut left_click = context.mouse.take_click(MouseButton::Left);
                 let cancel_warp = context.mouse.take_click(MouseButton::Right);
 
-                if self.iaigiri_selecting {
+                if self.pending_skill == Some(SkillType::Iaigiri) {
                     if cancel_warp {
-                        self.iaigiri_selecting = false;
+                        self.clear_pending_skill();
                     }
                     if left_click {
                         if let Some(target) = aim_target {
-                        use common::skill::IAIGIRI_COOLDOWN;
-                            
-                            self.iaigiri_cooldown_secs = IAIGIRI_COOLDOWN.to_secs();
-                            self.iaigiri_selecting = false;
-                            pending_iaigiri = Some(common::protocol::Iaigiri { target });
+                            self.clear_pending_skill();
+                            pending_use_skill = Some(UseSkill {
+                                skill: SkillType::Iaigiri,
+                                target: SkillTarget::Position(target),
+                            });
                         }
                         left_click = false;
                     }
                 }
 
-                if self.warp_selecting {
+                if self.pending_skill == Some(SkillType::UnjustGame) {
                     if cancel_warp {
-                        self.warp_selecting = false;
+                        self.clear_pending_skill();
+                    }
+
+                    if left_click {
+                        if let Some(click_pos) = aim_target {
+                            // Find the nearest contact to the click position
+                            let player_id = context.state.game.player_contact().map(|c| c.id());
+                            let mut best: Option<(common::entity::EntityId, f32)> = None;
+                            for (_, interp) in context.state.game.contacts.iter() {
+                                let contact = &interp.view;
+                                let cid = contact.id();
+                                // Skip self
+                                if Some(cid) == player_id {
+                                    continue;
+                                }
+                                let dist_sq =
+                                    contact.transform().position.distance_squared(click_pos);
+                                // Click radius scales with distance — distant entities are harder to click precisely
+                                let base_radius = contact
+                                    .entity_type()
+                                    .map(|t| t.data().length.max(50.0))
+                                    .unwrap_or(50.0);
+                                let player_pos = context
+                                    .state
+                                    .game
+                                    .player_contact()
+                                    .map(|c| c.transform().position)
+                                    .unwrap_or_default();
+                                let dist_to_player =
+                                    contact.transform().position.distance(player_pos);
+                                let click_radius = base_radius + dist_to_player * 0.05;
+                                if dist_sq < click_radius * click_radius {
+                                    if best.map_or(true, |(_, d)| dist_sq < d) {
+                                        best = Some((cid, dist_sq));
+                                    }
+                                }
+                            }
+                            if let Some((target_id, _)) = best {
+                                pending_use_skill = Some(UseSkill {
+                                    skill: SkillType::UnjustGame,
+                                    target: SkillTarget::Entity(target_id),
+                                });
+                                self.clear_pending_skill();
+                            }
+                        }
+                        left_click = false;
+                    }
+                }
+
+                if self.pending_skill == Some(SkillType::Warp) {
+                    if cancel_warp {
+                        self.clear_pending_skill();
                     }
 
                     if left_click {
@@ -1962,16 +1968,11 @@ impl GameClient for Mk48Game {
                                 } else {
                                     clamped_target
                                 };
-                            pending_warp = Some(Warp { target: final_target });
-                            self.warp_selecting = false;
-                            // If charge time is 0, set cooldown directly; otherwise set charge time
-                            if WARP_CHARGE.to_secs() > 0.0 {
-                                self.warp_charge_secs = WARP_CHARGE.to_secs();
-                                self.warp_cooldown_secs = 0.0;
-                            } else {
-                                self.warp_charge_secs = 0.0;
-                                self.warp_cooldown_secs = WARP_COOLDOWN.to_secs();
-                            }
+                            pending_use_skill = Some(UseSkill {
+                                skill: SkillType::Warp,
+                                target: SkillTarget::Position(final_target),
+                            });
+                            self.clear_pending_skill();
                         }
                         // 吞掉点击，避免同时开火。
                         left_click = false;
@@ -2047,25 +2048,21 @@ impl GameClient for Mk48Game {
             .filter(|_| !self.respawn_overridden)
             .cloned()
         {
+            self.clear_pending_skill();
             self.reset_warp_state();
-            self.zero_pulse_cooldown_secs = 0.0;
             UiStatus::Respawning(UiStatusRespawning {
                 death_reason,
                 kill_log: context.state.game.kill_log.clone(),
                 arena_mode: context.state.game.arena_mode,
             })
         } else {
+            self.clear_pending_skill();
             self.reset_warp_state();
-            self.zero_pulse_cooldown_secs = 0.0;
             UiStatus::Spawning
         };
 
-        if let Some(iaigiri) = pending_iaigiri.take() {
-            context.send_to_game(Command::Iaigiri(iaigiri));
-        }
-
-        if let Some(warp) = pending_warp.take() {
-            context.send_to_game(Command::Warp(warp));
+        if let Some(use_skill) = pending_use_skill.take() {
+            context.send_to_game(Command::UseSkill(use_skill));
         }
 
         if let Some(control) = control {
@@ -2107,69 +2104,34 @@ impl GameClient for Mk48Game {
             UiEvent::Upgrade(entity_type) => {
                 context.audio.play(Audio::Upgrade);
                 context.send_to_game(Command::Upgrade(Upgrade { entity_type }));
+                self.clear_pending_skill();
                 self.reset_warp_state();
             }
-            UiEvent::WarpToggle => {
-                if let Some(contact) = context.state.game.player_contact() {
-                    if matches!(
-                        contact.entity_type(),
-                        Some(EntityType::StarDestroyer | EntityType::XystonStarDestroyer | EntityType::UnscInfinite | EntityType::StellarFrigate | EntityType::Valiant | EntityType::Marathon | EntityType::Marauder | EntityType::Hunter | EntityType::Paris | EntityType::ImperialStarDestroyer)
-                    )
-                        && self.warp_charge_secs == 0.0
-                        && self.warp_cooldown_secs == 0.0
-                    {
-                        self.warp_selecting = !self.warp_selecting;
-                    }
+            UiEvent::UseSkill(skill) => self.try_skill(skill, context),
+            UiEvent::CycleFactionMode => {
+                use common::protocol::{FactionMode, SetFactionMode};
+                let next_mode = match context.state.game.faction_mode {
+                    None => Some(FactionMode::TwoTeam),
+                    Some(FactionMode::TwoTeam) => Some(FactionMode::ThreeTeam),
+                    Some(FactionMode::ThreeTeam) => None,
+                };
+                if let Some(mode) = next_mode {
+                    context.send_to_game(Command::SetFactionMode(SetFactionMode { mode }));
+                } else {
+                    // Send ThreeTeam as a "reset" — server will handle disabling via config.
+                    // For now, cycle back to TwoTeam (disable not supported via command).
+                    context.send_to_game(Command::SetFactionMode(SetFactionMode {
+                        mode: FactionMode::TwoTeam,
+                    }));
                 }
             }
-            UiEvent::IaigiriToggle => {
-                use common::skill::SkillType;
-                if let Some(contact) = context.state.game.player_contact() {
-                    if let Some(entity_type) = contact.entity_type() {
-                        if entity_type.data().has_skill(SkillType::Iaigiri)
-                            && self.iaigiri_cooldown_secs == 0.0
-                        {
-                            self.iaigiri_selecting = !self.iaigiri_selecting;
-                        }
-                    }
-                }
+            UiEvent::ToggleHardcoreMode => {
+                self.hardcore_mode_local = !self.hardcore_mode_local;
+                // Note: hardcore mode is config-driven on server.
+                // This toggle is a local indicator; server reads from config.toml.
             }
-
-            UiEvent::EngineBoostToggle => {
-                self.try_engine_boost(context);
-            }
-            UiEvent::ZeroPulse => {
-                self.try_zero_pulse(context);
-            }
-            UiEvent::SonarPulse => {
-                self.try_sonar_pulse(context);
-            }
-            UiEvent::DepthChargeBarrage => {
-                self.try_depth_charge_barrage(context);
-            }
-            UiEvent::AirSuperiority => {
-                self.try_air_superiority(context);
-            }
-            UiEvent::EmergencyRepair => {
-                self.try_emergency_repair(context);
-            }
-            UiEvent::SmokeScreen => {
-                self.try_smoke_screen(context);
-            }
-            UiEvent::BurstLoading => {
-                self.try_burst_loading(context);
-            }
-            UiEvent::NuclearStrike => {
-                self.try_nuclear_strike(context);
-            }
-            UiEvent::EnergyShield => {
-                self.try_energy_shield(context);
-            }
-            UiEvent::DredgerSacrifice => {
-                self.try_dredger_sacrifice(context);
-            }
-            UiEvent::Stealth => {
-                self.try_stealth(context);
+            UiEvent::Cheat(text) => {
+                context.send_to_game(Command::Cheat(CheatCommand { text }));
             }
         }
     }
@@ -2199,20 +2161,92 @@ impl Mk48Game {
         self.ui_state.submerge = submerge;
     }
 
+    fn send_skill_command(
+        &mut self,
+        context: &mut Context<Self>,
+        skill: SkillType,
+        target: SkillTarget,
+    ) {
+        context.send_to_game(Command::UseSkill(UseSkill { skill, target }));
+    }
+
+    fn toggle_pending_skill(&mut self, skill: SkillType) {
+        if self.pending_skill == Some(skill) {
+            self.pending_skill = None;
+        } else {
+            self.pending_skill = Some(skill);
+        }
+    }
+
+    fn clear_pending_skill(&mut self) {
+        self.pending_skill = None;
+    }
+
+    fn clear_pending_skill_if(&mut self, skill: SkillType) {
+        if self.pending_skill == Some(skill) {
+            self.pending_skill = None;
+        }
+    }
+
+    fn skill_snapshot<'a>(
+        context: &'a Context<Self>,
+        skill: SkillType,
+    ) -> Option<&'a common::protocol::SkillSnapshot> {
+        context
+            .state
+            .game
+            .skills
+            .iter()
+            .find(|snapshot| snapshot.skill == skill)
+    }
+
+    fn skill_charge_remaining(context: &Context<Self>, skill: SkillType) -> f32 {
+        Self::skill_snapshot(context, skill)
+            .map(|snapshot| snapshot.charge_remaining.to_secs())
+            .unwrap_or(0.0)
+    }
+
+    fn skill_active_remaining(context: &Context<Self>, skill: SkillType) -> f32 {
+        Self::skill_snapshot(context, skill)
+            .map(|snapshot| snapshot.active_remaining.to_secs())
+            .unwrap_or(0.0)
+    }
+
+    fn skill_cooldown_remaining(context: &Context<Self>, skill: SkillType) -> f32 {
+        Self::skill_snapshot(context, skill)
+            .map(|snapshot| snapshot.cooldown_remaining.to_secs())
+            .unwrap_or(0.0)
+    }
+
+    fn player_has_skill(context: &Context<Self>, skill: SkillType) -> bool {
+        context
+            .state
+            .game
+            .player_contact()
+            .and_then(|contact| contact.entity_type())
+            .map(|entity_type| entity_type.data().has_skill(skill))
+            .unwrap_or(false)
+    }
+
+    fn can_use_skill(context: &Context<Self>, skill: SkillType) -> bool {
+        Self::player_has_skill(context, skill)
+            && Self::skill_charge_remaining(context, skill) == 0.0
+            && Self::skill_active_remaining(context, skill) == 0.0
+            && Self::skill_cooldown_remaining(context, skill) == 0.0
+    }
+
     /// Unified skill dispatcher - maps SkillType to its handler.
-    fn try_skill(&mut self, skill: common::skill::SkillType, context: &mut Context<Self>) {
-        use common::skill::SkillType;
+    fn try_skill(&mut self, skill: SkillType, context: &mut Context<Self>) {
         match skill {
             SkillType::Warp => {
-                // Warp is click-to-select, toggle selection state
-                if self.warp_cooldown_secs == 0.0 && self.warp_charge_secs == 0.0 {
-                    self.warp_selecting = !self.warp_selecting;
+                if Self::can_use_skill(context, SkillType::Warp) {
+                    self.toggle_pending_skill(SkillType::Warp);
                 }
             }
             SkillType::ZeroPulse => self.try_zero_pulse(context),
             SkillType::Iaigiri => {
-                if self.iaigiri_cooldown_secs == 0.0 {
-                    self.iaigiri_selecting = !self.iaigiri_selecting;
+                if Self::can_use_skill(context, SkillType::Iaigiri) {
+                    self.toggle_pending_skill(SkillType::Iaigiri);
                 }
             }
             SkillType::EngineBoost => self.try_engine_boost(context),
@@ -2226,351 +2260,119 @@ impl Mk48Game {
             SkillType::EnergyShield => self.try_energy_shield(context),
             SkillType::DredgerSacrifice => self.try_dredger_sacrifice(context),
             SkillType::Stealth => self.try_stealth(context),
+            SkillType::UnjustGame => self.try_unjust_game(context),
+            SkillType::LastStand => {}
+            SkillType::Ironclad => self.try_ironclad(context),
+            SkillType::YamatoCannon => self.try_yamato_cannon(context),
+            SkillType::OrbitalBombardment => self.try_orbital_bombardment(context),
+            SkillType::RiftStorm => self.try_rift_storm(context),
         }
     }
 
     fn try_zero_pulse(&mut self, context: &mut Context<Self>) {
-        let entity_type = context
-            .state
-            .game
-            .player_interpolated_contact()
-            .and_then(|c| c.model.entity_type().or(c.view.entity_type()));
-        if matches!(
-            entity_type,
-            Some(EntityType::Leviathan | EntityType::StarDestroyer)
-        ) && self.zero_pulse_cooldown_secs == 0.0
-        {
-            context.send_to_game(Command::ZeroPulse(ZeroPulse));
-            self.zero_pulse_cooldown_secs = ZERO_PULSE_COOLDOWN.to_secs();
-        }
-    }
-
-    fn update_warp_timers(&mut self, elapsed_seconds: f32, has_warp: bool) {
-        if !has_warp {
-            self.reset_warp_state();
-            return;
-        }
-        if self.warp_charge_secs > 0.0 {
-            self.warp_charge_secs = (self.warp_charge_secs - elapsed_seconds).max(0.0);
-            if self.warp_charge_secs == 0.0 && self.warp_cooldown_secs == 0.0 {
-                self.warp_cooldown_secs = WARP_COOLDOWN.to_secs();
-            }
-        } else {
-            self.warp_cooldown_secs = (self.warp_cooldown_secs - elapsed_seconds).max(0.0);
-        }
-    }
-
-    fn update_zero_pulse_timers(&mut self, elapsed_seconds: f32, has_zero_pulse: bool) {
-        if has_zero_pulse || self.zero_pulse_cooldown_secs > 0.0 {
-            self.zero_pulse_cooldown_secs =
-                (self.zero_pulse_cooldown_secs - elapsed_seconds).max(0.0);
-        } else {
-            self.zero_pulse_cooldown_secs = 0.0;
-        }
-    }
-
-    fn update_iaigiri_timers(&mut self, elapsed_seconds: f32, has_iaigiri: bool) {
-        if has_iaigiri || self.iaigiri_cooldown_secs > 0.0 {
-            self.iaigiri_cooldown_secs = (self.iaigiri_cooldown_secs - elapsed_seconds).max(0.0);
-        } else {
-            self.iaigiri_cooldown_secs = 0.0;
-            self.iaigiri_selecting = false;
-        }
-    }
-
-    fn update_engine_boost_timers(&mut self, elapsed_seconds: f32, has_boost: bool) {
-        if has_boost {
-            self.engine_boost_remaining_secs = (self.engine_boost_remaining_secs - elapsed_seconds).max(0.0);
-            if self.engine_boost_remaining_secs == 0.0 {
-                self.engine_boost_cooldown_secs = (self.engine_boost_cooldown_secs - elapsed_seconds).max(0.0);
-            }
-        } else {
-            self.engine_boost_remaining_secs = 0.0;
-            self.engine_boost_cooldown_secs = 0.0;
+        if Self::can_use_skill(context, SkillType::ZeroPulse) {
+            self.send_skill_command(context, SkillType::ZeroPulse, SkillTarget::None);
         }
     }
 
     fn reset_warp_state(&mut self) {
-        self.warp_selecting = false;
-        self.warp_charge_secs = 0.0;
-        self.warp_cooldown_secs = 0.0;
+        self.clear_pending_skill_if(SkillType::Warp);
     }
 
     fn try_engine_boost(&mut self, context: &mut Context<Self>) {
-        use common::skill::{ENGINE_BOOST_COOLDOWN, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_MAX_DURATION, SkillType};
-        use common::protocol::EngineBoost;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-                let has_skill = entity_type.data().has_skill(SkillType::EngineBoost);
-                if has_skill
-                    && self.engine_boost_cooldown_secs == 0.0
-                    && self.engine_boost_remaining_secs == 0.0
-                {
-                    self.engine_boost_remaining_secs = ENGINE_BOOST_MAX_DURATION.to_secs() + ENGINE_BOOST_DECEL_DURATION.to_secs();
-                    self.engine_boost_cooldown_secs = ENGINE_BOOST_COOLDOWN.to_secs();
-                    context.send_to_game(Command::EngineBoost(EngineBoost));
-                }
-            }
-        }
-    }
-
-    fn update_sonar_pulse_timers(&mut self, elapsed_seconds: f32, has_skill: bool) {
-        if has_skill {
-            self.sonar_pulse_cooldown_secs = (self.sonar_pulse_cooldown_secs - elapsed_seconds).max(0.0);
-        } else {
-            self.sonar_pulse_cooldown_secs = 0.0;
-        }
-    }
-
-    fn update_depth_charge_barrage_timers(&mut self, elapsed_seconds: f32, has_skill: bool) {
-        if has_skill {
-            self.depth_charge_barrage_cooldown_secs = (self.depth_charge_barrage_cooldown_secs - elapsed_seconds).max(0.0);
-        } else {
-            self.depth_charge_barrage_cooldown_secs = 0.0;
+        if Self::can_use_skill(context, SkillType::EngineBoost) {
+            self.send_skill_command(context, SkillType::EngineBoost, SkillTarget::None);
         }
     }
 
     fn try_sonar_pulse(&mut self, context: &mut Context<Self>) {
-        use common::skill::SONAR_PULSE_COOLDOWN;
-        use common::protocol::SonarPulse;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::HunterKiller77)
-                && self.sonar_pulse_cooldown_secs == 0.0
-            {
-                self.sonar_pulse_cooldown_secs = SONAR_PULSE_COOLDOWN.to_secs();
-                context.send_to_game(Command::SonarPulse(SonarPulse));
-            }
+        if Self::can_use_skill(context, SkillType::SonarPulse) {
+            self.send_skill_command(context, SkillType::SonarPulse, SkillTarget::None);
         }
     }
 
     fn try_depth_charge_barrage(&mut self, context: &mut Context<Self>) {
-        use common::skill::DCB_COOLDOWN;
-        use common::protocol::DepthChargeBarrage;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::HunterKiller77)
-                && self.depth_charge_barrage_cooldown_secs == 0.0
-            {
-                self.depth_charge_barrage_cooldown_secs = DCB_COOLDOWN.to_secs();
-                context.send_to_game(Command::DepthChargeBarrage(DepthChargeBarrage));
-            }
+        if Self::can_use_skill(context, SkillType::DepthChargeBarrage) {
+            self.send_skill_command(context, SkillType::DepthChargeBarrage, SkillTarget::None);
         }
     }
 
     fn try_air_superiority(&mut self, context: &mut Context<Self>) {
-        use common::skill::AIR_SUPERIORITY_COOLDOWN;
-        use common::skill::SkillType;
-        use common::protocol::AirSuperiority;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-                if entity_type.data().has_skill(SkillType::AirSuperiority)
-                    && self.air_superiority_cooldown_secs == 0.0
-                {
-                    self.air_superiority_cooldown_secs = AIR_SUPERIORITY_COOLDOWN.to_secs();
-                    context.send_to_game(Command::AirSuperiority(AirSuperiority));
-                }
-            }
+        if Self::can_use_skill(context, SkillType::AirSuperiority) {
+            self.send_skill_command(context, SkillType::AirSuperiority, SkillTarget::None);
         }
     }
-
 
     fn try_emergency_repair(&mut self, context: &mut Context<Self>) {
-        use common::skill::{SkillType, EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
-        use common::protocol::EmergencyRepair;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-            if entity_type.data().has_skill(SkillType::EmergencyRepair)
-                && self.emergency_repair_cooldown_secs == 0.0
-            {
-                self.emergency_repair_cooldown_secs = EMERGENCY_REPAIR_COOLDOWN.to_secs();
-                self.emergency_repair_active_secs = REPAIR_DURATION.to_secs();
-                context.send_to_game(Command::EmergencyRepair(EmergencyRepair));
-            }
-            }
-        }
-    }
-
-    fn update_air_superiority_timers(&mut self, elapsed_seconds: f32) {
-        if self.air_superiority_cooldown_secs > 0.0 {
-            self.air_superiority_cooldown_secs = (self.air_superiority_cooldown_secs - elapsed_seconds).max(0.0);
-        }
-    }
-
-    fn update_emergency_repair_timers(&mut self, elapsed_seconds: f32) {
-        if self.emergency_repair_cooldown_secs > 0.0 {
-            self.emergency_repair_cooldown_secs = (self.emergency_repair_cooldown_secs - elapsed_seconds).max(0.0);
-        }
-        if self.emergency_repair_active_secs > 0.0 {
-            self.emergency_repair_active_secs = (self.emergency_repair_active_secs - elapsed_seconds).max(0.0);
+        if Self::can_use_skill(context, SkillType::EmergencyRepair) {
+            self.send_skill_command(context, SkillType::EmergencyRepair, SkillTarget::None);
         }
     }
 
     fn try_smoke_screen(&mut self, context: &mut Context<Self>) {
-        use common::skill::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION, SkillType};
-        use common::protocol::SmokeScreen;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-                let has_skill = entity_type.data().has_skill(SkillType::SmokeScreen);
-                if has_skill && self.smoke_screen_cooldown_secs == 0.0 {
-                    self.smoke_screen_cooldown_secs = SMOKE_SCREEN_COOLDOWN.to_secs();
-                    self.smoke_screen_active_secs = SMOKE_SCREEN_DURATION.to_secs();
-                    context.send_to_game(Command::SmokeScreen(SmokeScreen));
-                }
-            }
-        }
-    }
-
-    fn update_smoke_screen_timers(&mut self, elapsed_seconds: f32) {
-        if self.smoke_screen_cooldown_secs > 0.0 {
-            self.smoke_screen_cooldown_secs = (self.smoke_screen_cooldown_secs - elapsed_seconds).max(0.0);
-        }
-        if self.smoke_screen_active_secs > 0.0 {
-            self.smoke_screen_active_secs = (self.smoke_screen_active_secs - elapsed_seconds).max(0.0);
-        }
-    }
-
-    /// Returns true if the player's ship has an active smoke screen
-    #[allow(dead_code)]
-    pub fn is_smoke_screen_active(&self) -> bool {
-        self.smoke_screen_active_secs > 0.0
-    }
-
-    /// Returns the smoke screen remaining duration ratio (0.0-1.0)
-    #[allow(dead_code)]
-    pub fn smoke_screen_ratio(&self) -> f32 {
-        use common::skill::SMOKE_SCREEN_DURATION;
-        if self.smoke_screen_active_secs > 0.0 {
-            self.smoke_screen_active_secs / SMOKE_SCREEN_DURATION.to_secs()
-        } else {
-            0.0
+        if Self::can_use_skill(context, SkillType::SmokeScreen) {
+            self.send_skill_command(context, SkillType::SmokeScreen, SkillTarget::None);
         }
     }
 
     fn try_burst_loading(&mut self, context: &mut Context<Self>) {
-        use common::skill::{BURST_LOADING_COOLDOWN, BURST_LOADING_DURATION, SkillType};
-        use common::protocol::BurstLoading;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-                if entity_type.data().has_skill(SkillType::BurstLoading)
-                    && self.burst_loading_cooldown_secs == 0.0
-                {
-                    self.burst_loading_cooldown_secs = BURST_LOADING_COOLDOWN.to_secs();
-                    self.burst_loading_active_secs = BURST_LOADING_DURATION.to_secs();
-                    context.send_to_game(Command::BurstLoading(BurstLoading));
-                }
-            }
-        }
-    }
-
-
-    fn update_burst_loading_timers(&mut self, elapsed_seconds: f32) {
-        if self.burst_loading_active_secs > 0.0 {
-            self.burst_loading_active_secs = (self.burst_loading_active_secs - elapsed_seconds).max(0.0);
-        }
-        if self.burst_loading_cooldown_secs > 0.0 {
-            self.burst_loading_cooldown_secs = (self.burst_loading_cooldown_secs - elapsed_seconds).max(0.0);
+        if Self::can_use_skill(context, SkillType::BurstLoading) {
+            self.send_skill_command(context, SkillType::BurstLoading, SkillTarget::None);
         }
     }
 
     fn try_nuclear_strike(&mut self, context: &mut Context<Self>) {
-        use common::skill::NUCLEAR_STRIKE_COOLDOWN;
-        use common::protocol::NuclearStrike;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if contact.entity_type() == Some(EntityType::UnscInfinite)
-                && self.nuclear_strike_cooldown_secs == 0.0
-            {
-                self.nuclear_strike_cooldown_secs = NUCLEAR_STRIKE_COOLDOWN.to_secs();
-                context.send_to_game(Command::NuclearStrike(NuclearStrike));
-                context.audio.play(Audio::Impact);
-            }
-        }
-    }
-
-    fn update_nuclear_strike_timers(&mut self, elapsed_seconds: f32) {
-        if self.nuclear_strike_cooldown_secs > 0.0 {
-            self.nuclear_strike_cooldown_secs = (self.nuclear_strike_cooldown_secs - elapsed_seconds).max(0.0);
+        if Self::can_use_skill(context, SkillType::NuclearStrike) {
+            self.send_skill_command(context, SkillType::NuclearStrike, SkillTarget::None);
+            context.audio.play(Audio::Impact);
         }
     }
 
     fn try_energy_shield(&mut self, context: &mut Context<Self>) {
-        use common::skill::{SkillType, ENERGY_SHIELD_COOLDOWN};
-        use common::skill::ENERGY_SHIELD_DURATION;
-        use common::protocol::EnergyShield;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-            if entity_type.data().has_skill(SkillType::EnergyShield)
-                && self.energy_shield_cooldown_secs == 0.0
-            {
-                self.energy_shield_cooldown_secs = ENERGY_SHIELD_COOLDOWN.to_secs();
-                self.energy_shield_active_secs = ENERGY_SHIELD_DURATION.to_secs();
-                context.send_to_game(Command::EnergyShield(EnergyShield));
-            }
-            }
-        }
-    }
-
-    fn update_energy_shield_timers(&mut self, elapsed_seconds: f32) {
-        if self.energy_shield_cooldown_secs > 0.0 {
-            self.energy_shield_cooldown_secs = (self.energy_shield_cooldown_secs - elapsed_seconds).max(0.0);
-        }
-        if self.energy_shield_active_secs > 0.0 {
-            self.energy_shield_active_secs = (self.energy_shield_active_secs - elapsed_seconds).max(0.0);
+        if Self::can_use_skill(context, SkillType::EnergyShield) {
+            self.send_skill_command(context, SkillType::EnergyShield, SkillTarget::None);
         }
     }
 
     fn try_dredger_sacrifice(&mut self, context: &mut Context<Self>) {
-        use common::skill::{SkillType, DREDGER_SACRIFICE_COOLDOWN};
-        use common::protocol::DredgerSacrifice;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-                if entity_type.data().has_skill(SkillType::DredgerSacrifice)
-                    && self.dredger_sacrifice_cooldown_secs == 0.0
-                {
-                    self.dredger_sacrifice_cooldown_secs = DREDGER_SACRIFICE_COOLDOWN.to_secs();
-                    context.send_to_game(Command::DredgerSacrifice(DredgerSacrifice));
-                }
-            }
-        }
-    }
-
-    fn update_dredger_sacrifice_timers(&mut self, elapsed_seconds: f32) {
-        if self.dredger_sacrifice_cooldown_secs > 0.0 {
-            self.dredger_sacrifice_cooldown_secs = (self.dredger_sacrifice_cooldown_secs - elapsed_seconds).max(0.0);
+        if Self::can_use_skill(context, SkillType::DredgerSacrifice) {
+            self.send_skill_command(context, SkillType::DredgerSacrifice, SkillTarget::None);
         }
     }
 
     fn try_stealth(&mut self, context: &mut Context<Self>) {
-        use common::skill::{SkillType, STEALTH_COOLDOWN, STEALTH_DURATION};
-        use common::protocol::Stealth;
-        
-        if let Some(contact) = context.state.game.player_contact() {
-            if let Some(entity_type) = contact.entity_type() {
-                if entity_type.data().has_skill(SkillType::Stealth)
-                    && self.stealth_cooldown_secs == 0.0
-                {
-                    self.stealth_active_secs = STEALTH_DURATION.to_secs();
-                    self.stealth_cooldown_secs = STEALTH_COOLDOWN.to_secs();
-                    context.send_to_game(Command::Stealth(Stealth));
-                }
-            }
+        if Self::can_use_skill(context, SkillType::Stealth) {
+            self.send_skill_command(context, SkillType::Stealth, SkillTarget::None);
         }
     }
 
-    fn update_stealth_timers(&mut self, elapsed_seconds: f32) {
-        if self.stealth_active_secs > 0.0 {
-            self.stealth_active_secs = (self.stealth_active_secs - elapsed_seconds).max(0.0);
+    fn try_unjust_game(&mut self, context: &mut Context<Self>) {
+        if Self::can_use_skill(context, SkillType::UnjustGame) {
+            self.toggle_pending_skill(SkillType::UnjustGame);
         }
-        if self.stealth_cooldown_secs > 0.0 {
-            self.stealth_cooldown_secs = (self.stealth_cooldown_secs - elapsed_seconds).max(0.0);
+    }
+
+    fn try_ironclad(&mut self, context: &mut Context<Self>) {
+        if Self::can_use_skill(context, SkillType::Ironclad) {
+            self.send_skill_command(context, SkillType::Ironclad, SkillTarget::None);
+        }
+    }
+
+    fn try_yamato_cannon(&mut self, context: &mut Context<Self>) {
+        if Self::can_use_skill(context, SkillType::YamatoCannon) {
+            self.send_skill_command(context, SkillType::YamatoCannon, SkillTarget::None);
+        }
+    }
+
+    fn try_orbital_bombardment(&mut self, context: &mut Context<Self>) {
+        if Self::can_use_skill(context, SkillType::OrbitalBombardment) {
+            self.send_skill_command(context, SkillType::OrbitalBombardment, SkillTarget::None);
+        }
+    }
+
+    fn try_rift_storm(&mut self, context: &mut Context<Self>) {
+        if Self::can_use_skill(context, SkillType::RiftStorm) {
+            self.send_skill_command(context, SkillType::RiftStorm, SkillTarget::None);
         }
     }
 }

@@ -6,7 +6,7 @@ use atomic_refcell::AtomicRef;
 use common::complete::CompleteTrait;
 use common::contact::ContactTrait;
 use common::death_reason::DeathReason;
-use common::protocol::{FactionId, FactionUpdate, Update, WorldEvent};
+use common::protocol::{FactionMode, FactionUpdate, Update, WorldEvent};
 use common::terrain;
 use common::terrain::{ChunkSet, Terrain};
 use common::ticks::{Ticks, TicksRepr};
@@ -48,13 +48,23 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
         loaded_chunks: &mut ChunkSet,
         faction_update: Option<FactionUpdate>,
         altar_position: Option<Vec2>,
-        altar_sacrifice_counts: [u8; FactionId::COUNT],
+        altar_sacrifice_counts: Vec<u8>,
         arena_mode: bool,
+        faction_mode: Option<FactionMode>,
     ) -> Update {
         let death_reason = if let Status::Dead { reason, .. } = &self.player.data.status {
             Some(reason.clone())
         } else {
             None
+        };
+
+        let skills = if let Status::Alive { entity_index, .. } = self.player.data.status {
+            let entity = &self.world.entities[entity_index];
+            entity
+                .extension()
+                .skill_snapshots(&entity.entity_type.data().skills)
+        } else {
+            Vec::new()
         };
 
         // Any updated chunks are now no longer loaded.
@@ -96,14 +106,20 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
         // Filter events per-faction: strip server-internal events and
         // only send faction-specific events to the correct faction.
         let my_faction = self.player.data.faction;
-        let events: Vec<WorldEvent> = self.world.events.iter().filter(|e| match e {
-            // Server-internal event, never send to clients.
-            WorldEvent::AltarSacrifice { .. } => false,
-            // Only send to the faction that discovered.
-            WorldEvent::AltarDiscovered { faction, .. } => my_faction == Some(*faction),
-            // Global events.
-            _ => true,
-        }).cloned().collect();
+        let events: Vec<WorldEvent> = self
+            .world
+            .events
+            .iter()
+            .filter(|e| match e {
+                // Server-internal event, never send to clients.
+                WorldEvent::AltarSacrifice { .. } => false,
+                // Only send to the faction that discovered.
+                WorldEvent::AltarDiscovered { faction, .. } => my_faction == Some(*faction),
+                // Global events.
+                _ => true,
+            })
+            .cloned()
+            .collect();
 
         Update {
             contacts: self
@@ -133,15 +149,23 @@ impl<'a, I: Iterator<Item = ContactRef<'a>>> CompleteRef<'a, I> {
             events,
             death_reason,
             score: self.player.score,
-            kill_log: self.player.data.kill_log.iter().map(|(k, v)| (*k, *v)).collect(),
+            kill_log: self
+                .player
+                .data
+                .kill_log
+                .iter()
+                .map(|(k, v)| (*k, *v))
+                .collect(),
             world_radius: self.world.radius,
             terrain,
             bot_alliance_enabled,
+            skills,
             faction_data: faction_update,
             my_faction,
             altar_position,
             altar_sacrifice_counts,
             arena_mode,
+            faction_mode,
         }
     }
 }

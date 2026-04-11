@@ -7,7 +7,7 @@ use client_util::apply::Apply;
 use common::contact::Contact;
 use common::death_reason::DeathReason;
 use common::entity::{EntityId, EntityType};
-use common::protocol::{FactionId, FactionUpdate, Update};
+use common::protocol::{FactionId, FactionMode, FactionUpdate, SkillSnapshot, Update};
 use common::terrain::Terrain;
 use std::collections::HashMap;
 
@@ -31,9 +31,13 @@ pub struct Mk48State {
     /// Known altar position for this player's faction.
     pub altar_position: Option<glam::Vec2>,
     /// Per-faction sacrifice counts.
-    pub altar_sacrifice_counts: [u8; FactionId::COUNT],
+    pub altar_sacrifice_counts: Vec<u8>,
     /// Whether connected to arena mode server.
     pub arena_mode: bool,
+    /// Current faction mode (None = disabled).
+    pub faction_mode: Option<FactionMode>,
+    /// Server-authoritative runtime state for the current player's skills.
+    pub skills: Vec<SkillSnapshot>,
     terrain_reset: bool,
 }
 
@@ -53,8 +57,10 @@ impl Default for Mk48State {
             faction_data: None,
             my_faction: None,
             altar_position: None,
-            altar_sacrifice_counts: [0; FactionId::COUNT],
+            altar_sacrifice_counts: Vec::new(),
             arena_mode: false,
+            faction_mode: None,
+            skills: Vec::new(),
             terrain_reset: false,
         }
     }
@@ -100,6 +106,8 @@ impl Apply<Update> for Mk48State {
         self.altar_position = update.altar_position;
         self.altar_sacrifice_counts = update.altar_sacrifice_counts;
         self.arena_mode = update.arena_mode;
+        self.faction_mode = update.faction_mode;
+        self.skills = update.skills;
     }
 
     fn reset(&mut self) {

@@ -4,9 +4,11 @@
 use common::altitude::Altitude;
 use common::angle::Angle;
 use common::entity::*;
+use common::protocol::SkillSnapshot;
+use common::skill::SkillType;
+use common::skill::WARP_COOLDOWN;
 use common::ticks::Ticks;
 use common::util::make_mut_slice;
-use common::skill::WARP_COOLDOWN;
 use common_util::alloc::{arc_default_n, box_default_n};
 use glam::Vec2;
 use std::iter::FromIterator;
@@ -75,6 +77,15 @@ pub struct EntityExtension {
     dredger_sacrifice_cooldown: Ticks,
     stealth_cooldown: Ticks,
     stealth_remaining: Ticks,
+    unjust_game_cooldown: Ticks,
+    last_stand_cooldown: Ticks,
+    last_stand_remaining: Ticks,
+    ironclad_cooldown: Ticks,
+    ironclad_remaining: Ticks,
+    yamato_cannon_cooldown: Ticks,
+    orbital_bombardment_cooldown: Ticks,
+    orbital_bombardment_remaining: Ticks,
+    rift_storm_cooldown: Ticks,
 }
 
 impl EntityExtension {
@@ -125,6 +136,15 @@ impl EntityExtension {
         self.dredger_sacrifice_cooldown = Ticks::ZERO;
         self.stealth_cooldown = Ticks::ZERO;
         self.stealth_remaining = Ticks::ZERO;
+        self.unjust_game_cooldown = Ticks::ZERO;
+        self.last_stand_cooldown = Ticks::ZERO;
+        self.last_stand_remaining = Ticks::ZERO;
+        self.ironclad_cooldown = Ticks::ZERO;
+        self.ironclad_remaining = Ticks::ZERO;
+        self.yamato_cannon_cooldown = Ticks::ZERO;
+        self.orbital_bombardment_cooldown = Ticks::ZERO;
+        self.orbital_bombardment_remaining = Ticks::ZERO;
+        self.rift_storm_cooldown = Ticks::ZERO;
     }
 
     /// Returns the target altitude of the boat from submerge.
@@ -310,6 +330,15 @@ impl Default for EntityExtension {
             dredger_sacrifice_cooldown: Ticks::ZERO,
             stealth_cooldown: Ticks::ZERO,
             stealth_remaining: Ticks::ZERO,
+            unjust_game_cooldown: Ticks::ZERO,
+            last_stand_cooldown: Ticks::ZERO,
+            last_stand_remaining: Ticks::ZERO,
+            ironclad_cooldown: Ticks::ZERO,
+            ironclad_remaining: Ticks::ZERO,
+            yamato_cannon_cooldown: Ticks::ZERO,
+            orbital_bombardment_cooldown: Ticks::ZERO,
+            orbital_bombardment_remaining: Ticks::ZERO,
+            rift_storm_cooldown: Ticks::ZERO,
         }
     }
 }
@@ -329,7 +358,12 @@ impl EntityExtension {
     }
 
     // Engine boost methods
-    pub fn start_engine_boost(&mut self, duration: Ticks, decel_duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+    pub fn start_engine_boost(
+        &mut self,
+        duration: Ticks,
+        decel_duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
         if self.engine_boost_cooldown != Ticks::ZERO || self.engine_boost_remaining != Ticks::ZERO {
             return Err("engine boost on cooldown");
         }
@@ -341,7 +375,8 @@ impl EntityExtension {
 
     #[allow(dead_code)]
     pub fn is_engine_boosting(&self) -> bool {
-        self.engine_boost_remaining != Ticks::ZERO || self.engine_boost_decel_remaining != Ticks::ZERO
+        self.engine_boost_remaining != Ticks::ZERO
+            || self.engine_boost_decel_remaining != Ticks::ZERO
     }
 
     pub fn engine_boost_speed_multiplier(&self) -> f32 {
@@ -360,7 +395,8 @@ impl EntityExtension {
         if self.engine_boost_remaining != Ticks::ZERO {
             self.engine_boost_remaining = self.engine_boost_remaining.saturating_sub(delta);
         } else if self.engine_boost_decel_remaining != Ticks::ZERO {
-            self.engine_boost_decel_remaining = self.engine_boost_decel_remaining.saturating_sub(delta);
+            self.engine_boost_decel_remaining =
+                self.engine_boost_decel_remaining.saturating_sub(delta);
         } else {
             self.engine_boost_cooldown = self.engine_boost_cooldown.saturating_sub(delta);
         }
@@ -403,7 +439,8 @@ impl EntityExtension {
 
     #[allow(dead_code)]
     pub fn advance_depth_charge_barrage(&mut self, delta: Ticks) {
-        self.depth_charge_barrage_cooldown = self.depth_charge_barrage_cooldown.saturating_sub(delta);
+        self.depth_charge_barrage_cooldown =
+            self.depth_charge_barrage_cooldown.saturating_sub(delta);
     }
 
     // AirSuperiority methods
@@ -425,7 +462,11 @@ impl EntityExtension {
     }
 
     // EmergencyRepair methods
-    pub fn start_emergency_repair(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+    pub fn start_emergency_repair(
+        &mut self,
+        duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
         if self.emergency_repair_cooldown != Ticks::ZERO {
             return Err("emergency repair on cooldown");
         }
@@ -453,7 +494,11 @@ impl EntityExtension {
     }
 
     // Smoke screen methods
-    pub fn start_smoke_screen(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+    pub fn start_smoke_screen(
+        &mut self,
+        duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
         if self.smoke_screen_cooldown != Ticks::ZERO {
             return Err("smoke screen on cooldown");
         }
@@ -482,7 +527,11 @@ impl EntityExtension {
     }
 
     // Burst loading methods
-    pub fn start_burst_loading(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+    pub fn start_burst_loading(
+        &mut self,
+        duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
         if self.burst_loading_cooldown != Ticks::ZERO {
             return Err("burst loading on cooldown");
         }
@@ -511,7 +560,11 @@ impl EntityExtension {
     }
 
     // Nuclear Strike methods
-    pub fn start_nuclear_strike(&mut self, charge: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+    pub fn start_nuclear_strike(
+        &mut self,
+        charge: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
         if self.nuclear_strike_cooldown != Ticks::ZERO {
             return Err("nuclear strike is on cooldown");
         }
@@ -546,7 +599,11 @@ impl EntityExtension {
     }
 
     // Energy Shield methods
-    pub fn start_energy_shield(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+    pub fn start_energy_shield(
+        &mut self,
+        duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
         if self.energy_shield_cooldown != Ticks::ZERO {
             return Err("energy shield is on cooldown");
         }
@@ -619,5 +676,241 @@ impl EntityExtension {
     pub fn advance_stealth(&mut self, delta: Ticks) {
         self.stealth_remaining = self.stealth_remaining.saturating_sub(delta);
         self.stealth_cooldown = self.stealth_cooldown.saturating_sub(delta);
+    }
+
+    // Unjust Game methods
+    pub fn start_unjust_game(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.unjust_game_cooldown != Ticks::ZERO {
+            return Err("unjust game on cooldown");
+        }
+        self.unjust_game_cooldown = cooldown;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn unjust_game_cooldown_remaining(&self) -> Ticks {
+        self.unjust_game_cooldown
+    }
+
+    pub fn advance_unjust_game(&mut self, delta: Ticks) {
+        self.unjust_game_cooldown = self.unjust_game_cooldown.saturating_sub(delta);
+    }
+
+    // Last Stand methods
+    pub fn start_last_stand(
+        &mut self,
+        duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
+        if self.last_stand_cooldown != Ticks::ZERO {
+            return Err("last stand on cooldown");
+        }
+        self.last_stand_remaining = duration;
+        self.last_stand_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn is_last_stand_active(&self) -> bool {
+        self.last_stand_remaining != Ticks::ZERO
+    }
+
+    #[allow(dead_code)]
+    pub fn last_stand_cooldown_remaining(&self) -> Ticks {
+        self.last_stand_cooldown
+    }
+
+    pub fn advance_last_stand(&mut self, delta: Ticks) {
+        self.last_stand_remaining = self.last_stand_remaining.saturating_sub(delta);
+        self.last_stand_cooldown = self.last_stand_cooldown.saturating_sub(delta);
+    }
+
+    // Ironclad methods
+    pub fn start_ironclad(&mut self, duration: Ticks, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.ironclad_cooldown != Ticks::ZERO {
+            return Err("ironclad on cooldown");
+        }
+        self.ironclad_remaining = duration;
+        self.ironclad_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn is_ironclad_active(&self) -> bool {
+        self.ironclad_remaining != Ticks::ZERO
+    }
+
+    #[allow(dead_code)]
+    pub fn ironclad_cooldown_remaining(&self) -> Ticks {
+        self.ironclad_cooldown
+    }
+
+    pub fn advance_ironclad(&mut self, delta: Ticks) {
+        self.ironclad_remaining = self.ironclad_remaining.saturating_sub(delta);
+        self.ironclad_cooldown = self.ironclad_cooldown.saturating_sub(delta);
+    }
+
+    // Yamato Cannon methods
+    pub fn start_yamato_cannon(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.yamato_cannon_cooldown != Ticks::ZERO {
+            return Err("yamato cannon on cooldown");
+        }
+        self.yamato_cannon_cooldown = cooldown;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn yamato_cannon_cooldown_remaining(&self) -> Ticks {
+        self.yamato_cannon_cooldown
+    }
+
+    pub fn advance_yamato_cannon(&mut self, delta: Ticks) {
+        self.yamato_cannon_cooldown = self.yamato_cannon_cooldown.saturating_sub(delta);
+    }
+
+    // Orbital Bombardment methods
+    pub fn start_orbital_bombardment(
+        &mut self,
+        duration: Ticks,
+        cooldown: Ticks,
+    ) -> Result<(), &'static str> {
+        if self.orbital_bombardment_cooldown != Ticks::ZERO {
+            return Err("orbital bombardment on cooldown");
+        }
+        self.orbital_bombardment_remaining = duration;
+        self.orbital_bombardment_cooldown = cooldown;
+        Ok(())
+    }
+
+    pub fn is_orbital_bombardment_active(&self) -> bool {
+        self.orbital_bombardment_remaining != Ticks::ZERO
+    }
+
+    #[allow(dead_code)]
+    pub fn orbital_bombardment_cooldown_remaining(&self) -> Ticks {
+        self.orbital_bombardment_cooldown
+    }
+
+    pub fn advance_orbital_bombardment(&mut self, delta: Ticks) {
+        self.orbital_bombardment_remaining =
+            self.orbital_bombardment_remaining.saturating_sub(delta);
+        self.orbital_bombardment_cooldown = self.orbital_bombardment_cooldown.saturating_sub(delta);
+    }
+
+    // Rift Storm methods
+    pub fn start_rift_storm(&mut self, cooldown: Ticks) -> Result<(), &'static str> {
+        if self.rift_storm_cooldown != Ticks::ZERO {
+            return Err("rift storm on cooldown");
+        }
+        self.rift_storm_cooldown = cooldown;
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn rift_storm_cooldown_remaining(&self) -> Ticks {
+        self.rift_storm_cooldown
+    }
+
+    pub fn advance_rift_storm(&mut self, delta: Ticks) {
+        self.rift_storm_cooldown = self.rift_storm_cooldown.saturating_sub(delta);
+    }
+
+    pub fn skill_snapshot(&self, skill: SkillType) -> SkillSnapshot {
+        let (cooldown_remaining, active_remaining, charge_remaining) = match skill {
+            SkillType::Warp => (
+                self.warp_cooldown_remaining(),
+                Ticks::ZERO,
+                self.warp_charge_remaining(),
+            ),
+            SkillType::ZeroPulse => (
+                self.zero_pulse_cooldown_remaining(),
+                Ticks::ZERO,
+                Ticks::ZERO,
+            ),
+            SkillType::Iaigiri => (self.iaigiri_cooldown_remaining(), Ticks::ZERO, Ticks::ZERO),
+            SkillType::EngineBoost => (
+                self.engine_boost_cooldown,
+                self.engine_boost_remaining
+                    .saturating_add(self.engine_boost_decel_remaining),
+                Ticks::ZERO,
+            ),
+            SkillType::SonarPulse => (
+                self.sonar_pulse_cooldown_remaining(),
+                Ticks::ZERO,
+                Ticks::ZERO,
+            ),
+            SkillType::DepthChargeBarrage => (
+                self.depth_charge_barrage_cooldown_remaining(),
+                Ticks::ZERO,
+                Ticks::ZERO,
+            ),
+            SkillType::AirSuperiority => (
+                self.air_superiority_cooldown_remaining(),
+                Ticks::ZERO,
+                Ticks::ZERO,
+            ),
+            SkillType::EmergencyRepair => (
+                self.emergency_repair_cooldown_remaining(),
+                self.emergency_repair_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::SmokeScreen => (
+                self.smoke_screen_cooldown_remaining(),
+                self.smoke_screen_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::BurstLoading => (
+                self.burst_loading_cooldown_remaining(),
+                self.burst_loading_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::NuclearStrike => (
+                self.nuclear_strike_cooldown_remaining(),
+                Ticks::ZERO,
+                self.nuclear_strike_charge_remaining(),
+            ),
+            SkillType::EnergyShield => (
+                self.energy_shield_cooldown,
+                self.energy_shield_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::DredgerSacrifice => (
+                self.dredger_sacrifice_cooldown_remaining(),
+                Ticks::ZERO,
+                Ticks::ZERO,
+            ),
+            SkillType::Stealth => (
+                self.stealth_cooldown_remaining(),
+                self.stealth_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::UnjustGame => (self.unjust_game_cooldown, Ticks::ZERO, Ticks::ZERO),
+            SkillType::LastStand => (
+                self.last_stand_cooldown,
+                self.last_stand_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::Ironclad => (self.ironclad_cooldown, self.ironclad_remaining, Ticks::ZERO),
+            SkillType::YamatoCannon => (self.yamato_cannon_cooldown, Ticks::ZERO, Ticks::ZERO),
+            SkillType::OrbitalBombardment => (
+                self.orbital_bombardment_cooldown,
+                self.orbital_bombardment_remaining,
+                Ticks::ZERO,
+            ),
+            SkillType::RiftStorm => (self.rift_storm_cooldown, Ticks::ZERO, Ticks::ZERO),
+        };
+
+        SkillSnapshot {
+            skill,
+            cooldown_remaining,
+            active_remaining,
+            charge_remaining,
+        }
+    }
+
+    pub fn skill_snapshots(&self, skills: &[SkillType]) -> Vec<SkillSnapshot> {
+        skills
+            .iter()
+            .copied()
+            .map(|skill| self.skill_snapshot(skill))
+            .collect()
     }
 }

@@ -5,7 +5,9 @@ use crate::contact::Contact;
 use crate::death_reason::DeathReason;
 use crate::entity::*;
 use crate::guidance::Guidance;
+use crate::skill::SkillType;
 use crate::terrain::{ChunkId, SerializedChunk};
+use crate::ticks::Ticks;
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
@@ -31,6 +33,9 @@ pub struct Update {
     /// Whether bot alliance mode is enabled (high-score bots form alliance against players).
     #[serde(default)]
     pub bot_alliance_enabled: bool,
+    /// Runtime skill state snapshots for the current player.
+    #[serde(default)]
+    pub skills: Vec<SkillSnapshot>,
     /// Faction war data (present when faction_mode is enabled).
     #[serde(default)]
     pub faction_data: Option<FactionUpdate>,
@@ -42,10 +47,13 @@ pub struct Update {
     pub altar_position: Option<Vec2>,
     /// Current altar sacrifice progress for all factions.
     #[serde(default)]
-    pub altar_sacrifice_counts: [u8; FactionId::COUNT],
+    pub altar_sacrifice_counts: Vec<u8>,
     /// Whether this update comes from an arena instance.
     #[serde(default)]
     pub arena_mode: bool,
+    /// Current faction mode (None = faction mode disabled).
+    #[serde(default)]
+    pub faction_mode: Option<FactionMode>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -63,7 +71,41 @@ pub enum WorldEvent {
 /// Updates for terrain chunks.
 pub type TerrainUpdate = [(ChunkId, SerializedChunk)];
 
-/// Faction identifier for the 3-faction war mode.
+/// Faction mode: determines how teams are arranged.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum FactionMode {
+    /// 2-team battle: 三（4）舰队 vs 三（3）舰队
+    TwoTeam = 1,
+    /// 3-team FFA: 红军 vs 蓝军 vs 绿军
+    ThreeTeam = 2,
+}
+
+impl FactionMode {
+    /// Number of factions for this mode.
+    pub fn faction_count(&self) -> usize {
+        match self {
+            Self::TwoTeam => 2,
+            Self::ThreeTeam => 3,
+        }
+    }
+
+    pub fn from_u8(v: u8) -> Option<Self> {
+        match v {
+            1 => Some(Self::TwoTeam),
+            2 => Some(Self::ThreeTeam),
+            _ => None,
+        }
+    }
+}
+
+impl Default for FactionMode {
+    fn default() -> Self {
+        Self::ThreeTeam
+    }
+}
+
+/// Faction identifier for the faction war mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum FactionId {
@@ -73,22 +115,35 @@ pub enum FactionId {
 }
 
 impl FactionId {
-    /// Number of factions in the game.
+    /// Maximum number of factions (used for fixed-size arrays).
+    pub const MAX_COUNT: usize = 3;
+    /// Legacy constant for backward compatibility.
     pub const COUNT: usize = 3;
+    /// Maximum players per faction.
+    pub const MAX_PLAYERS_PER_FACTION: u32 = 34;
 
-    pub fn from_index(i: u8) -> Self {
-        match i % Self::COUNT as u8 {
+    pub fn from_index(i: u8, mode: FactionMode) -> Self {
+        let count = mode.faction_count() as u8;
+        match i % count {
             0 => Self::Red,
             1 => Self::Blue,
             _ => Self::Green,
         }
     }
 
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::Red => "红军",
-            Self::Blue => "蓝军",
-            Self::Green => "绿军",
+    /// Name of this faction in the given mode.
+    pub fn name(&self, mode: FactionMode) -> &'static str {
+        match mode {
+            FactionMode::TwoTeam => match self {
+                Self::Red => "三（4）舰队",
+                Self::Blue => "三（3）舰队",
+                Self::Green => "三（3）舰队", // unused in TwoTeam
+            },
+            FactionMode::ThreeTeam => match self {
+                Self::Red => "红军",
+                Self::Blue => "蓝军",
+                Self::Green => "绿军",
+            },
         }
     }
 
@@ -96,12 +151,24 @@ impl FactionId {
         *self as usize
     }
 
-    pub fn emoji(&self) -> &'static str {
-        match self {
-            Self::Red => "🔴",
-            Self::Blue => "🔵",
-            Self::Green => "🟢",
+    pub fn emoji(&self, mode: FactionMode) -> &'static str {
+        match mode {
+            FactionMode::TwoTeam => match self {
+                Self::Red => "🔴",
+                Self::Blue => "🔵",
+                Self::Green => "🔵",
+            },
+            FactionMode::ThreeTeam => match self {
+                Self::Red => "🔴",
+                Self::Blue => "🔵",
+                Self::Green => "🟢",
+            },
         }
+    }
+
+    /// Iterate all factions for a given mode.
+    pub fn iter_for_mode(mode: FactionMode) -> impl Iterator<Item = FactionId> {
+        (0..mode.faction_count()).map(move |i| Self::from_index(i as u8, mode))
     }
 }
 
@@ -117,7 +184,7 @@ pub struct FactionStats {
 /// Faction war update data.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactionUpdate {
-    pub factions: [FactionStats; FactionId::COUNT],
+    pub factions: Vec<FactionStats>,
     /// Per-player faction assignments (for rendering faction markers above ships).
     #[serde(default)]
     pub player_factions: Vec<(core_protocol::id::PlayerId, FactionId)>,
@@ -131,6 +198,7 @@ pub enum Command {
     Control(Control),
     Spawn(Spawn),
     Upgrade(Upgrade),
+    UseSkill(UseSkill),
     Warp(Warp),
     ZeroPulse(ZeroPulse),
     Iaigiri(Iaigiri),
@@ -145,6 +213,13 @@ pub enum Command {
     EnergyShield(EnergyShield),
     DredgerSacrifice(DredgerSacrifice),
     Stealth(Stealth),
+    UnjustGame(UnjustGame),
+    Ironclad(Ironclad),
+    YamatoCannon(YamatoCannon),
+    OrbitalBombardment(OrbitalBombardment),
+    RiftStorm(RiftStorm),
+    SetFactionMode(SetFactionMode),
+    Cheat(CheatCommand),
 }
 
 /// Generic command to control one's ship.
@@ -206,6 +281,29 @@ pub struct Upgrade {
     pub entity_type: EntityType,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct UseSkill {
+    /// Skill being used.
+    pub skill: SkillType,
+    /// Explicit target payload, if any.
+    pub target: SkillTarget,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub enum SkillTarget {
+    None,
+    Position(Vec2),
+    Entity(EntityId),
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct SkillSnapshot {
+    pub skill: SkillType,
+    pub cooldown_remaining: Ticks,
+    pub active_remaining: Ticks,
+    pub charge_remaining: Ticks,
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Warp {
     /// 目标世界坐标，服务器会再次裁剪。
@@ -252,6 +350,34 @@ pub struct DredgerSacrifice;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Stealth;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct UnjustGame {
+    /// Target entity to swap with.
+    pub target_id: EntityId,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Ironclad;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct YamatoCannon;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct OrbitalBombardment;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct RiftStorm;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct SetFactionMode {
+    pub mode: FactionMode,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CheatCommand {
+    pub text: String,
+}
 
 #[cfg(test)]
 mod tests {

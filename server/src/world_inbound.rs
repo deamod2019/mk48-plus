@@ -13,8 +13,7 @@ use common::death_reason::DeathReason;
 use common::protocol::*;
 use common::terrain::TerrainMutation;
 use common::ticks::Ticks;
-use common::velocity::Velocity;
-use common::skill::{SkillType, WARP_CHARGE, WARP_COOLDOWN, WARP_MAX_RANGE_SCALE, ZERO_PULSE_COOLDOWN, ZERO_PULSE_DURATION, ZERO_PULSE_RADIUS, NUCLEAR_STRIKE_COOLDOWN, NUCLEAR_STRIKE_RADIUS, ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN};
+use common::skill::SkillType;
 use common::util::{level_to_score, score_to_level};
 use common::world::{clamp_y_to_strict_area_border, outside_strict_area, ARCTIC};
 use common_util::range::map_ranges;
@@ -44,6 +43,11 @@ impl CommandTrait for Spawn {
 
         if player.data.status.is_alive() {
             return Err("cannot spawn while already alive");
+        }
+
+        // Hardcore mode: no respawn after death.
+        if crate::runtime_config::hot_hardcore_mode() && player.data.has_died {
+            return Err("hardcore mode: no respawn after death");
         }
 
         // Arena mode: only submarines allowed.
@@ -265,49 +269,12 @@ impl CommandTrait for Warp {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive {
-                entity_index, ..
-            } => entity_index,
-            _ => return Err("cannot warp while not alive"),
-        };
-
-        let entity = &mut world.entities[entity_index];
-        let data = entity.data();
-        // Check if entity has Warp skill
-        if !data.has_skill(SkillType::Warp) {
-            return Err("warp not supported");
-        }
-
-        if entity.extension().is_warp_busy() {
-            return Err("warp busy");
-        }
-
-        let mut target = self.target;
-        let valid_range = -world.radius * 2.0..world.radius * 2.0;
-        target.x = sanitize_float(target.x, valid_range.clone())?;
-        target.y = sanitize_float(target.y, valid_range)?;
-
-        // 限制在当前可视范围附近，防止穿越全图。
-        let max_offset = data.camera_range() * WARP_MAX_RANGE_SCALE;
-        let current = entity.transform.position;
-        let delta = target - current;
-        let clamped_target = current + delta.clamp_length_max(max_offset);
-
-        // 保证落点不出边界。
-        let border_limit = world.radius - data.length.max(100.0);
-        let length_sq = clamped_target.length_squared();
-        let target = if length_sq > border_limit.powi(2) {
-            clamped_target.normalize_or_zero() * border_limit
-        } else {
-            clamped_target
-        };
-
-        entity
-            .extension_mut()
-            .start_warp(target, WARP_CHARGE, WARP_COOLDOWN)?;
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::Warp,
+            SkillTarget::Position(self.target),
+        )
     }
 }
 
@@ -317,50 +284,12 @@ impl CommandTrait for ZeroPulse {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        let player = player_tuple.borrow_player();
-
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot pulse while not alive"),
-        };
-
-        let entity = &mut world.entities[entity_index];
-        // Check if entity has ZeroPulse skill
-        if !entity.data().has_skill(SkillType::ZeroPulse) {
-            return Err("zero pulse not supported");
-        }
-
-        entity
-            .extension_mut()
-            .start_zero_pulse(ZERO_PULSE_COOLDOWN)?;
-
-        let center = entity.transform.position;
-        let radius = ZERO_PULSE_RADIUS;
-
-        let targets: Vec<_> = world
-            .entities
-            .iter_radius(center, radius)
-            .filter_map(|(target_index, target)| {
-                let data = target.data();
-                if !(data.kind == EntityKind::Boat || data.kind == EntityKind::Aircraft) {
-                    return None;
-                }
-                if target.is_friendly_to_player(Some(player_tuple)) {
-                    return None;
-                }
-                Some(target_index)
-            })
-            .collect();
-
-        for target_index in targets {
-            world.entities[target_index].freeze_for(ZERO_PULSE_DURATION);
-        }
-
-        world
-            .events
-            .push(WorldEvent::ZeroPulse { center, radius });
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::ZeroPulse,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -421,7 +350,7 @@ impl CommandTrait for Fire {
             if entity.altitude > Altitude(50)
                 && !(matches!(
                     data.sub_kind,
-                    EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::Helicopter
+                    EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::FlyingMecha | EntitySubKind::Helicopter
                 ))
             {
                 return Err("cannot fire while flying high (lol)");
@@ -636,6 +565,16 @@ impl CommandTrait for Upgrade {
     }
 }
 
+impl CommandTrait for UseSkill {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        crate::skill_dispatch::dispatch_use_skill(world, player_tuple, self)
+    }
+}
+
 /// Returns an error if the float isn't finite. Otherwise, clamps it to the provided range.
 fn sanitize_float(float: f32, valid: Range<f32>) -> Result<f32, &'static str> {
     if float.is_finite() {
@@ -679,69 +618,12 @@ impl CommandTrait for Iaigiri {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{IAIGIRI_COOLDOWN, IAIGIRI_MAX_RANGE_SCALE, IAIGIRI_MINE_COUNT};
-        
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot iaigiri while not alive"),
-        };
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has Iaigiri skill
-        if !entity.data().has_skill(SkillType::Iaigiri) {
-            return Err("iaigiri not supported");
-        }
-
-        if entity.extension().iaigiri_cooldown_remaining() != Ticks::ZERO {
-            return Err("iaigiri on cooldown");
-        }
-
-        let data = entity.data();
-        
-        // Calculate target position
-        let mut target = self.target;
-        let valid_range = -world.radius * 2.0..world.radius * 2.0;
-        target.x = sanitize_float(target.x, valid_range.clone()).unwrap_or(entity.transform.position.x);
-        target.y = sanitize_float(target.y, valid_range).unwrap_or(entity.transform.position.y);
-
-        let max_offset = data.camera_range() * IAIGIRI_MAX_RANGE_SCALE;
-        let start = entity.transform.position;
-        let delta = target - start;
-        let end = start + delta.clamp_length_max(max_offset);
-
-        // Clamp to world border
-        let border_limit = world.radius - data.length.max(100.0);
-        let end = if end.length_squared() > border_limit.powi(2) {
-            end.normalize_or_zero() * border_limit
-        } else {
-            end
-        };
-
-        let altitude = entity.altitude;
-        
-        // Start cooldown
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_iaigiri(IAIGIRI_COOLDOWN)?;
-        
-        // Spawn mines along path
-        let mine_count = IAIGIRI_MINE_COUNT as usize;
-        for i in 0..mine_count {
-            let t = (i as f32 + 0.5) / mine_count as f32;
-            let mine_pos = start.lerp(end, t);
-            
-            let mut mine = Entity::new(EntityType::IaigiriMine, Some(Arc::clone(player_tuple)));
-            mine.transform.position = mine_pos;
-            mine.altitude = altitude;
-            world.spawn_here_or_nearby(mine, 5.0, None);
-        }
-
-        // Teleport to end position
-        let entity = &mut world.entities[entity_index];
-        entity.transform.position = end;
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::Iaigiri,
+            SkillTarget::Position(self.target),
+        )
     }
 }
 
@@ -751,30 +633,12 @@ impl CommandTrait for EngineBoost {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{ENGINE_BOOST_MAX_DURATION, ENGINE_BOOST_DECEL_DURATION, ENGINE_BOOST_COOLDOWN};
-        
-        
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot boost while not alive"),
-        };
-
-        let entity = &mut world.entities[entity_index];
-        
-        // Check if entity has EngineBoost skill
-        if !entity.data().has_skill(SkillType::EngineBoost) {
-            return Err("engine boost not supported");
-        }
-
-        
-        entity.extension_mut().start_engine_boost(
-            ENGINE_BOOST_MAX_DURATION,
-            ENGINE_BOOST_DECEL_DURATION,
-            ENGINE_BOOST_COOLDOWN,
-        )?;
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::EngineBoost,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -784,62 +648,12 @@ impl CommandTrait for SonarPulse {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{SONAR_PULSE_COOLDOWN, SONAR_PULSE_RADIUS};
-        
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot sonar pulse while not alive"),
-        };
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has SonarPulse skill
-        if !entity.data().has_skill(SkillType::SonarPulse) {
-            return Err("sonar pulse not supported");
-        }
-
-        if entity.extension().sonar_pulse_cooldown_remaining() != Ticks::ZERO {
-            return Err("sonar pulse on cooldown");
-        }
-
-        let center = entity.transform.position;
-
-        // Start cooldown
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_sonar_pulse(SONAR_PULSE_COOLDOWN)?;
-
-        // Find and reveal submerged submarines in range
-        // Note: In a full implementation, we would need a "revealed" state that
-        // gets synced to clients. For now, we'll just set active sensors temporarily.
-        let targets: Vec<_> = world
-            .entities
-            .iter_radius(center, SONAR_PULSE_RADIUS)
-            .filter_map(|(target_index, target)| {
-                let data = target.data();
-                if data.sub_kind != EntitySubKind::Submarine {
-                    return None;
-                }
-                if !target.altitude.is_submerged() {
-                    return None;
-                }
-                if target.is_friendly_to_player(Some(player_tuple)) {
-                    return None;
-                }
-                Some(target_index)
-            })
-            .collect();
-
-        // Mark targets as detected (set their active sensor flag temporarily)
-        for target_index in targets {
-            let target = &mut world.entities[target_index];
-            target.extension_mut().set_active(true);
-        }
-
-        // Broadcast sonar pulse event for visual effect
-        world.events.push(WorldEvent::ZeroPulse { center, radius: SONAR_PULSE_RADIUS });
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::SonarPulse,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -849,59 +663,12 @@ impl CommandTrait for DepthChargeBarrage {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{DCB_COOLDOWN, DCB_COUNT, DCB_RANGE, DCB_SPREAD_ANGLE};
-        
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot depth charge barrage while not alive"),
-        };
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has DepthChargeBarrage skill
-        if !entity.data().has_skill(SkillType::DepthChargeBarrage) {
-            return Err("depth charge barrage not supported");
-        }
-
-        if entity.extension().depth_charge_barrage_cooldown_remaining() != Ticks::ZERO {
-            return Err("depth charge barrage on cooldown");
-        }
-
-        let center = entity.transform.position;
-        let direction = entity.transform.direction;
-        let altitude = entity.altitude;
-
-        // Start cooldown
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_depth_charge_barrage(DCB_COOLDOWN)?;
-
-        // Spawn depth charges in a fan pattern
-        let half_angle = DCB_SPREAD_ANGLE / 2.0;
-        for i in 0..DCB_COUNT {
-            // Calculate angle offset within the fan
-            let t = if DCB_COUNT > 1 {
-                (i as f32) / ((DCB_COUNT - 1) as f32)
-            } else {
-                0.5
-            };
-            let angle_offset_deg = -half_angle + t * DCB_SPREAD_ANGLE;
-            let angle_offset = Angle::from_degrees(angle_offset_deg);
-            let launch_direction = direction + angle_offset;
-            
-            // Calculate spawn position
-            let offset = launch_direction.to_vec() * DCB_RANGE;
-            let spawn_pos = center + offset;
-
-            let mut depth_charge = Entity::new(EntityType::Mark9, Some(Arc::clone(player_tuple)));
-            depth_charge.transform.position = spawn_pos;
-            depth_charge.transform.direction = launch_direction;
-            depth_charge.altitude = altitude;
-            
-            world.spawn_here_or_nearby(depth_charge, 10.0, None);
-        }
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::DepthChargeBarrage,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -911,76 +678,12 @@ impl CommandTrait for AirSuperiority {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::AIR_SUPERIORITY_COOLDOWN;
-        
-        // Get entity_index from player status
-        let entity_index = {
-            let player = player_tuple.borrow_player();
-            match player.data.status {
-                Status::Alive { entity_index, .. } => entity_index,
-                _ => return Err("not alive"),
-            }
-        }; // player borrow dropped here
-
-        // Check entity type, get aircraft type, and check cooldown
-        let aircraft_type = {
-            let entity = &world.entities[entity_index];
-            
-            // Check if entity has AirSuperiority skill
-            if !entity.data().has_skill(SkillType::AirSuperiority) {
-                return Err("air superiority not supported");
-            }
-
-            if entity.extension().air_superiority_cooldown_remaining() != Ticks::ZERO {
-                return Err("air superiority on cooldown");
-            }
-            
-            // Find the first aircraft type from armaments
-            entity.data().armaments.iter()
-                .find_map(|arm| {
-                    let arm_type = arm.entity_type;
-                    if arm_type.data().kind == EntityKind::Aircraft {
-                        Some(arm_type)
-                    } else {
-                        None
-                    }
-                })
-                .ok_or("no aircraft armaments")?
-        };
-
-        // Get position and direction
-        let (center, direction) = {
-            let entity = &world.entities[entity_index];
-            (entity.transform.position, entity.transform.direction)
-        };
-
-        // Start cooldown
-        {
-            let entity = &mut world.entities[entity_index];
-            entity.extension_mut().start_air_superiority(AIR_SUPERIORITY_COOLDOWN)?;
-        }
-
-        // Spawn Aircraft with player ownership
-        // Aircraft don't trigger create_index (only Boats do), so this is safe
-        for i in 0..10 {
-            let angle_offset = Angle::from_degrees((i as f32 - 5.0) * 20.0);
-            let spawn_direction = direction + angle_offset;
-            let offset = spawn_direction.to_vec() * 100.0;
-            let spawn_pos = center + offset;
-
-            // Create Aircraft WITH player ownership using detected aircraft type
-            let mut drone = Entity::new(aircraft_type, Some(Arc::clone(player_tuple)));
-            drone.transform.position = spawn_pos;
-            drone.transform.direction = spawn_direction;
-            drone.transform.velocity = Velocity::from_mps(50.0);
-            drone.guidance.direction_target = spawn_direction;
-            drone.guidance.velocity_target = Velocity::from_mps(50.0);
-            
-            // world.add is safe for Aircraft with player - doesn't call create_index
-            world.add(drone);
-        }
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::AirSuperiority,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -992,30 +695,12 @@ impl CommandTrait for EmergencyRepair {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{EMERGENCY_REPAIR_COOLDOWN, REPAIR_DURATION};
-        
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("not alive"),
-        };
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has EmergencyRepair skill
-        if !entity.data().has_skill(SkillType::EmergencyRepair) {
-            return Err("emergency repair not supported");
-        }
-
-        if entity.extension().emergency_repair_cooldown_remaining() != Ticks::ZERO {
-            return Err("emergency repair on cooldown");
-        }
-
-        // Start repair
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_emergency_repair(REPAIR_DURATION, EMERGENCY_REPAIR_COOLDOWN)?;
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::EmergencyRepair,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -1025,30 +710,12 @@ impl CommandTrait for SmokeScreen {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{SMOKE_SCREEN_COOLDOWN, SMOKE_SCREEN_DURATION};
-        
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("not alive"),
-        };
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has SmokeScreen skill
-        if !entity.data().has_skill(SkillType::SmokeScreen) {
-            return Err("smoke screen not supported");
-        }
-
-        if entity.extension().smoke_screen_cooldown_remaining() != Ticks::ZERO {
-            return Err("smoke screen on cooldown");
-        }
-
-        // Start smoke screen
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_smoke_screen(SMOKE_SCREEN_DURATION, SMOKE_SCREEN_COOLDOWN)?;
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::SmokeScreen,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -1058,29 +725,12 @@ impl CommandTrait for BurstLoading {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{BURST_LOADING_COOLDOWN, BURST_LOADING_DURATION};
-
-        let player = player_tuple.borrow_player();
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("not alive"),
-        };
-        let entity = &world.entities[entity_index];
-
-        // Check if entity has BurstLoading skill
-        if !entity.data().has_skill(SkillType::BurstLoading) {
-            return Err("entity does not have burst loading skill");
-        }
-
-        if entity.extension().burst_loading_cooldown_remaining() != Ticks::ZERO {
-            return Err("burst loading on cooldown");
-        }
-
-        // Start burst loading effect (duration-based reload speed buff)
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_burst_loading(BURST_LOADING_DURATION, BURST_LOADING_COOLDOWN)?;
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::BurstLoading,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -1090,74 +740,12 @@ impl CommandTrait for NuclearStrike {
         world: &mut World,
         player_tuple: &Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        log::warn!("NuclearStrike command received!");
-        let player = player_tuple.borrow_player();
-
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot use nuclear strike while not alive"),
-        };
-        
-        // Drop the player borrow BEFORE calling is_friendly_to_player in the iterator
-        drop(player);
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has NuclearStrike skill
-        if !entity.data().has_skill(SkillType::NuclearStrike) {
-            return Err("entity does not have nuclear strike skill");
-        }
-
-        // Check cooldown
-        if entity.extension().nuclear_strike_cooldown_remaining() != Ticks::ZERO {
-            return Err("nuclear strike is on cooldown");
-        }
-
-        let center = entity.transform.position;
-        let radius = NUCLEAR_STRIKE_RADIUS;
-
-        // Start cooldown
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_nuclear_strike(Ticks::ZERO, NUCLEAR_STRIKE_COOLDOWN)?;
-
-        // Find all non-friendly combat entities in radius (boats, aircraft, weapons - NOT collectibles)
-        let mut targets: Vec<_> = world
-            .entities
-            .iter_radius(center, radius)
-            .filter_map(|(target_index, target)| {
-                if target_index == entity_index { return None; }
-                let data = target.data();
-                // Only affect boats, aircraft, and weapons (skip collectibles, obstacles, etc.)
-                if !matches!(data.kind, EntityKind::Boat | EntityKind::Aircraft | EntityKind::Weapon) {
-                    return None;
-                }
-                // Skip friendly entities
-                if target.is_friendly_to_player(Some(player_tuple)) { return None; }
-                Some(target_index)
-            })
-            .collect();
-
-        // Sort in reverse order to avoid index invalidation when removing
-        targets.sort_by(|a, b| b.cmp(a));
-
-        log::warn!("NuclearStrike: Found {} combat targets in radius {}", targets.len(), radius);
-
-        // Instant kill all targets by removing them from the world
-        for target_index in targets {
-            let target_data = world.entities[target_index].data();
-            log::warn!("  Killing target: {:?}, kind={:?}", target_data.label, target_data.kind);
-            // Use world.remove() to properly kill and trigger death effects
-            world.remove(target_index, DeathReason::Unknown);
-        }
-
-        log::warn!("NuclearStrike: Pushing WorldEvent::NuclearStrike");
-        // Push event for visual effects on client
-        world
-            .events
-            .push(WorldEvent::NuclearStrike { center, radius });
-        log::warn!("NuclearStrike: events Vec now has {} events", world.events.len());
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::NuclearStrike,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -1167,28 +755,12 @@ impl CommandTrait for EnergyShield {
         world: &mut World,
         player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        let player = player_tuple.borrow_player();
-        
-        let entity_index = match player.data.status {
-            Status::Alive { entity_index, .. } => entity_index,
-            _ => return Err("cannot use energy shield while not alive"),
-        };
-        drop(player);
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has EnergyShield skill
-        if !entity.data().has_skill(SkillType::EnergyShield) {
-            return Err("ship does not have energy shield skill");
-        }
-
-        // Start shield
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_energy_shield(ENERGY_SHIELD_DURATION, ENERGY_SHIELD_COOLDOWN)?;
-
-        log::warn!("EnergyShield activated for {:?}", entity.data().label);
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::EnergyShield,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -1198,60 +770,12 @@ impl CommandTrait for DredgerSacrifice {
         world: &mut World,
         player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        let player = player_tuple.borrow_player();
-        
-        let (entity_index, player_alias) = match player.data.status {
-            Status::Alive { entity_index, .. } => (entity_index, player.alias()),
-            _ => return Err("not alive"),
-        };
-        drop(player);
-
-        let entity = &world.entities[entity_index];
-        
-        // Check if entity has DredgerSacrifice skill
-        if !entity.data().has_skill(SkillType::DredgerSacrifice) {
-            return Err("ship does not have dredger sacrifice skill");
-        }
-
-        // Get position and type before removing
-        let position = entity.transform.position;
-        let direction = entity.transform.direction;
-        let entity_type = entity.entity_type;
-
-        log::warn!("DredgerSacrifice: {:?} sacrificing at {:?}", player_alias, position);
-
-        // Kill the player FIRST (clears the position so OilPlatform can spawn)
-        world.remove(entity_index, DeathReason::Weapon(player_alias, entity_type));
-
-        // Spawn OilPlatform at the sacrifice position using world.add() directly
-        // (bypass can_spawn checks which might reject due to terrain/collision)
-        use crate::entity::unset_entity_id;
-        use common::transform::Transform;
-        use common::guidance::Guidance;
-
-        let oil_platform = Entity {
-            player: None,
-            transform: Transform {
-                position,
-                direction,
-                velocity: Velocity::ZERO,
-            },
-            guidance: Guidance {
-                velocity_target: Velocity::ZERO,
-                direction_target: direction,
-            },
-            entity_type: EntityType::OilPlatform,
-            ticks: Ticks::ZERO,
-            id: unset_entity_id(),
-            altitude: Altitude::ZERO,
-            frozen: Ticks::ZERO,
-            altar_blessing: Ticks::ZERO,
-        };
-        world.add(oil_platform);
-
-        log::warn!("DredgerSacrifice: OilPlatform spawned at {:?}", position);
-
-        Ok(())
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::DredgerSacrifice,
+            SkillTarget::None,
+        )
     }
 }
 
@@ -1261,32 +785,294 @@ impl CommandTrait for Stealth {
         world: &mut World,
         player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
     ) -> Result<(), &'static str> {
-        use common::skill::{STEALTH_DURATION, STEALTH_COOLDOWN};
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::Stealth,
+            SkillTarget::None,
+        )
+    }
+}
 
+impl CommandTrait for UnjustGame {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &std::sync::Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::UnjustGame,
+            SkillTarget::Entity(self.target_id),
+        )
+    }
+}
+
+impl CommandTrait for common::protocol::Ironclad {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::Ironclad,
+            SkillTarget::None,
+        )
+    }
+}
+
+impl CommandTrait for common::protocol::YamatoCannon {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::YamatoCannon,
+            SkillTarget::None,
+        )
+    }
+}
+
+impl CommandTrait for common::protocol::OrbitalBombardment {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::OrbitalBombardment,
+            SkillTarget::None,
+        )
+    }
+}
+
+impl CommandTrait for common::protocol::RiftStorm {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        crate::skill_dispatch::dispatch_skill(
+            world,
+            player_tuple,
+            SkillType::RiftStorm,
+            SkillTarget::None,
+        )
+    }
+}
+
+impl CommandTrait for common::protocol::SetFactionMode {
+    fn apply(
+        &self,
+        _world: &mut World,
+        _player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        // Set the new faction mode via runtime config.
+        crate::runtime_config::set_faction_mode(Some(self.mode));
+        log::info!("[FACTION] Mode switched to {:?} by player", self.mode);
+        Ok(())
+    }
+}
+
+impl CommandTrait for CheatCommand {
+    fn apply(
+        &self,
+        world: &mut World,
+        player_tuple: &Arc<PlayerTuple<Server>>,
+    ) -> Result<(), &'static str> {
+        // Only allow cheat commands from player "anan"
         let player = player_tuple.borrow_player();
+        if !player.alias().as_str().eq_ignore_ascii_case("anan") {
+            return Err("cheat commands are not available");
+        }
+
         let entity_index = match player.data.status {
             Status::Alive { entity_index, .. } => entity_index,
             _ => return Err("not alive"),
         };
         drop(player);
 
-        let entity = &world.entities[entity_index];
+        let text = self.text.trim();
+        let mut parts = text.splitn(2, ' ');
+        let cmd = parts.next().unwrap_or("");
+        let arg = parts.next().unwrap_or("").trim();
 
-        // Check if entity has Stealth skill
-        if !entity.data().has_skill(SkillType::Stealth) {
-            return Err("ship does not have stealth skill");
+        match cmd {
+            "/god" => {
+                let entity = &mut world.entities[entity_index];
+                if entity.altar_blessing > Ticks::ZERO {
+                    entity.altar_blessing = Ticks::ZERO;
+                    log::info!("[CHEAT] God mode OFF");
+                } else {
+                    entity.altar_blessing = Ticks::MAX;
+                    log::info!("[CHEAT] God mode ON");
+                }
+                Ok(())
+            }
+            "/heal" => {
+                let entity = &mut world.entities[entity_index];
+                entity.ticks = Ticks::ZERO;
+                log::info!("[CHEAT] Healed");
+                Ok(())
+            }
+            "/level" => {
+                let level: u8 = arg.parse().map_err(|_| "usage: /level <1-21>")?;
+                if level < 1 || level > 21 {
+                    return Err("level must be 1-21");
+                }
+                let score = level_to_score(level);
+                let mut player = player_tuple.borrow_player_mut();
+                player.score = score;
+                log::info!("[CHEAT] Level set to {}", level);
+                Ok(())
+            }
+            "/spawn" => {
+                if arg.is_empty() {
+                    return Err("usage: /spawn <EntityName>");
+                }
+                let entity_type = EntityType::from_str(arg)
+                    .ok_or("unknown entity type")?;
+                let entity = &mut world.entities[entity_index];
+                entity.change_entity_type(entity_type, &mut world.arena, false);
+                log::info!("[CHEAT] Spawned as {:?}", entity_type);
+                Ok(())
+            }
+            "/kill" => {
+                if arg.is_empty() {
+                    // Kill self
+                    let player = player_tuple.borrow_player();
+                    let alias = player.alias();
+                    drop(player);
+                    world.remove(entity_index, DeathReason::Border);
+                    log::info!("[CHEAT] {} killed self", alias);
+                } else {
+                    // Kill target by name (matches player alias or entity label)
+                    // Search from player's position, pick closest match
+                    let target_name = arg.trim();
+                    let my_pos = world.entities[entity_index].transform.position;
+                    let search_radius = world.radius * 2.0;
+                    let target = world.entities
+                        .iter_radius(my_pos, search_radius)
+                        .filter(|(idx, entity)| {
+                            if *idx == entity_index {
+                                return false;
+                            }
+                            if entity.data().kind != EntityKind::Boat {
+                                return false;
+                            }
+                            // Match by player alias
+                            if let Some(pt) = entity.player.as_ref() {
+                                let p = pt.borrow_player();
+                                if p.alias().as_str().eq_ignore_ascii_case(target_name) {
+                                    return true;
+                                }
+                            }
+                            // Match by entity label (for bots/NPCs without player)
+                            entity.data().label.eq_ignore_ascii_case(target_name)
+                        })
+                        .min_by(|(_, a), (_, b)| {
+                            let da = a.transform.position.distance_squared(my_pos);
+                            let db = b.transform.position.distance_squared(my_pos);
+                            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                        .map(|(i, _)| i);
+                    if let Some(target_index) = target {
+                        world.remove(target_index, DeathReason::Border);
+                        log::info!("[CHEAT] Killed target {}", target_name);
+                    } else {
+                        return Err("target not found");
+                    }
+                }
+                Ok(())
+            }
+            "/tp" => {
+                // Check if it's "/tp to <name>" or "/tp <x> <y>"
+                if arg.starts_with("to ") || arg.starts_with("to\t") {
+                    // Teleport to named player/bot
+                    let target_name = arg[2..].trim();
+                    if target_name.is_empty() {
+                        return Err("usage: /tp to <name>");
+                    }
+                    let my_pos = world.entities[entity_index].transform.position;
+                    let search_radius = world.radius * 2.0;
+                    let target_pos = world.entities
+                        .iter_radius(my_pos, search_radius)
+                        .filter(|(idx, entity)| {
+                            if *idx == entity_index {
+                                return false;
+                            }
+                            if entity.data().kind != EntityKind::Boat {
+                                return false;
+                            }
+                            if let Some(pt) = entity.player.as_ref() {
+                                let p = pt.borrow_player();
+                                if p.alias().as_str().eq_ignore_ascii_case(target_name) {
+                                    return true;
+                                }
+                            }
+                            entity.data().label.eq_ignore_ascii_case(target_name)
+                        })
+                        .min_by(|(_, a), (_, b)| {
+                            let da = a.transform.position.distance_squared(my_pos);
+                            let db = b.transform.position.distance_squared(my_pos);
+                            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                        .map(|(_, entity)| entity.transform.position);
+                    if let Some(pos) = target_pos {
+                        let entity = &mut world.entities[entity_index];
+                        entity.transform.position = pos;
+                        world.entities.move_sector(entity_index);
+                        log::info!("[CHEAT] Teleported to player {}", target_name);
+                    } else {
+                        return Err("target not found");
+                    }
+                } else {
+                    // Teleport to coordinates
+                    let coords: Vec<f32> = arg
+                        .split_whitespace()
+                        .filter_map(|s| s.parse().ok())
+                        .collect();
+                    if coords.len() != 2 {
+                        return Err("usage: /tp <x> <y> or /tp to <name>");
+                    }
+                    let target = Vec2::new(coords[0], coords[1]);
+                    if target.length() > world.radius {
+                        return Err("coordinates outside world boundary");
+                    }
+                    let entity = &mut world.entities[entity_index];
+                    entity.transform.position = target;
+                    world.entities.move_sector(entity_index);
+                    log::info!("[CHEAT] Teleported to ({}, {})", coords[0], coords[1]);
+                }
+                Ok(())
+            }
+            "/score" => {
+                let score: u32 = arg.parse().map_err(|_| "usage: /score <N>")?;
+                let mut player = player_tuple.borrow_player_mut();
+                player.score = score;
+                log::info!("[CHEAT] Score set to {}", score);
+                Ok(())
+            }
+            "/reload" => {
+                let entity = &mut world.entities[entity_index];
+                if entity.is_boat() {
+                    let reloads = entity.extension_mut().reloads_mut();
+                    for reload in reloads.iter_mut() {
+                        *reload = Ticks::ZERO;
+                    }
+                }
+                log::info!("[CHEAT] All weapons reloaded");
+                Ok(())
+            }
+            _ => Err("unknown cheat command"),
         }
-
-        if entity.extension().stealth_cooldown_remaining() != Ticks::ZERO {
-            return Err("stealth on cooldown");
-        }
-
-        // Activate stealth
-        let entity = &mut world.entities[entity_index];
-        entity.extension_mut().start_stealth(STEALTH_DURATION, STEALTH_COOLDOWN)?;
-
-        log::info!("Stealth activated for {:?}", player_tuple.borrow_player().alias());
-
-        Ok(())
     }
 }
