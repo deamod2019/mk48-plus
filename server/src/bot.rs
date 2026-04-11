@@ -3,19 +3,20 @@
 
 use crate::complete_ref::CompleteRef;
 use crate::contact_ref::ContactRef;
-use crate::server::Server;
 use crate::player::Status;
+use crate::server::Server;
 use common::altitude::Altitude;
 use common::angle::Angle;
 use common::complete::CompleteTrait;
 use common::contact::ContactTrait;
 use common::entity::*;
 use common::guidance::Guidance;
+use common::protocol::FactionId;
 use common::protocol::*;
 use common::terrain;
 use common::terrain::Terrain;
+use common::ticks::Ticks;
 use common_util::range::gen_radius;
-use common::protocol::FactionId;
 use core_protocol::id::PlayerId;
 use game_server::game_service::{BotAction, GameArenaService};
 use game_server::player::{PlayerRepo, PlayerTuple};
@@ -45,6 +46,14 @@ pub struct Bot {
     sacrifice_committed: bool,
     /// Tracks whether the bot was alive last tick (for death/respawn detection).
     was_alive_last_tick: bool,
+    /// Short-lived state that overrides normal goals to get the hull unstuck from terrain.
+    terrain_escape_ticks: Ticks,
+    /// Locked escape heading used while terrain_escape_ticks is active.
+    terrain_escape_dir: Vec2,
+    /// Consecutive ticks of significant terrain pressure.
+    terrain_pressure_streak: u8,
+    /// Consecutive ticks with clear water while escaping.
+    terrain_clear_streak: u8,
 }
 
 /// Altar info passed from get_input to bot update.
@@ -87,6 +96,10 @@ impl Default for Bot {
             has_waited_one_tick: false,
             sacrifice_committed: false,
             was_alive_last_tick: false,
+            terrain_escape_ticks: Ticks::ZERO,
+            terrain_escape_dir: Vec2::ZERO,
+            terrain_pressure_streak: 0,
+            terrain_clear_streak: 0,
         }
     }
 }
@@ -95,6 +108,10 @@ impl Bot {
     /// This arbitrary value controls how chill the bots are. If too high, bots are trigger-happy
     /// maniacs, and the waters get filled with stray torpedoes.
     const MAX_AGGRESSION: f32 = 0.35;
+    const TERRAIN_ESCAPE_LIGHT: Ticks = Ticks::from_whole_millis(800);
+    const TERRAIN_ESCAPE_HEAVY: Ticks = Ticks::from_whole_millis(1400);
+    const TERRAIN_ESCAPE_TRIGGER_STREAK: u8 = 2;
+    const TERRAIN_ESCAPE_CLEAR_STREAK: u8 = 2;
 
     /// Returns true if there is land or border at the given position.
     fn is_land_or_border(pos: Vec2, terrain: &Terrain, world_radius: f32) -> bool {
@@ -105,6 +122,17 @@ impl Bot {
         terrain.sample(pos).unwrap_or(Altitude::MIN) >= terrain::SAND_LEVEL
     }
 
+    fn should_use_terrain_escape(boat_type: EntityType, data: &EntityData) -> bool {
+        !matches!(boat_type, EntityType::Sherman | EntityType::Abrams)
+            && !matches!(
+                data.sub_kind,
+                EntitySubKind::Hovercraft
+                    | EntitySubKind::Dredger
+                    | EntitySubKind::LandingShip
+                    | EntitySubKind::Tank
+            )
+    }
+
     /// Pre-checks if a given armament can be fired based on altitude/surfacing conditions.
     /// This mirrors the checks in world_inbound.rs to avoid generating invalid fire commands.
     fn can_fire_armament<C: ContactTrait>(
@@ -113,7 +141,7 @@ impl Bot {
         armament_data: &EntityData,
     ) -> bool {
         let altitude = boat.altitude();
-        
+
         // Can't fire if boat is a submerged former submarine (or non-submarine that upgraded from sub)
         if altitude.is_submerged() {
             if boat_data.sub_kind != EntitySubKind::Submarine {
@@ -123,19 +151,22 @@ impl Bot {
             if matches!(
                 armament_data.sub_kind,
                 EntitySubKind::Shell | EntitySubKind::Sam | EntitySubKind::TankShell
-            ) || matches!(armament_data.kind, EntityKind::Aircraft) {
+            ) || matches!(armament_data.kind, EntityKind::Aircraft)
+            {
                 return false;
             }
         }
-        
+
         // Can't fire if flying high (except for aircraft/starships)
-        if altitude > Altitude(50) && !matches!(
-            boat_data.sub_kind,
-            EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::Helicopter
-        ) {
+        if altitude > Altitude(50)
+            && !matches!(
+                boat_data.sub_kind,
+                EntitySubKind::Aeroplane | EntitySubKind::Starship | EntitySubKind::Helicopter
+            )
+        {
             return false;
         }
-        
+
         true
     }
 
@@ -153,13 +184,17 @@ impl Bot {
         // Faction-aware friendly detection: look up bot's own faction once.
         let faction_mode = !is_arena && crate::runtime_config::hot_faction_mode();
         let my_faction: Option<FactionId> = if faction_mode {
-            players.borrow_player(player_id).and_then(|p| p.data.faction)
+            players
+                .borrow_player(player_id)
+                .and_then(|p| p.data.faction)
         } else {
             None
         };
 
         // Boss bots always aim for max level.
-        let is_boss = players.borrow_player(player_id).map_or(false, |p| p.data.is_boss);
+        let is_boss = players
+            .borrow_player(player_id)
+            .map_or(false, |p| p.data.is_boss);
         if is_boss {
             self.level_ambition = EntityData::MAX_BOAT_LEVEL;
         }
@@ -176,6 +211,8 @@ impl Bot {
             let boat_type: EntityType = boat.entity_type().unwrap();
             let data: &EntityData = boat_type.data();
             let health_percent = 1.0 - boat.damage().to_secs() / data.max_health().to_secs();
+            let forward = boat.transform().direction.to_vec();
+            let port = Vec2::new(-forward.y, forward.x);
 
             // Weighted sums of direction vectors for various purposes.
             let mut movement = Vec2::ZERO;
@@ -194,6 +231,14 @@ impl Bot {
                 *weighted_sum = target_delta * displacement / (displacement.powi(2) + 1.0);
             };
 
+            let terrain_escape_enabled =
+                !self.sacrifice_committed && Self::should_use_terrain_escape(boat_type, data);
+            let mut terrain_blocked_count: u8 = 0;
+            let mut terrain_front_pressure = 0.0_f32;
+            let mut terrain_left_pressure = 0.0_f32;
+            let mut terrain_right_pressure = 0.0_f32;
+            let mut terrain_escape_sum = Vec2::ZERO;
+
             // Terrain avoidance — skip entirely for sacrifice-committed bots.
             if !self.sacrifice_committed {
                 let (scan_radius_mult, num_samples, repel_denom_mult) = if is_boss {
@@ -202,26 +247,112 @@ impl Bot {
                     (1.0, 10, 0.5)
                 };
                 for i in 0..num_samples {
-                    let angle =
-                        Angle::from_radians(i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32));
+                    let angle = Angle::from_radians(
+                        i as f32 * (2.0 * std::f32::consts::PI / num_samples as f32),
+                    );
                     let delta_position = angle.to_vec() * data.length * scan_radius_mult;
-                    if boat_type != EntityType::Sherman
-                        && boat_type != EntityType::Abrams
-                        && Self::is_land_or_border(
-                            boat.transform().position + delta_position,
-                            terrain,
-                            update.world_radius(),
-                        )
-                    {
-                        repel(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
-                    } else if Self::is_land_or_border(
+                    let blocked = Self::is_land_or_border(
                         boat.transform().position + delta_position,
                         terrain,
                         update.world_radius(),
-                    ) {
-                        attract(&mut movement, delta_position, repel_denom_mult * data.length.powi(2));
+                    );
+                    if blocked {
+                        if boat_type != EntityType::Sherman && boat_type != EntityType::Abrams {
+                            repel(
+                                &mut movement,
+                                delta_position,
+                                repel_denom_mult * data.length.powi(2),
+                            );
+                        } else {
+                            attract(
+                                &mut movement,
+                                delta_position,
+                                repel_denom_mult * data.length.powi(2),
+                            );
+                        }
+
+                        if terrain_escape_enabled {
+                            let sample_dir = delta_position.normalize_or_zero();
+                            let front = sample_dir.dot(forward).max(0.0);
+                            let side = sample_dir.dot(port);
+
+                            terrain_blocked_count = terrain_blocked_count.saturating_add(1);
+                            terrain_front_pressure += front;
+                            if side >= 0.0 {
+                                terrain_left_pressure += side;
+                            } else {
+                                terrain_right_pressure += -side;
+                            }
+                            terrain_escape_sum -= sample_dir * (1.0 + front * 1.5);
+                        }
                     }
                 }
+            }
+
+            let mut terrain_escape_reverse = false;
+            if terrain_escape_enabled {
+                let current_speed = boat.transform().velocity.abs().to_mps();
+                let cruise_speed = data.speed.to_mps().max(1.0);
+                let heavy_pressure = terrain_blocked_count >= 3 || terrain_front_pressure >= 1.25;
+                let scrape_pressure =
+                    terrain_front_pressure >= 0.85 && current_speed < cruise_speed * 0.45;
+
+                if heavy_pressure || scrape_pressure {
+                    self.terrain_pressure_streak = self.terrain_pressure_streak.saturating_add(1);
+                    self.terrain_clear_streak = 0;
+                } else {
+                    self.terrain_pressure_streak = 0;
+                    if self.terrain_escape_ticks != Ticks::ZERO {
+                        self.terrain_clear_streak = self.terrain_clear_streak.saturating_add(1);
+                    } else {
+                        self.terrain_clear_streak = 0;
+                    }
+                }
+
+                if self.terrain_escape_ticks == Ticks::ZERO
+                    && self.terrain_pressure_streak >= Self::TERRAIN_ESCAPE_TRIGGER_STREAK
+                {
+                    let mut escape_dir = terrain_escape_sum.normalize_or_zero();
+                    if escape_dir.length_squared() < 0.01 {
+                        escape_dir = -forward;
+                    }
+
+                    let side_bias = if terrain_left_pressure > terrain_right_pressure {
+                        -port
+                    } else if terrain_right_pressure > terrain_left_pressure {
+                        port
+                    } else {
+                        Vec2::ZERO
+                    };
+                    let biased_escape = escape_dir + side_bias * 0.35;
+                    self.terrain_escape_dir = if biased_escape.length_squared() >= 0.01 {
+                        biased_escape.normalize()
+                    } else {
+                        escape_dir.normalize_or_zero()
+                    };
+                    self.terrain_escape_ticks = if heavy_pressure {
+                        Self::TERRAIN_ESCAPE_HEAVY
+                    } else {
+                        Self::TERRAIN_ESCAPE_LIGHT
+                    };
+                }
+
+                if self.terrain_escape_ticks != Ticks::ZERO
+                    && self.terrain_clear_streak >= Self::TERRAIN_ESCAPE_CLEAR_STREAK
+                {
+                    self.terrain_escape_ticks = Ticks::ZERO;
+                    self.terrain_clear_streak = 0;
+                }
+
+                terrain_escape_reverse = self.terrain_escape_ticks != Ticks::ZERO
+                    && terrain_blocked_count >= 3
+                    && terrain_front_pressure >= 1.25
+                    && current_speed < cruise_speed * 0.2;
+            } else {
+                self.terrain_escape_ticks = Ticks::ZERO;
+                self.terrain_escape_dir = Vec2::ZERO;
+                self.terrain_pressure_streak = 0;
+                self.terrain_clear_streak = 0;
             }
 
             let mut closest_enemy: Option<(U::Contact, f32)> = None;
@@ -239,7 +370,8 @@ impl Bot {
 
                     let friendly = contact.player_id() == Some(player_id)
                         || (my_faction.is_some()
-                            && contact.player_id()
+                            && contact
+                                .player_id()
                                 .and_then(|cid| players.borrow_player(cid))
                                 .and_then(|p| p.data.faction)
                                 == my_faction);
@@ -318,12 +450,12 @@ impl Bot {
                     }
 
                     let armament_entity_data: &EntityData = armament.entity_type.data();
-                    
+
                     // Pre-check if we can fire this armament (avoids generating invalid commands)
                     if !Self::can_fire_armament(&boat, data, armament_entity_data) {
                         continue;
                     }
-                    
+
                     if !matches!(
                         armament_entity_data.kind,
                         EntityKind::Weapon | EntityKind::Aircraft | EntityKind::Decoy
@@ -423,6 +555,10 @@ impl Bot {
             // Death reset: if just respawned (transition dead→alive), clear commitment.
             if !self.was_alive_last_tick {
                 self.sacrifice_committed = false;
+                self.terrain_escape_ticks = Ticks::ZERO;
+                self.terrain_escape_dir = Vec2::ZERO;
+                self.terrain_pressure_streak = 0;
+                self.terrain_clear_streak = 0;
             }
             self.was_alive_last_tick = true;
 
@@ -442,7 +578,11 @@ impl Bot {
                         let level = altar_info.my_level.max(1) as f32;
                         let level_factor = 1.0 / level;
                         let distance_factor = 1.0 / (1.0 + dist_to_altar / 1000.0);
-                        let urgency = if altar_info.sacrifice_count >= 3 { 3.0 } else { 1.0 };
+                        let urgency = if altar_info.sacrifice_count >= 3 {
+                            3.0
+                        } else {
+                            1.0
+                        };
                         let score = level_factor * distance_factor * urgency;
                         let commit_chance = (score * 0.01_f32).min(0.1);
 
@@ -469,12 +609,27 @@ impl Bot {
                         movement += tangent * 1.5;
                     }
                 }
-
             } else {
                 // No altar known (altar destroyed or not discovered) — reset commitment.
                 self.sacrifice_committed = false;
             }
             // ---- End Droplet Altar bot behavior ----
+
+            let terrain_escape_active = self.terrain_escape_ticks != Ticks::ZERO;
+            let mut velocity_target = if altar_sacrifice_mode {
+                data.speed
+            } else {
+                data.speed * 0.8
+            };
+            if terrain_escape_active {
+                movement = self.terrain_escape_dir;
+                velocity_target = if terrain_escape_reverse {
+                    data.speed * -0.15
+                } else {
+                    data.speed * 0.25
+                };
+                self.terrain_escape_ticks = self.terrain_escape_ticks.saturating_sub(Ticks::ONE);
+            }
 
             self.was_submerging = if data.sub_kind == EntitySubKind::Submarine {
                 // More positive values mean want to surface, more negative values mean want to dive.
@@ -495,7 +650,7 @@ impl Bot {
             let mut ret = Command::Control(Control {
                 guidance: Some(Guidance {
                     direction_target: Angle::from(movement) + self.steer_bias,
-                    velocity_target: if altar_sacrifice_mode { data.speed } else { data.speed * 0.8 },
+                    velocity_target,
                 }),
                 submerge: self.was_submerging,
                 aim_target: best_firing_solution.map(|solution| solution.1 + self.aim_bias),
@@ -569,9 +724,7 @@ impl Bot {
                 }
                 // 8. Warp — escape death
                 else if health_percent < 0.25 && data.has_skill(SkillType::Warp) {
-                    let escape_dir = Angle::from_radians(
-                        rng.gen_range(0.0..std::f32::consts::TAU),
-                    );
+                    let escape_dir = Angle::from_radians(rng.gen_range(0.0..std::f32::consts::TAU));
                     let target = boat.transform().position
                         + escape_dir.to_vec() * data.sensors.visual.range * 0.8;
                     ret = Command::Warp(Warp { target });
@@ -583,13 +736,20 @@ impl Bot {
         } else {
             // Bot is dead — mark for death→alive transition detection.
             self.was_alive_last_tick = false;
+            self.terrain_escape_ticks = Ticks::ZERO;
+            self.terrain_escape_dir = Vec2::ZERO;
+            self.terrain_pressure_streak = 0;
+            self.terrain_clear_streak = 0;
             if self.spawned_at_least_once && (rng.gen_bool(1.0 / 3.0)) {
                 // Rage quit.
                 BotAction::Quit
             } else if self.has_waited_one_tick {
                 // Arena bots only spawn as submarines.
                 let spawn_type = if is_arena {
-                    let bot_score = players.borrow_player(player_id).map(|p| p.score).unwrap_or(0);
+                    let bot_score = players
+                        .borrow_player(player_id)
+                        .map(|p| p.score)
+                        .unwrap_or(0);
                     EntityType::spawn_options_arena(bot_score, true)
                         .choose(&mut rng)
                         .expect("there must be at least one submarine to spawn as")
@@ -628,9 +788,9 @@ impl game_server::game_service::Bot<Server> for Bot {
                     0
                 };
                 let threshold = server.altar_sacrifice_level_threshold[idx];
-                let has_real = _players.iter_borrow().any(|p| {
-                    !p.is_bot() && p.data.faction == Some(faction)
-                });
+                let has_real = _players
+                    .iter_borrow()
+                    .any(|p| !p.is_bot() && p.data.faction == Some(faction));
                 AltarInfo {
                     position: server.altar_known_position[idx],
                     sacrifice_count: server.altar_sacrifices[idx],
